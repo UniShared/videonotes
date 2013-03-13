@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="app" class="no-js">
+<head>
+    <!-- Le styles -->
+    <title>UniShared</title>
+    <meta property="og:title" content="UniShared video"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="http://video.unishared.com"/>
+    <meta property="og:image" content="http://video.unishared.com/img/unishared-logo-simple-128.png"/>
+    <meta property="og:site_name" content="UniShared"/>
+    <meta property="fb:admins" content="1312243132,726961638"/>
+    <meta property="og:description" content="Your place for social note-taking."/>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.5/angular.min.js"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="/css/font-awesome.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/img/favicon.ico">
+</head>
+<body ng-cloak class="ng-cloak">
+<div id="fb-root" />
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="#"><img src="/img/unishared-logo.png"></a>
+            <div id="social_panel">
+                <ul>
+                    <li><div class="fb-like" data-send="false" data-layout="box_count" data-url="http://video.unishared.com" data-width="60" data-show-faces="true"></div></li>
+                    <li><a href="https://twitter.com/share" data-count="vertical" data-url="http://video.unishared.com" class="twitter-share-button" data-via="UniShared" data-lang="en" data-hashtags="mooc"
+                       data-text="I'm taking note while watching my online course. Want to try?">Tweeter</a></li>
+                    <li><div class="g-plusone" data-url="http://video.unishared.com" data-size="tall"></div></li>
+                </ul>
+            </div>
+            <ul class="nav pull-right" ng-controller="UserCtrl">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        {{user.email}}
+                        <img class="profile-picture" src="{{user.picture}}"/>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{user.link}}" target="_blank">Profile</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="overlay" class="sign-in" ng-controller="OverlayCtrl" ng-show="loading">
+    <div class="loading">
+        <img src="/img/loading.gif">
+    </div>
+</div>
+
+<div id="container" class="view" ng-view></div>
+
+<!-- UserVoice JavaScript SDK (only needed once on a page) -->
+<script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/yLQD5AeYCevXZEy94UtdUA.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
+
+<!-- A tab to launch the Classic Widget -->
+<script>
+    UserVoice = window.UserVoice || [];
+    UserVoice.push(['showTab', 'classic_widget', {
+        mode: 'full',
+        primary_color: '#cc6d00',
+        link_color: '#007dbf',
+        default_mode: 'support',
+        forum_id: 175081,
+        tab_label: 'Feedback',
+        tab_color: '#cc6d00',
+        tab_position: 'bottom-left',
+        tab_inverted: false
+    }]);
+
+    // Twitter button
+    !function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (!d.getElementById(id)) {
+            js = d.createElement(s);
+            js.id = id;
+            js.src = "//platform.twitter.com/widgets.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }
+    }(document, "script", "twitter-wjs");
+
+    // Google + 1 button
+    (function () {
+        var po = document.createElement('script');
+        po.type = 'text/javascript';
+        po.async = true;
+        po.src = 'https://apis.google.com/js/plusone.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(po, s);
+    })();
+
+    (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<script src="https://www.google.com/jsapi"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+<script src="/lib/angular-ui-custom/angular-ui.min.js"></script>
+<script src="/lib/modernizr-custom/modernizr.min.js"></script>
+<script src="/lib/angularjs-gaq/angularjs-gaq.js"></script>
+<script src="/lib/angular-youtube-player-api/angular-youtube-player-api.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/ace/0.2.0/ace.js" charset="utf-8"></script>
+<script src="/js/app.js"></script>
+<script src="/js/services.js"></script>
+<script src="/js/controllers.js"></script>
+<script src="/js/filters.js"></script>
+<script src="/js/directives.js"></script>
+</body>
+</html>

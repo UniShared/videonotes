@@ -33,3 +33,13 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Intellij IDEA
+.idea/
+*.iml
+
+# SASS cache
+static/.sass-cache
+
+# Google AppEngine
+*.datastore

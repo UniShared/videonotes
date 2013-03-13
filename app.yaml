@@ -1,0 +1,25 @@
+application: unishared-dredit
+version: 2
+runtime: python27
+threadsafe: true
+api_version: 1
+
+handlers:
+
+- url: /img
+  static_dir: static/img
+
+- url: /js
+  static_dir: static/js
+
+- url: /css
+  static_dir: static/css
+
+- url: /partials
+  static_dir: static/partials
+
+- url: /lib
+  static_dir: static/lib
+
+- url: /.*
+  script: main.app

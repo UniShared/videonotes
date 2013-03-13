@@ -1,0 +1,101 @@
+<div ui-keypress="{'ctrl-0':'shortcuts($event)'}">
+    <div id="video-container" ng-controller="VideoCtrl">
+        <form id="video-url-form" ng-submit="loadVideo()">
+            <h3>Enter the video URL:</h3>
+            <input type="url" id="videoUrl" name="videoUrl" ng-model="videoUrl" placeholder="Youtube, Coursera, edX, etc." required>
+            <input type="submit" class="btn btn-primary" value="Validate">
+        </form>
+
+        <div id="no-video" ng-hide="doc.info.video">
+            <div>
+                <h2>How to find the video URL on Coursera?</h2>
+                <img ng-show="canReadH264" src="/img/video_url.png">
+                <img ng-show="!canReadH264" src="/img/video_url_no_h264.png">
+            </div>
+        </div>
+
+        <div ng-show="doc.info.video">
+            <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls play-pause-video="videoStatus.play"></video>
+            <div ng-show="youtubeVideo">
+                <div id="ytplayer" play-pause-video="videoStatus.play"></div>
+            </div>
+            <div id="shortcuts">
+                <h2>Shortcuts</h2>
+                <ul>
+                    <li>Ctrl-Space: Pause the video</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="editor-container" ng-controller="EditorCtrl">
+        <div id="editor-info-bar">
+            <div class="container-fluid">
+                <div id="doc-bar" class="row-fluid">
+    <span class="span4">
+        <h3 ng-show="doc.info.editable" class="doc-title"
+            data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
+        <h3 ng-hide="doc.info.editable" class="doc-title">{{doc.info.title}}</h3>
+        <star value="doc.info.labels.starred" click="editor.dirty(true)"></star></span>
+                    <span class="span4">{{editor.state() | saveStateFormatter }}</span>
+                    <!--span class="span4" ng-controller="ShareCtrl"><a class="btn pull-right" href click="share">
+                        Share</a></span-->
+                </div>
+                <div class="navbar subnav">
+                    <ul ng-controller="MenuCtrl" class="nav">
+                        <li class="dropdown">
+                            <a href class="dropdown-toggle" data-toggle="dropdown">
+                                File <b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a target="_blank" href="/#/edit/">New</a></li>
+                                <li><a ng-click="open()" href>Open</a></li>
+                                <li>
+                                    <a ng-show="doc.info.editable" role="button" data-toggle="modal" href="#rename-dialog">Rename</a>
+                                    <span ng-hide="doc.info.editable">Rename</span>
+                                </li>
+                                <li><a ng-click="save()" href>Save</a></li>
+                            </ul>
+                        </li>
+                        <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="modal hide" id="rename-dialog" ng-controller="RenameCtrl">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">?</button>
+                    <h3>Rename File</h3>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <label>Enter a new file name:</label>
+                        <input type="text" ng-model="newFileName" autofocus required/>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <a href class="btn" data-dismiss="modal">Cancel</a>
+                    <a href ng-click="save()" class="btn btn-primary">Save</a>
+                </div>
+            </div>
+
+            <div class="modal hide" id="about-dialog" ng-controller="AboutCtrl">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">?</button>
+                    <h3>About</h3>
+                </div>
+                <div class="modal-body">
+                    <div><b>Total Drive Quota:</b> {{info.quotaBytesTotal | bytes}}</div>
+                    <div><b>Drive Quota Used:</b> {{info.quotaBytesUsed | bytes}}</div>
+                </div>
+                <div class="modal-footer">
+                    <a href class="btn btn-primary" data-dismiss="modal">Close</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="editor" ace-editor></div>
+    </div>
+
+</div>
