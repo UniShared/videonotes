@@ -118,66 +118,71 @@
   right: 0px;
   height: 77%;
 }
+/* line 120, ../scss/app.scss */
+#container #editor-container #editor .ace_gutter-cell.ace_breakpoint {
+  border-radius: 20px 0px 0px 20px;
+  box-shadow: 0px 0px 10px 1px #3781ee inset;
+}
 
-/* line 123, ../scss/app.scss */
+/* line 129, ../scss/app.scss */
 #doc-bar {
   line-height: 27px;
 }
 
-/* line 127, ../scss/app.scss */
+/* line 133, ../scss/app.scss */
 .doc-title {
   display: inline;
   padding-right: 12px;
 }
 
-/* line 132, ../scss/app.scss */
+/* line 138, ../scss/app.scss */
 .star {
   font-size: 22px;
   color: black;
 }
 
-/* line 137, ../scss/app.scss */
+/* line 143, ../scss/app.scss */
 .icon-star {
   color: yellow;
   -webkit-text-stroke: 1px black;
 }
 
-/* line 142, ../scss/app.scss */
+/* line 148, ../scss/app.scss */
 .profile-picture {
   width: 22px;
 }
 
-/* line 146, ../scss/app.scss */
+/* line 152, ../scss/app.scss */
 #error {
   position: absolute;
   bottom: 10px;
   right: 10px;
 }
 
-/* line 152, ../scss/app.scss */
+/* line 158, ../scss/app.scss */
 body {
   height: 100%;
 }
 
-/* line 156, ../scss/app.scss */
+/* line 162, ../scss/app.scss */
 .subnav {
   margin-bottom: 0px;
 }
 
-/* line 160, ../scss/app.scss */
+/* line 166, ../scss/app.scss */
 .subnav .nav > li > a {
   color: #333;
   padding-top: 2px;
   padding-bottom: 2px;
 }
 
-/* line 166, ../scss/app.scss */
+/* line 172, ../scss/app.scss */
 .subnav .nav > li > a:hover {
   background-color: #F5F5F5;
   color: #333;
 }
 
-/* line 170, ../scss/app.scss */
+/* line 176, ../scss/app.scss */
 .dropdown-menu span {
   display: block;
   padding: 3px 15px;
@@ -188,7 +193,7 @@ body {
   white-space: nowrap;
 }
 
-/* line 180, ../scss/app.scss */
+/* line 186, ../scss/app.scss */
 .view {
   margin-top: 25px;
 }

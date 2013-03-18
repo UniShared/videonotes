@@ -12,6 +12,16 @@ module.directive('aceEditor',
         };
     });
 
+module.directive('html5VideoPlayer',
+    function (video) {
+        return {
+            restrict:'A',
+            link:function (scope, element) {
+                video.bindVideoPlayer(element[0]);
+            }
+        };
+    });
+
 module.directive('star',
     function () {
         return {
@@ -58,7 +68,7 @@ module.directive('alert',
         }
     });
 
-module.directive('playPauseVideo', function(youtubePlayerApi) {
+module.directive('playPauseVideo', function(youtubePlayerApi, video) {
     return {
         link: function(scope, element, attrs) {
             scope.$watch(attrs.playPauseVideo, function(newValue, oldValue) {

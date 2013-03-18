@@ -6,6 +6,27 @@ var module = angular.module('app.services', [], function($locationProvider) {
 
 var ONE_HOUR_IN_MS = 1000 * 60 * 60;
 
+// Http interceptor for error 401 (authorization)
+module.factory('httpInterceptor401', function($q, $location) {
+    return function (promise) {
+        return promise.then(function (response) {
+            // do something on response 401
+            return response;
+        }, function(response) {
+            if(response.status === 401){
+                window.location.href = response.data.redirectUri;
+            }
+            else {
+                return $q.reject(response);
+            }
+        });
+    };
+});
+
+module.config(function ($httpProvider) {
+    $httpProvider.responseInterceptors.push('httpInterceptor401');
+});
+
 // Shared model for current document
 module.factory('doc',
     function ($rootScope) {
@@ -25,31 +46,45 @@ module.factory('doc',
         return service;
     });
 
+module.factory('video', function($log) {
+    return {
+        player: null,
+        bindVideoPlayer:function (element) {
+            this.player = element;
+        }
+    };
+});
+
 module.factory('editor',
-    function (doc, backend, $q, $rootScope, $log) {
+    function (doc, backend, youtubePlayerApi, video, $q, $rootScope, $log) {
         var editor = null;
         var EditSession = require("ace/edit_session").EditSession;
 
         var service = {
             loading:false,
             saving:false,
+            lastRow: -1,
             rebind:function (element) {
                 editor = ace.edit(element);
+                this.updateEditor(doc.info);
             },
+
             snapshot:function () {
                 doc.dirty = false;
                 var data = angular.extend({}, doc.info);
-                data.resource_id = doc.resource_id;
                 if (doc.info.editable) {
-                    data.content = editor.getSession().getValue();
+                    data.content = doc.info.content;
                 }
                 return data;
             },
             create:function (parentId) {
                 $log.info("Creating new doc");
+                doc.dirty = true;
                 this.updateEditor({
+                    id:null,
                     content: '',
                     video: null,
+                    syncNotesVideo: {},
                     labels:{
                         starred:false
                     },
@@ -57,28 +92,29 @@ module.factory('editor',
                     title:'Your notes',
                     description:'',
                     mimeType:'application/vnd.unishared.document',
-                    parent: parentId || null,
-                    resource_id:null
+                    parent: parentId || null
                 });
+                this.save(true);
             },
             copy: function (templateId) {
                 $log.info("Copying template", templateId);
                 backend.copy(templateId).then(angular.bind(this,
                 function (result) {
-                    doc.resource_id = result.data.id;
+                    doc.info.id = result.data.id;
                     $rootScope.$broadcast('copied', result.data.id);
                 }),
                 angular.bind(this, function () {
                     $log.warn("Error copying", templateId);
                     $rootScope.$broadcast('error', {
                         action:'copy',
-                        message:"An error occured while copying the template"
+                        message:"An error occurred while copying the template"
                     });
                 }));
             },
             load:function (id, reload) {
-                $log.info("Loading resource", id, doc.resource_id);
-                if (!reload && doc.info && id == doc.resource_id) {
+                $log.info("Loading resource", id, doc.info && doc.info.id);
+                if (!reload && doc.info && id == doc.info.id) {
+                    this.updateEditor(doc.info);
                     return $q.when(doc.info);
                 }
                 this.loading = true;
@@ -108,6 +144,10 @@ module.factory('editor',
                 this.saving = true;
                 var file = this.snapshot();
 
+                if(!doc.info.id) {
+                    $rootScope.$broadcast('firstSaving');
+                }
+
                 // Force revision if first save of the session
                 newRevision = newRevision || doc.timeSinceLastSave() > ONE_HOUR_IN_MS;
                 var promise = backend.save(file, newRevision);
@@ -115,7 +155,12 @@ module.factory('editor',
                     function (result) {
                         $log.info("Saved file", result);
                         this.saving = false;
-                        doc.resource_id = result.data.id;
+
+                        if(!doc.info.id) {
+                            doc.info.id = result.data.id;
+                            $rootScope.$broadcast('firstSaved', doc.info);
+                        }
+
                         doc.lastSave = new Date().getTime();
                         $rootScope.$broadcast('saved', doc.info);
                         return doc.info;
@@ -125,23 +170,171 @@ module.factory('editor',
                         doc.dirty = true;
                         $rootScope.$broadcast('error', {
                             action:'save',
-                            message:"An error occured while saving the file"
+                            message:"An error occurred while saving the file"
                         });
                         return result;
                     }));
                 return promise;
             },
             updateEditor:function (fileInfo) {
+                if(!fileInfo) {
+                    return;
+                }
+
                 $log.info("Updating editor", fileInfo);
 
                 var session = new EditSession(fileInfo.content);
+
                 session.on('change', function () {
-                    doc.dirty = true;
-                    $rootScope.$apply();
+                    if(doc && doc.info) {
+                        doc.dirty = true;
+                        doc.info.content = session.getValue();
+                        $rootScope.$apply();
+                    }
                 });
+
+                session.getSelection().on('changeCursor', function () {
+                    var lineCursorPosition = editor.getCursorPosition().row,
+                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
+
+                    if(session.getLine(lineCursorPosition) != '') {
+                        if(lineCursorPosition != service.lastRow) {
+                            service.lastRow = lineCursorPosition;
+                            if(timestamp) {
+                                if(youtubePlayerApi.player) {
+                                    youtubePlayerApi.player.seekTo(timestamp);
+                                }
+                                else if(video.player) {
+                                    video.player.currentTime = timestamp;
+                                }
+                            }
+                            else {
+                                // Is there some texts before and after?
+                                var timestampBefore, lineBefore = false,
+                                    timestampAfter, lineAfter = false;
+                                for(var line in doc.info.syncNotesVideo) {
+                                    if (!lineBefore && line < lineCursorPosition) {
+                                        lineBefore = true;
+                                        timestampBefore = doc.info.syncNotesVideo[line];
+                                    }
+                                    else if (!lineAfter && line > lineCursorPosition) {
+                                        lineAfter = true;
+                                        timestampAfter = doc.info.syncNotesVideo[line];
+                                    }
+
+                                    if(lineBefore && lineAfter) {
+                                        break;
+                                    }
+                                }
+
+                                if(lineBefore && lineAfter) {
+                                    // Text before and after
+                                    // Timestamp for this line must be average time between nearest line before/after
+                                    doc.info.syncNotesVideo[lineCursorPosition] = (timestampBefore + timestampAfter) / 2;
+                                }
+                                else {
+                                    // No text or only before / after
+                                    // Using current player time
+                                    if(youtubePlayerApi.player) {
+                                        doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime();
+                                    }
+                                    else if(video.player) {
+                                        doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime;
+                                    }
+
+                                    session.setBreakpoint(lineCursorPosition);
+                                }
+
+                            }
+                        }
+                    }
+                });
+
+                editor.on("gutterclick", function(e){
+                    var lineCursorPosition = e.getDocumentPosition().row,
+                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
+
+                    if(youtubePlayerApi.player) {
+                        youtubePlayerApi.player.seekTo(timestamp);
+                    }
+                    else if(video.player) {
+                        video.player.currentTime = timestamp;
+                    }
+                });
+
+                for(var line in fileInfo.syncNotesVideo) {
+                    session.setBreakpoint(line);
+                }
+
+                /*var dom = require("../lib/dom");
+                require("ace/layer/gutter").Gutter.prototype.update = function(config) {
+                    var emptyAnno = {className: ""};
+                    var html = [];
+                    var i = config.firstRow;
+                    var lastRow = config.lastRow;
+                    var fold = this.session.getNextFoldLine(i);
+                    var foldStart = fold ? fold.start.row : Infinity;
+                    var foldWidgets = this.$showFoldWidgets && this.session.foldWidgets;
+                    var breakpoints = this.session.$breakpoints;
+                    var decorations = this.session.$decorations;
+                    var firstLineNumber = this.session.$firstLineNumber;
+                    var lastLineNumber = 0;
+
+                    while (true) {
+                        if(i > foldStart) {
+                            i = fold.end.row + 1;
+                            fold = this.session.getNextFoldLine(i, fold);
+                            foldStart = fold ?fold.start.row :Infinity;
+                        }
+                        if(i > lastRow)
+                            break;
+
+                        var annotation = this.$annotations[i] || emptyAnno;
+                        html.push(
+                            "<div class='ace_gutter-cell ",
+                            breakpoints[i] || "", decorations[i] || "", annotation.className,
+                            "' style='height:", this.session.getRowLength(i) * config.lineHeight, "px;'>",
+                            doc.info.syncNotesVideo[i + firstLineNumber]
+                        );
+
+                        if (foldWidgets) {
+                            var c = foldWidgets[i];
+                            // check if cached value is invalidated and we need to recompute
+                            if (c == null)
+                                c = foldWidgets[i] = this.session.getFoldWidget(i);
+                            if (c)
+                                html.push(
+                                    "<span class='ace_fold-widget ace_", c,
+                                    c == "start" && i == foldStart && i < fold.end.row ? " ace_closed" : " ace_open",
+                                    "' style='height:", config.lineHeight, "px",
+                                    "'></span>"
+                                );
+                        }
+
+                        html.push("</div>");
+
+                        i++;
+                    }
+
+                    this.element = dom.setInnerHtml(this.element, html.join(""));
+                    this.element.style.height = config.minHeight + "px";
+
+                    if (this.session.$useWrapMode)
+                        lastLineNumber = this.session.getLength();
+
+                    var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
+                    var padding = this.$padding || this.$computePadding();
+                    gutterWidth += padding.left + padding.right;
+                    if (gutterWidth !== this.gutterWidth) {
+                        this.gutterWidth = gutterWidth;
+                        this.element.style.width = Math.ceil(this.gutterWidth) + "px";
+                        this._emit("changeGutterWidth", gutterWidth);
+                    }
+                };*/
+
+
                 doc.lastSave = 0;
                 doc.info = fileInfo;
-                doc.resource_id = fileInfo.id;
                 editor.setSession(session);
                 editor.setReadOnly(!doc.info.editable);
                 session.setUseWrapMode(true);
@@ -155,7 +348,7 @@ module.factory('editor',
                     return EditorState.SAVE;
                 } else if (doc.dirty) {
                     return EditorState.DIRTY;
-                } else if (!doc.info.editable) {
+                } else if (doc.info && !doc.info.editable) {
                     return EditorState.READONLY;
                 }
                 return EditorState.CLEAN;
@@ -171,23 +364,21 @@ module.factory('backend',
         };
         var service = {
             courses: function() {
-                return $http.get('/courses', {transformResponse:jsonTransform})
+                return $http.get('/courses')
             },
             user:function () {
-                return $http.get('/user', {transformResponse:jsonTransform});
+                return $http.get('/user');
             },
             about:function () {
-                return $http.get('/about', {transformResponse:jsonTransform});
+                return $http.get('/about');
             },
             copy: function(templateId) {
                 return $http.post('/svc', {
-                    transformResponse:jsonTransform,
                     templateId:templateId
                 });
             },
             load:function (id) {
                 return $http.get('/svc', {
-                    transformResponse:jsonTransform,
                     params:{
                         'file_id':id
                     }
@@ -197,14 +388,13 @@ module.factory('backend',
                 $log.info('Saving', fileInfo);
                 return $http({
                     url:'/svc',
-                    method:fileInfo.resource_id ? 'PUT' : 'POST',
+                    method:fileInfo.id ? 'PUT' : 'POST',
                     headers:{
                         'Content-Type':'application/json'
                     },
                     params:{
                         'newRevision':newRevision
                     },
-                    transformResponse:jsonTransform,
                     data:JSON.stringify(fileInfo)
                 });
             }
@@ -243,16 +433,9 @@ module.factory('user', function($rootScope, backend) {
         },
         login: function() {
             backend.user().then(function (response) {
-                var data = response.data;
-                if('redirectUri' in data) {
-                    $rootScope.$broadcast('needAutorisation', data.redirectUri);
-                }
-                else {
-                    _this.authenticated = true;
-                    _this.info = data;
-                    $rootScope.$broadcast('authentified', _this);
-                }
-
+                _this.authenticated = true;
+                _this.info = response.data;
+                $rootScope.$broadcast('authentified', _this);
             });
         }
     };

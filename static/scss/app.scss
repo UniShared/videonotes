@@ -116,6 +116,12 @@
       left: 50%;
       right: 0px;
       height: 77%;
+
+      .ace_gutter-cell.ace_breakpoint{
+        border-radius: 20px 0px 0px 20px;
+        box-shadow: 0px 0px 10px 1px #3781ee inset;
+      }
+
     }
   }
 }

@@ -2,7 +2,7 @@
     <div id="video-container" ng-controller="VideoCtrl">
         <form id="video-url-form" ng-submit="loadVideo()">
             <h3>Enter the video URL:</h3>
-            <input type="url" id="videoUrl" name="videoUrl" ng-model="videoUrl" placeholder="Youtube, Coursera, edX, etc." required>
+            <input type="url" id="videoUrl" name="videoUrl" ng-model="videoUrl" required>
             <input type="submit" class="btn btn-primary" value="Validate">
         </form>
 
@@ -15,9 +15,10 @@
         </div>
 
         <div ng-show="doc.info.video">
-            <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls play-pause-video="videoStatus.play"></video>
+            <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls play-pause-video="videoStatus.play"
+                   html5VideoPlayer></video>
             <div ng-show="youtubeVideo">
-                <div id="ytplayer" play-pause-video="videoStatus.play"></div>
+                <div id="ytplayer" play-pause-video="videoStatus.play" youtube-player></div>
             </div>
             <div id="shortcuts">
                 <h2>Shortcuts</h2>
@@ -32,11 +33,12 @@
         <div id="editor-info-bar">
             <div class="container-fluid">
                 <div id="doc-bar" class="row-fluid">
-    <span class="span4">
-        <h3 ng-show="doc.info.editable" class="doc-title"
-            data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
-        <h3 ng-hide="doc.info.editable" class="doc-title">{{doc.info.title}}</h3>
-        <star value="doc.info.labels.starred" click="editor.dirty(true)"></star></span>
+                    <span class="span8">
+                        <h3 ng-show="doc.info.editable" class="doc-title"
+                            data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
+                        <h3 ng-hide="doc.info.editable" class="doc-title">{{doc.info.title}}</h3>
+                        <star value="doc.info.labels.starred" click="editor.dirty(true)"></star>
+                    </span>
                     <span class="span4">{{editor.state() | saveStateFormatter }}</span>
                     <!--span class="span4" ng-controller="ShareCtrl"><a class="btn pull-right" href click="share">
                         Share</a></span-->
@@ -51,7 +53,8 @@
                                 <li><a target="_blank" href="/#/edit/">New</a></li>
                                 <li><a ng-click="open()" href>Open</a></li>
                                 <li>
-                                    <a ng-show="doc.info.editable" role="button" data-toggle="modal" href="#rename-dialog">Rename</a>
+                                    <a ng-show="doc.info.editable" role="button" data-toggle="modal"
+                                       href="#rename-dialog">Rename</a>
                                     <span ng-hide="doc.info.editable">Rename</span>
                                 </li>
                                 <li><a ng-click="save()" href>Save</a></li>
@@ -60,7 +63,6 @@
                         <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                     </ul>
                 </div>
-
             </div>
 
             <div class="modal hide" id="rename-dialog" ng-controller="RenameCtrl">

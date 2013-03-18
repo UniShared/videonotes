@@ -1,18 +1,22 @@
 'use strict';
 
-function OverlayCtrl($scope, editor) {
-    $scope.loading = editor.loading;
-    $scope.$on('loading', function () {
+function OverlayCtrl($scope, $log, editor, doc) {
+    $scope.loading = (!doc.info) || editor.loading;
+
+    $scope.$onMany(['loading', 'firstSaving'], function ($event) {
+        $log.log('Enable loading from event ' + $event.name);
         $scope.loading = true;
     });
-    $scope.$on('loaded', function () {
+
+    $scope.$onMany(['loaded', 'firstSaved', 'error'], function ($event) {
+        $log.info('Disable loading from event ' + $event.name);
         $scope.loading = false;
     });
 }
 
-function MainCtrl($scope, $location, $routeParams, $timeout, $window, $log, editor, doc, user) {
-    $scope.redirectToDocument = function () {
-        $location.path('/edit/' + doc.resource_id);
+function MainCtrl($scope, $location, $routeParams, $timeout, $log, editor, doc) {
+    $scope.redirectToDocument = function (event, fileInfo) {
+        $location.path('/edit/' + fileInfo.id);
     };
 
     $scope.init = function () {
@@ -27,6 +31,7 @@ function MainCtrl($scope, $location, $routeParams, $timeout, $window, $log, edit
             $timeout(function () {
                     var parentId = $location.search()['parent'];
                     editor.create(parentId);
+                    editor.save(true);
                 },
                 1);
         }
@@ -38,18 +43,13 @@ function MainCtrl($scope, $location, $routeParams, $timeout, $window, $log, edit
         $event.preventDefault();
     };
 
-    $scope.$on('saved', $scope.redirectToDocument);
-    $scope.$on('copied', $scope.redirectToDocument);
+    $scope.$onMany(['firstSaved', 'copied'], $scope.redirectToDocument);
+
     $scope.$on('authentified', function () {
         $scope.init();
     });
 
-    if(!user.isAuthenticated()) {
-        user.login();
-    }
-    else {
-        $scope.init();
-    }
+    $scope.init();
 }
 
 function CoursesListCtrl($scope, $location, user, course) {
@@ -78,16 +78,16 @@ function CoursesListCtrl($scope, $location, user, course) {
 }
 
 function UserCtrl($scope, user, backend) {
+    if(!user.isAuthenticated()) {
+        user.login();
+    }
+
     $scope.$on('authentified', function () {
         $scope.user = user.getInfo();
     });
-
-    $scope.$on('needAutorisation', function (event, args) {
-        window.location.href = args;
-    });
 }
 
-function VideoCtrl($scope, $window, doc, youtubePlayerApi) {
+function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
     $scope.canReadH264 = Modernizr.video.h264;
     $scope.youtubeVideo = false;
     $scope.doc = doc;
@@ -118,7 +118,7 @@ function VideoCtrl($scope, $window, doc, youtubePlayerApi) {
 
                 if(videoId != null) {
                     $scope.youtubeVideo = true;
-                    doc.info.video = 'http://www.youtube.com/embed/'+videoId;
+                    doc.info.video = $scope.videoUrl;
                     youtubePlayerApi.videoId = videoId;
                     youtubePlayerApi.loadPlayer();
                 }
@@ -141,10 +141,7 @@ function VideoCtrl($scope, $window, doc, youtubePlayerApi) {
 
     $scope.$on('shortcut', $scope.pauseVideo);
     $scope.$on('loaded', $scope.loadVideo);
-
-    $scope.loadVideo();
 }
-
 
 function EditorCtrl($scope, editor, doc, autosaver) {
     $scope.editor = editor;
@@ -194,7 +191,7 @@ function MenuCtrl($scope, $location, $window, appId, editor) {
     }
 }
 
-function RenameCtrl($scope, doc) {
+function RenameCtrl($scope, $window, doc) {
     $('#rename-dialog').on('show',
         function () {
             $scope.$apply(function () {
