@@ -1,0 +1,23 @@
+{
+  "name": "angular-youtube",
+  "version": "0.0.0",
+  "main": "./angular-youtube-player-api.js",
+  "dependencies": {
+    "angular": "~1.0.5"
+  },
+  "ignore": [
+    "test/*",
+    "scripts/*",
+    "config/*"
+  ],
+  "gitHead": "27a9ff98a33e0b3d6b1c576e9d562aa3a64eb56b",
+  "readme": "Angular Youtube Player module\n=============================\n\nA simple AngularJS (http://angularjs.com) to interact with Youtube Player (API).\n",
+  "readmeFilename": "README.md",
+  "_id": "angular-youtube@1.0.0",
+  "description": "Angular Youtube Player module =============================",
+  "commit": "27a9ff98a33e0b3d6b1c576e9d562aa3a64eb56b",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/arnaudbreton/angular-youtube.git"
+  }
+}
