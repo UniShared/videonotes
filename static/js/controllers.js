@@ -110,6 +110,8 @@ function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
     };
 
     $scope.loadVideo = function () {
+        $scope.loading = true;
+
         if(doc && doc.info) {
             $scope.videoUrl = (this && this.videoUrl) || doc.info.video;
 
@@ -121,15 +123,19 @@ function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
                     doc.info.video = $scope.videoUrl;
                     youtubePlayerApi.videoId = videoId;
                     youtubePlayerApi.loadPlayer();
+                    $scope.loading = false;
                 }
                 else {
                     $scope.youtubeVideo = false;
+                    $scope.$on('videoLoaded', function () { $scope.loading = false });
                     doc.info.video = $scope.videoUrl;
                 }
 
                 $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Video', $scope.videoUrl]);
             }
         }
+
+
     };
 
     $scope.pauseVideo = function() {

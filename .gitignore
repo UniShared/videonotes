@@ -37,8 +37,9 @@ nosetests.xml
 .idea/
 *.iml
 
-# SASS cache
+# SASS cache and generated CSS
 static/.sass-cache
+static/css/app.css
 
 # Google AppEngine
 *.datastore

@@ -60,6 +60,13 @@
       #videoUrl {
         width: 270px;
       }
+
+      .loading {
+        width: 30px;
+        height: 30px;
+        margin-bottom: 10px;
+        margin-left: 15px;
+      }
     }
 
 
@@ -78,9 +85,20 @@
       }
     }
 
+    #no-video {
+      margin-left: 10px;
+      margin-right: 10px;
+    }
 
-    video {
-      width: 100%;
+    .video {
+      video {
+        width: 100%;
+      }
+
+      .loading {
+        display: block;
+        margin: 0 auto;
+      }
     }
 
     #shortcuts {

@@ -3,7 +3,8 @@
         <form id="video-url-form" ng-submit="loadVideo()">
             <h3>Enter the video URL:</h3>
             <input type="url" id="videoUrl" name="videoUrl" ng-model="videoUrl" required>
-            <input type="submit" class="btn btn-primary" value="Validate">
+            <input type="submit" class="btn btn-primary" value="Validate" ng-hide="loading">
+            <img class="loading" src="/img/loading.gif" ng-show="loading">
         </form>
 
         <div id="no-video" ng-hide="doc.info.video">
@@ -14,17 +15,20 @@
             </div>
         </div>
 
-        <div ng-show="doc.info.video">
-            <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls play-pause-video="videoStatus.play"
-                   html5-video-player></video>
-            <div ng-show="youtubeVideo">
-                <div id="ytplayer" play-pause-video="videoStatus.play" youtube-player></div>
-            </div>
-            <div id="shortcuts">
-                <h2>Shortcut</h2>
-                <ul>
-                    <li><h4>Ctrl-Space: Pause the video</h4></li>
-                </ul>
+        <div class="video" ng-show="doc.info.video">
+            <img class="loading" src="/img/loading.gif" ng-show="loading">
+            <div ng-hide="loading">
+                <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls play-pause-video-html5="videoStatus.playHtml5"
+                       html5-video-player></video>
+                <div ng-show="youtubeVideo">
+                    <div id="ytplayer" play-pause-video-youtube="videoStatus.playYoutube" youtube-player></div>
+                </div>
+                <div id="shortcuts">
+                    <h2>Shortcut</h2>
+                    <ul>
+                        <li><h4>Ctrl-Space: Pause the video</h4></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

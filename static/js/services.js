@@ -46,12 +46,15 @@ module.factory('doc',
         return service;
     });
 
-module.factory('video', function($log) {
+module.factory('video', function($rootScope, $log) {
     return {
         player: null,
         bindVideoPlayer:function (element) {
             $log.info("Bind video player to element", element.id);
             this.player = element;
+            this.player.addEventListener("canplay", function () {
+                $rootScope.$broadcast('videoLoaded');
+            }, false);
         }
     };
 });
