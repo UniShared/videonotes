@@ -43,3 +43,5 @@ static/css/app.css
 
 # Google AppEngine
 *.datastore
+client_secrets.json
+session.secret
