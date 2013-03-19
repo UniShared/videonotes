@@ -1,4 +1,4 @@
-<div ui-keypress="{'ctrl-0':'shortcuts($event)'}">
+<div ui-keypress="{'ctrl-0 ctrl-space':'shortcuts($event)'}">
     <div id="video-container" ng-controller="VideoCtrl">
         <form id="video-url-form" ng-submit="loadVideo()">
             <h3>Enter the video URL:</h3>
@@ -16,7 +16,7 @@
 
         <div ng-show="doc.info.video">
             <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls play-pause-video="videoStatus.play"
-                   html5VideoPlayer></video>
+                   html5-video-player></video>
             <div ng-show="youtubeVideo">
                 <div id="ytplayer" play-pause-video="videoStatus.play" youtube-player></div>
             </div>
