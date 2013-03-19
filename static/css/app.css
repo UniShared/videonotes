@@ -1,10 +1,23 @@
 /* app css stylesheet */
-/* line 3, ../scss/app.scss */
+@font-face {
+  font-family: 'BebasNeueRegular';
+  src: url("../font/bebasneue-webfont.eot");
+  src: url("../font/bebasneue-webfont.eot?#iefix") format("embedded-opentype"), url("../font/bebasneue-webfont.woff") format("woff"), url("../font/bebasneue-webfont.ttf") format("truetype"), url("../font/bebasneue-webfont.svg#BebasNeueRegular") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* line 11, ../scss/app.scss */
 [ng\:cloak], [ng-cloak], .ng-cloak {
   display: none !important;
 }
 
-/* line 7, ../scss/app.scss */
+/* line 15, ../scss/app.scss */
+h2, h3, h4 {
+  font-family: BebasNeueRegular;
+}
+
+/* line 19, ../scss/app.scss */
 #overlay {
   position: fixed;
   left: 0px;
@@ -14,30 +27,30 @@
   background: rgba(0, 0, 0, 0.2);
   z-index: 1000;
 }
-/* line 16, ../scss/app.scss */
+/* line 28, ../scss/app.scss */
 #overlay .loading {
   top: 35%;
   position: relative;
   height: 0px;
 }
-/* line 21, ../scss/app.scss */
+/* line 33, ../scss/app.scss */
 #overlay .loading img {
   margin: 0 auto;
   display: block;
 }
 
-/* line 28, ../scss/app.scss */
+/* line 40, ../scss/app.scss */
 #social_panel {
   position: relative;
   width: 266px;
   margin: 0 auto;
 }
-/* line 33, ../scss/app.scss */
+/* line 45, ../scss/app.scss */
 #social_panel ul {
   list-style-type: none;
   margin: 0 0 0px 25px;
 }
-/* line 37, ../scss/app.scss */
+/* line 49, ../scss/app.scss */
 #social_panel ul li {
   display: inline;
   float: left;
@@ -45,44 +58,44 @@
   margin: 2px;
 }
 
-/* line 46, ../scss/app.scss */
+/* line 58, ../scss/app.scss */
 #container {
   margin-top: 88px;
 }
-/* line 49, ../scss/app.scss */
+/* line 61, ../scss/app.scss */
 #container #video-container {
   width: 50%;
 }
-/* line 52, ../scss/app.scss */
+/* line 64, ../scss/app.scss */
 #container #video-container h3 {
   display: inline;
 }
-/* line 56, ../scss/app.scss */
+/* line 68, ../scss/app.scss */
 #container #video-container form {
   margin-top: 5px;
   margin-left: 10px;
 }
-/* line 60, ../scss/app.scss */
+/* line 72, ../scss/app.scss */
 #container #video-container form #videoUrl {
-  width: 270px;
+  width: 345px;
 }
-/* line 64, ../scss/app.scss */
+/* line 76, ../scss/app.scss */
 #container #video-container form .loading {
   width: 30px;
   height: 30px;
   margin-bottom: 10px;
   margin-left: 15px;
 }
-/* line 73, ../scss/app.scss */
+/* line 85, ../scss/app.scss */
 #container #video-container #no-video {
   margin-left: 10px;
   margin-right: 10px;
 }
-/* line 79, ../scss/app.scss */
+/* line 91, ../scss/app.scss */
 #container #video-container form label {
   display: inline;
 }
-/* line 83, ../scss/app.scss */
+/* line 95, ../scss/app.scss */
 #container #video-container form input[type="submit"] {
   margin-bottom: 10px;
 }
@@ -129,7 +142,7 @@
 /* line 130, ../scss/app.scss */
 #container #editor-container #editor {
   position: absolute;
-  top: 154px;
+  top: 153px;
   bottom: 0px;
   left: 50%;
   right: 0px;

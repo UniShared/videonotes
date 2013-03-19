@@ -1,5 +1,6 @@
 application: unishared-dredit
-version: 2
+#version: production
+#version: staging
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -15,6 +16,9 @@ handlers:
 - url: /css
   static_dir: static/css
 
+- url: /font
+  static_dir: static/font
+
 - url: /partials
   static_dir: static/partials
 
@@ -23,3 +27,6 @@ handlers:
 
 - url: /.*
   script: main.app
+
+builtins:
+  - remote_api: on

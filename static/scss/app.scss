@@ -1,7 +1,19 @@
 /* app css stylesheet */
 
+@font-face {
+  font-family: 'BebasNeueRegular';
+  src: url('../font/bebasneue-webfont.eot');
+  src: url('../font/bebasneue-webfont.eot?#iefix') format("embedded-opentype"), url('../font/bebasneue-webfont.woff') format("woff"), url('../font/bebasneue-webfont.ttf') format("truetype"), url('../font/bebasneue-webfont.svg#BebasNeueRegular') format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
 [ng\:cloak], [ng-cloak], .ng-cloak {
   display: none !important;
+}
+
+h2, h3, h4 {
+  font-family: BebasNeueRegular;
 }
 
 #overlay {
@@ -58,7 +70,7 @@
       margin-left: 10px;
 
       #videoUrl {
-        width: 270px;
+        width: 345px;
       }
 
       .loading {
@@ -129,7 +141,7 @@
 
     #editor {
       position: absolute;
-      top: 154px;
+      top: 153px;
       bottom: 0px;
       left: 50%;
       right: 0px;
