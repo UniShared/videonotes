@@ -50,6 +50,7 @@ module.factory('video', function($log) {
     return {
         player: null,
         bindVideoPlayer:function (element) {
+            $log.info("Bind video player to element", element.id);
             this.player = element;
         }
     };
