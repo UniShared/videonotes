@@ -68,29 +68,24 @@ module.directive('alert',
         }
     });
 
-module.directive('playPauseVideo', function(youtubePlayerApi, video) {
+module.directive('playPauseVideoHtml5', function(video) {
     return {
         link: function(scope, element, attrs) {
-            scope.$watch(attrs.playPauseVideo, function(newValue, oldValue) {
-                if(newValue != oldValue) {
-                    var videoElement = element[0];
+            scope.$watch(attrs.playPauseVideoHtml5, function(newValue, oldValue) {
+                if(newValue != oldValue && video.player) {
+                    newValue ? video.player.play() : video.player.pause();
+                }
+            });
+        }
+    }
+});
 
-                    if(newValue) {
-                        if(youtubePlayerApi.player) {
-                            youtubePlayerApi.player.playVideo();
-                        }
-                        else {
-                            videoElement.play();
-                        }
-                    }
-                    else {
-                        if(youtubePlayerApi.player) {
-                            youtubePlayerApi.player.pauseVideo();
-                        }
-                        else {
-                            videoElement.pause();
-                        }
-                    }
+module.directive('playPauseVideoYoutube', function(youtubePlayerApi) {
+    return {
+        link: function(scope, element, attrs) {
+            scope.$watch(attrs.playPauseVideoYoutube, function(newValue, oldValue) {
+                if(newValue != oldValue && youtubePlayerApi.player) {
+                    newValue ? youtubePlayerApi.player.playVideo() : youtubePlayerApi.player.pauseVideo();
                 }
             });
         }

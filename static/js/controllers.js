@@ -94,7 +94,8 @@ function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
     $scope.videoUrl = null;
 
     $scope.videoStatus = {
-        play: false
+        playYoutube: false,
+        playHtml5: false
     };
 
     $scope.getYoutubeVideoId = function(url) {
@@ -140,7 +141,8 @@ function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
 
     $scope.pauseVideo = function() {
         if(doc.info && doc.info.video) {
-            $scope.videoStatus.play = !$scope.videoStatus.play;
+            $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
+            $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
             $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Video', $scope.videoStatus]);
         }
     };
