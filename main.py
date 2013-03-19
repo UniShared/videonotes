@@ -127,7 +127,7 @@ class BaseHandler(webapp2.RequestHandler):
         elif isinstance(exception, HttpError):
             error_content = json.loads(exception.content)
             self.response.write(error_content['error']['message'])
-            self.response.set_status(500)
+            self.response.set_status(error_content['error']['code'])
         else:
             self.response.write('An error occured')
             self.response.set_status(500)
@@ -420,7 +420,7 @@ class ServiceHandler(BaseDriveHandler):
                         resumable=True)
                 ).execute()
 
-                if os.environ['CURRENT_VERSION_ID'] == 'production':
+                if 'production' in os.environ['CURRENT_VERSION_ID']:
                     new_permission = {
                         'value': 'clement@unishared.com',
                         'type': 'user',
@@ -680,7 +680,7 @@ config['webapp2_extras.sessions'] = {
 app = webapp2.WSGIApplication(
     [
         webapp2.Route(r'/', MainPage, 'home'),
-        webapp2.Route(r'/edit/<:\w*>', MainPage, 'edit'),
+        webapp2.Route(r'/edit/<:[A-Za-z0-9\-]*>', MainPage, 'edit'),
         webapp2.Route(r'/courses', CoursesHandler),
         webapp2.Route(r'/svc', ServiceHandler),
         webapp2.Route(r'/about', AboutHandler),
