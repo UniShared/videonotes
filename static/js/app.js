@@ -25,6 +25,7 @@ google.load('picker', '1');
 //gapi.load('drive-share');
 
 angular.module('app', ['app.filters', 'app.services', 'app.directives', 'ui.directives', 'analytics', 'youtube'])
+    .constant('appName', 'VideoNot.es')
     .constant('saveInterval', 15000)
     .constant('appId', '653335932456-b0rsc2sq9ftn5l69p72710lh4n8tujtr.apps.googleusercontent.com') // Please replace this with your Application ID.
     .config(['$routeProvider', function ($routeProvider) {

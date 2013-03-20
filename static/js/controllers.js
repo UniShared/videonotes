@@ -87,7 +87,7 @@ function UserCtrl($scope, user, backend) {
     });
 }
 
-function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
+function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
     $scope.canReadH264 = Modernizr.video.h264;
     $scope.youtubeVideo = false;
     $scope.doc = doc;
@@ -132,7 +132,7 @@ function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
                     doc.info.video = $scope.videoUrl;
                 }
 
-                $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Video', $scope.videoUrl]);
+                $window._gaq.push(['_trackEvent', appName, 'Video', $scope.videoUrl]);
             }
         }
 
@@ -143,7 +143,7 @@ function VideoCtrl($scope, $window, doc, video, youtubePlayerApi) {
         if(doc.info && doc.info.video) {
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
             $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
-            $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Video', $scope.videoStatus]);
+            $window._gaq.push(['_trackEvent', appName, 'Video', $scope.videoStatus]);
         }
     };
 
@@ -169,7 +169,7 @@ function ShareCtrl($scope, appId, doc) {
      */
 }
 
-function MenuCtrl($scope, $location, $window, appId, editor) {
+function MenuCtrl($scope, $location, $window, appName, appId, editor) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -187,24 +187,24 @@ function MenuCtrl($scope, $location, $window, appId, editor) {
             .setCallback(angular.bind(this, onFilePicked))
             .build();
         picker.setVisible(true);
-        $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Open document']);
+        $window._gaq.push(['_trackEvent', appName, 'Open document']);
     };
     $scope.create = function () {
         editor.create();
-        $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Create new document']);
+        $window._gaq.push(['_trackEvent', appName, 'Create new document']);
     };
     $scope.save = function () {
         editor.save(true);
-        $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Save document']);
+        $window._gaq.push(['_trackEvent', appName, 'Save document']);
     }
 }
 
-function RenameCtrl($scope, $window, doc) {
+function RenameCtrl($scope, $window, appName, doc) {
     $('#rename-dialog').on('show',
         function () {
             $scope.$apply(function () {
                 $scope.newFileName = doc.info.title;
-                $window._gaq.push(['_trackEvent', 'UniShared DrEdit', 'Rename document']);
+                $window._gaq.push(['_trackEvent', appName, 'Rename document']);
             });
         });
     $scope.save = function () {
