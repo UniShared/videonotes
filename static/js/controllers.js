@@ -110,6 +110,12 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         }
     };
 
+    $scope.getCourseLectureCoursera = function (url) {
+        var regex = /^https:\/\/class.coursera.org\/([a-z0-9-]+)\/lecture\/(\d+)$/;
+
+        return url.match(regex);
+    };
+
     $scope.loadVideo = function () {
         $scope.loading = true;
 
@@ -128,8 +134,15 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
                 }
                 else {
                     $scope.youtubeVideo = false;
-                    $scope.$on('videoLoaded', function () { $scope.loading = false });
-                    doc.info.video = $scope.videoUrl;
+
+                    var matchVideoCoursera = $scope.getCourseLectureCoursera($scope.videoUrl);
+                    if(matchVideoCoursera && matchVideoCoursera.length == 3) {
+                        doc.info.video = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
+                    }
+                    else {
+                        doc.info.video = $scope.videoUrl;
+                    }
+
                 }
 
                 $window._gaq.push(['_trackEvent', appName, 'Video', $scope.videoUrl]);
@@ -149,6 +162,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
 
     $scope.$on('shortcut', $scope.pauseVideo);
     $scope.$on('loaded', $scope.loadVideo);
+    $scope.$on('videoLoaded', function () { $scope.loading = false });
 }
 
 function EditorCtrl($scope, editor, doc, autosaver) {
