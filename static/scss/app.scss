@@ -95,8 +95,15 @@ h2, h3, h4 {
       margin-right: 10px;
     }
 
-    video {
-      width: 100%;
+    .video {
+      .loading {
+        display: block;
+        margin: 0 auto;
+      }
+
+      video {
+        width: 100%;
+      }
     }
 
     #shortcuts {
