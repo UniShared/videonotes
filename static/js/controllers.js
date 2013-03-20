@@ -120,7 +120,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         $scope.loading = true;
 
         if(doc && doc.info) {
-            $scope.videoUrl = (this && this.videoUrl) || doc.info.video;
+            $scope.videoUrl = this.videoUrl || doc.info.video;
 
             if($scope.videoUrl) {
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
@@ -130,7 +130,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
                     doc.info.video = $scope.videoUrl;
                     youtubePlayerApi.videoId = videoId;
                     youtubePlayerApi.loadPlayer();
-                    $scope.loading = false;
+                    $scope.endLoading();
                 }
                 else {
                     $scope.youtubeVideo = false;
@@ -148,8 +148,6 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
                 $window._gaq.push(['_trackEvent', appName, 'Video', $scope.videoUrl]);
             }
         }
-
-
     };
 
     $scope.pauseVideo = function() {
@@ -160,9 +158,13 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         }
     };
 
+    $scope.endLoading = function () {
+        $scope.loading = false;
+    }
+
     $scope.$on('shortcut', $scope.pauseVideo);
     $scope.$on('loaded', $scope.loadVideo);
-    $scope.$on('videoLoaded', function () { $scope.loading = false });
+    $scope.$on('videoLoaded', $scope.endLoading);
 }
 
 function EditorCtrl($scope, editor, doc, autosaver) {
