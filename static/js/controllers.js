@@ -120,7 +120,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         $scope.loading = true;
 
         if(doc && doc.info) {
-            $scope.videoUrl = this.videoUrl || doc.info.video;
+            $scope.videoUrl = $scope.videoUrl || doc.info.video;
 
             if($scope.videoUrl) {
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
