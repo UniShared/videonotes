@@ -680,7 +680,7 @@ config['webapp2_extras.sessions'] = {
 app = webapp2.WSGIApplication(
     [
         webapp2.Route(r'/', MainPage, 'home'),
-        webapp2.Route(r'/edit/<:[A-Za-z0-9\-]*>', MainPage, 'edit'),
+        webapp2.Route(r'/edit/<:[A-Za-z0-9\-_]*>', MainPage, 'edit'),
         webapp2.Route(r'/courses', CoursesHandler),
         webapp2.Route(r'/svc', ServiceHandler),
         webapp2.Route(r'/about', AboutHandler),
