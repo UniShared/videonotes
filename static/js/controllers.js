@@ -1,40 +1,124 @@
 'use strict';
 
 function OverlayCtrl($scope, $log, editor, doc) {
-    $scope.loading = (!doc.info) || editor.loading;
+    $scope.loading = editor.loading;
 
-    $scope.$onMany(['loading', 'firstSaving'], function ($event) {
+    $scope.$onMany(['loading'], function ($event) {
         $log.log('Enable loading from event ' + $event.name);
         $scope.loading = true;
     });
 
-    $scope.$onMany(['loaded', 'firstSaved', 'error'], function ($event) {
+    $scope.$onMany(['loaded', 'error'], function ($event) {
         $log.info('Disable loading from event ' + $event.name);
         $scope.loading = false;
     });
 }
 
-function MainCtrl($scope, $location, $routeParams, $timeout, $log, editor, doc) {
+function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $window, appName, editor) {
     $scope.redirectToDocument = function (event, fileInfo) {
         $location.path('/edit/' + fileInfo.id);
     };
 
     $scope.init = function () {
-        if ($routeParams.id) {
-            editor.load($routeParams.id);
+        if($route.current.action === Actions.LOAD) {
+            if ($routeParams.id) {
+                editor.load($routeParams.id);
+            }
+            else if ($routeParams.templateId) {
+                editor.copy($routeParams.templateId);
+            }
         }
-        else if ($routeParams.templateId) {
-            editor.copy($routeParams.templateId);
-        }
-        else {
+        else if($route.current.action === Actions.CREATE) {
             // New doc, but defer to next event cycle to ensure init
             $timeout(function () {
                     var parentId = $location.search()['parent'];
                     editor.create(parentId);
-                    editor.save(true);
+                    $scope.startTour();
                 },
                 1);
         }
+
+        $scope.initTour();
+    };
+
+    $scope.initTour = function () {
+        $scope.tour = new Tour({
+            name: "tour",
+            keyboard: true,
+            labels: {
+                end: 'End tour',
+                next: 'Got it!',
+                prev: '&laquo; Prev'
+            },
+            useLocalStorage: false,
+            debug: false,
+            onStart: function () {
+                $window._gaq.push(['_trackEvent', appName, 'Tour', 'started']);
+            },
+            onShow: function (tour) {
+                $window._gaq.push(['_trackEvent', appName, 'Tour', 'show step {0}'.format(tour._current)]);
+            },
+            onEnd: function () {
+                $window._gaq.push(['_trackEvent', appName, 'Tour', 'ended']);
+            }
+        });
+
+        $scope.tour.addStep({
+            element: "#video-url-form",
+            content: "Welcome on {0}!<br> First, copy/paste your video URL from Coursera, Youtube, etc. <br> <strong>For Coursera, you have to login first</strong>".format(appName),
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".docTitle",
+            content: "Now, you should give a relevant name to your new notes",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".editor-state",
+            content: "Your notes will be automatically saved in your <a href='https://drive.google.com/?tab=mo&authuser=0#recent' target='_blank'>Google Drive</a>",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-file",
+            content: "Later, you can find all your notes or create new one from this menu. <br> You can also manage them directly from <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "right"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-help",
+            content: "This menu will show you this tour again.",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: "#editor",
+            content: "This is the note editor.<br>All your notes will be automatically synchronized with the video",
+            placement: "left"
+        });
+
+        $scope.tour.addStep({
+            element: "#shortcuts",
+            content: "You can play/pause the video by pressing ctrl-enter",
+            placement: "right"
+        });
+
+        $scope.tour.addStep({
+            element: "#uvTab",
+            content: "Feel free to send us feedback.<br> Happy note-taking!",
+            placement: "top"
+        });
+    };
+
+    $scope.restartTour = function () {
+        $scope.tour.end();
+        $scope.tour.restart();
+    };
+
+    $scope.startTour = function () {
+        $scope.tour.start();
     };
 
     $scope.shortcuts = function ($event) {
@@ -43,13 +127,9 @@ function MainCtrl($scope, $location, $routeParams, $timeout, $log, editor, doc) 
         $event.preventDefault();
     };
 
+    $scope.$on('authentified', $scope.init);
     $scope.$onMany(['firstSaved', 'copied'], $scope.redirectToDocument);
-
-    $scope.$on('authentified', function () {
-        $scope.init();
-    });
-
-    $scope.init();
+    $scope.$on('loaded', $scope.startTour);
 }
 
 function CoursesListCtrl($scope, $location, user, course) {
@@ -122,6 +202,8 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
 
             if($scope.videoUrl) {
                 $scope.loading = true;
+                $scope.tour.next();
+
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
 
                 if(videoId != null) {
@@ -219,6 +301,7 @@ function RenameCtrl($scope, $window, appName, doc) {
         function () {
             $scope.$apply(function () {
                 $scope.newFileName = doc.info.title;
+                $scope.tour.next();
                 $window._gaq.push(['_trackEvent', appName, 'Rename document']);
             });
         });

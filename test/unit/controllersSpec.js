@@ -10,6 +10,9 @@ describe('Controllers', function () {
 
         beforeEach(inject(function ($rootScope, $controller) {
             scope = $rootScope.$new();
+            scope.tour = {
+                next: function () {}
+            };
             spyOn(scope, '$on');
             videoCtrl = $controller(VideoCtrl, {$scope: scope});
         }));

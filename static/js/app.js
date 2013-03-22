@@ -8,6 +8,11 @@ var EditorState = {
     READONLY: 4
 };
 
+var Actions = {
+    LOAD: "load",
+    CREATE: "create"
+};
+
 //first, checks if it isn't implemented yet
 if (!String.prototype.format) {
     String.prototype.format = function() {
@@ -30,10 +35,9 @@ angular.module('app', ['app.filters', 'app.services', 'app.directives', 'ui.dire
     .constant('appId', '653335932456-b0rsc2sq9ftn5l69p72710lh4n8tujtr.apps.googleusercontent.com') // Please replace this with your Application ID.
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
-            .when('/', {templateUrl: '/partials/editor.html', controller: MainCtrl})
-            .when('/edit/', {templateUrl: '/partials/editor.html', controller: MainCtrl})
-            .when('/edit/:id', {templateUrl: '/partials/editor.html', controller: MainCtrl})
-            .otherwise({redirectTo: '/'});
+            .when('/edit/', {action: Actions.CREATE})
+            .when('/edit/:id', {action: Actions.LOAD})
+            .otherwise({redirectTo: '/edit/'});
     }]).run(function ($rootScope) {
         // Many events binding
         $rootScope.$onMany = function (events, fn) {

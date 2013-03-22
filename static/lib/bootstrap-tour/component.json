@@ -1,0 +1,18 @@
+{
+  "name": "bootstrap-tour",
+  "version": "0.2.0",
+  "main": "./bootstrap-tour.js",
+  "dependencies": {
+    "bootstrap": "2.3.1",
+    "jquery": "~1.8.0"
+  },
+  "gitHead": "ea345e2581eed0b2f6a1108434546e73f85ed9a9",
+  "readme": "# Bootstrap Tour #\nQuick and easy way to build your product tours with Twitter Bootstrap Popovers.\n\n## Demo and Documentation ##\n[http://bootstraptour.com](http://bootstraptour.com)\n\n## TODO ##\n- Add a `id` option to identify each step instead of using integers.\n- Add a `debug` option to show useful logged informations when needed (under development)\n- Add the support for promise object as possible callback response\n\n## Contributing ##\nFeel free to contribute with pull requests, bug reports or enhancement suggestions.\n\n## License ##\nCode licensed under the [Apache License v2.0](http://www.apache.org/licenses/LICENSE-2.0).\nDocumentation licensed under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/).\nWell, the same licenses as Bootstrap. We are lazy! ;)\n",
+  "readmeFilename": "README.md",
+  "_id": "bootstrap-tour@0.2.0",
+  "description": "Quick and easy way to build your product tours with Twitter Bootstrap Popovers.",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sorich87/bootstrap-tour.git"
+  }
+}

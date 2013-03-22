@@ -49,6 +49,7 @@ module.factory('doc',
 module.factory('video', function($rootScope, $log) {
     return {
         player: null,
+        playing: false,
         bindVideoPlayer:function (element) {
             $log.info("Bind video player to element", element.id);
             this.player = element;
@@ -83,7 +84,7 @@ module.factory('editor',
             },
             create:function (parentId) {
                 $log.info("Creating new doc");
-                doc.dirty = true;
+                doc.dirty = false;
                 this.updateEditor({
                     id:null,
                     content: '',
@@ -98,7 +99,6 @@ module.factory('editor',
                     mimeType:'application/vnd.unishared.document',
                     parent: parentId || null
                 });
-                this.save(true);
             },
             copy: function (templateId) {
                 $log.info("Copying template", templateId);
@@ -241,12 +241,12 @@ module.factory('editor',
                                     // Using current player time
                                     if(youtubePlayerApi.player) {
                                         doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime();
+                                        session.setBreakpoint(lineCursorPosition);
                                     }
                                     else if(video.player) {
                                         doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime;
+                                        session.setBreakpoint(lineCursorPosition);
                                     }
-
-                                    session.setBreakpoint(lineCursorPosition);
                                 }
 
                             }
@@ -269,73 +269,6 @@ module.factory('editor',
                 for(var line in fileInfo.syncNotesVideo) {
                     session.setBreakpoint(line);
                 }
-
-                /*var dom = require("../lib/dom");
-                require("ace/layer/gutter").Gutter.prototype.update = function(config) {
-                    var emptyAnno = {className: ""};
-                    var html = [];
-                    var i = config.firstRow;
-                    var lastRow = config.lastRow;
-                    var fold = this.session.getNextFoldLine(i);
-                    var foldStart = fold ? fold.start.row : Infinity;
-                    var foldWidgets = this.$showFoldWidgets && this.session.foldWidgets;
-                    var breakpoints = this.session.$breakpoints;
-                    var decorations = this.session.$decorations;
-                    var firstLineNumber = this.session.$firstLineNumber;
-                    var lastLineNumber = 0;
-
-                    while (true) {
-                        if(i > foldStart) {
-                            i = fold.end.row + 1;
-                            fold = this.session.getNextFoldLine(i, fold);
-                            foldStart = fold ?fold.start.row :Infinity;
-                        }
-                        if(i > lastRow)
-                            break;
-
-                        var annotation = this.$annotations[i] || emptyAnno;
-                        html.push(
-                            "<div class='ace_gutter-cell ",
-                            breakpoints[i] || "", decorations[i] || "", annotation.className,
-                            "' style='height:", this.session.getRowLength(i) * config.lineHeight, "px;'>",
-                            doc.info.syncNotesVideo[i + firstLineNumber]
-                        );
-
-                        if (foldWidgets) {
-                            var c = foldWidgets[i];
-                            // check if cached value is invalidated and we need to recompute
-                            if (c == null)
-                                c = foldWidgets[i] = this.session.getFoldWidget(i);
-                            if (c)
-                                html.push(
-                                    "<span class='ace_fold-widget ace_", c,
-                                    c == "start" && i == foldStart && i < fold.end.row ? " ace_closed" : " ace_open",
-                                    "' style='height:", config.lineHeight, "px",
-                                    "'></span>"
-                                );
-                        }
-
-                        html.push("</div>");
-
-                        i++;
-                    }
-
-                    this.element = dom.setInnerHtml(this.element, html.join(""));
-                    this.element.style.height = config.minHeight + "px";
-
-                    if (this.session.$useWrapMode)
-                        lastLineNumber = this.session.getLength();
-
-                    var gutterWidth = ("" + lastLineNumber).length * config.characterWidth;
-                    var padding = this.$padding || this.$computePadding();
-                    gutterWidth += padding.left + padding.right;
-                    if (gutterWidth !== this.gutterWidth) {
-                        this.gutterWidth = gutterWidth;
-                        this.element.style.width = Math.ceil(this.gutterWidth) + "px";
-                        this._emit("changeGutterWidth", gutterWidth);
-                    }
-                };*/
-
 
                 doc.lastSave = 0;
                 doc.info = fileInfo;

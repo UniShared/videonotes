@@ -38,18 +38,18 @@
             <div class="container-fluid">
                 <div id="doc-bar" class="row-fluid">
                     <span class="span8">
-                        <h3 ng-show="doc.info.editable" class="doc-title"
-                            data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
-                        <h3 ng-hide="doc.info.editable" class="doc-title">{{doc.info.title}}</h3>
-                        <star value="doc.info.labels.starred" click="editor.dirty(true)"></star>
+                            <h3 ng-show="doc.info.editable" ng-class="{docTitle : doc.info.editable}"
+                                data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
+                            <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">{{doc.info.title}}</h3>
+                            <star value="doc.info.labels.starred" click="editor.dirty(true)"></star>
                     </span>
-                    <span class="span4">{{editor.state() | saveStateFormatter }}</span>
+                    <span class="span4 editor-state">{{editor.state() | saveStateFormatter }}</span>
                     <!--span class="span4" ng-controller="ShareCtrl"><a class="btn pull-right" href click="share">
                         Share</a></span-->
                 </div>
-                <div class="navbar subnav">
+                <div class="navbar subnav menu">
                     <ul ng-controller="MenuCtrl" class="nav">
-                        <li class="dropdown">
+                        <li class="dropdown menu-file">
                             <a href class="dropdown-toggle" data-toggle="dropdown">
                                 File <b class="caret"></b>
                             </a>
@@ -64,6 +64,7 @@
                                 <li><a ng-click="save()" href>Save</a></li>
                             </ul>
                         </li>
+                        <li class="menu-help" ng-click="restartTour()"><a href>Help</a></li>
                         <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                     </ul>
                 </div>
