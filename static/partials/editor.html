@@ -41,7 +41,7 @@
                             <h3 ng-show="doc.info.editable" ng-class="{docTitle : doc.info.editable}"
                                 data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
                             <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">{{doc.info.title}}</h3>
-                            <star value="doc.info.labels.starred" click="editor.dirty(true)"></star>
+                            <!--star value="doc.info.labels.starred" click="editor.dirty(true)"></star-->
                     </span>
                     <span class="span5 editor-state">{{editor.state() | saveStateFormatter }}</span>
                     <!--span class="span4" ng-controller="ShareCtrl"><a class="btn pull-right" href click="share">
