@@ -9,13 +9,13 @@ angular.module('app.filters', [])
             if (state == EditorState.DIRTY) {
                 return 'You have unsaved changes';
             } else if (state == EditorState.SAVE) {
-                return 'Saving...';
+                return 'Saving in Google Drive...';
             } else if (state == EditorState.LOAD) {
                 return 'Loading...';
             } else if (state == EditorState.READONLY) {
                 return "Read only"
             } else {
-                return 'All changes saved';
+                return 'All changes saved in Google Drive';
             }
         };
     })
