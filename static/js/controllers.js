@@ -124,7 +124,6 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
     $scope.shortcuts = function ($event) {
         $log.log($event);
         $scope.$broadcast('shortcut', $event);
-        $event.preventDefault();
     };
 
     $scope.pushAnalytics = function (category, event) {
@@ -242,6 +241,18 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         }
     };
 
+    $scope.shortcuts = function (event, eventData) {
+        switch (eventData.which) {
+            case 0:
+            case 32:
+                if(eventData.ctrlKey) {
+                    event.preventDefault();
+                    $scope.pauseVideo();
+                }
+            break;
+        }
+    };
+
     $scope.pauseVideo = function() {
         if(doc.info && doc.info.video) {
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
@@ -254,7 +265,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         $scope.loading = false;
     };
 
-    $scope.$on('shortcut', $scope.pauseVideo);
+    $scope.$on('shortcut', $scope.shortcuts);
     $scope.$on('loaded', $scope.loadVideo);
     $scope.$on('videoLoaded', $scope.endLoading);
 }
