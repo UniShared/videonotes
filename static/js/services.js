@@ -201,7 +201,7 @@ module.factory('editor',
                     var lineCursorPosition = editor.getCursorPosition().row,
                         timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                    if(session.getLine(lineCursorPosition) != '') {
+                    if(session.getLine(lineCursorPosition).trim() != '') {
                         if(lineCursorPosition != service.lastRow) {
                             service.lastRow = lineCursorPosition;
                             if(timestamp) {
