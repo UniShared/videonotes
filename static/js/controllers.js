@@ -244,7 +244,6 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
     };
 
     $scope.$on('shortcut', $scope.pauseVideo);
-    $scope.$on('loadSampleVideo', $scope.sampleVideo);
     $scope.$on('loaded', $scope.loadVideo);
     $scope.$on('videoLoaded', $scope.endLoading);
 }
