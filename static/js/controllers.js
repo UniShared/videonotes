@@ -65,19 +65,25 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
 
         $scope.tour.addStep({
             element: "#video-url-form",
-            content: "Welcome on {0}!<br> First, copy/paste your video URL from Coursera, Youtube, etc. <br> <strong>For Coursera, you have to login first</strong>".format(appName),
+            content: "Welcome!<br> First, copy/paste your video URL from Coursera, Youtube, etc.",
             placement: "bottom"
         });
 
         $scope.tour.addStep({
+            element: "#editor",
+            content: "This is the note editor.<br>All your notes will be automatically synchronized with the video",
+            placement: "left"
+        });
+
+        $scope.tour.addStep({
             element: ".docTitle",
-            content: "Now, you should give a relevant name to your new notes",
+            content: "Now, you should name your notes",
             placement: "bottom"
         });
 
         $scope.tour.addStep({
             element: ".editor-state",
-            content: "Your notes will be automatically saved in your <a href='https://drive.google.com/?tab=mo&authuser=0#recent' target='_blank'>Google Drive</a>",
+            content: "Everything will be automatically saved in your <a href='https://drive.google.com/?tab=mo&authuser=0#recent' target='_blank'>Google Drive</a>",
             placement: "bottom"
         });
 
@@ -91,12 +97,6 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
             element: ".menu-help",
             content: "This menu will show you this tour again.",
             placement: "bottom"
-        });
-
-        $scope.tour.addStep({
-            element: "#editor",
-            content: "This is the note editor.<br>All your notes will be automatically synchronized with the video",
-            placement: "left"
         });
 
         $scope.tour.addStep({
@@ -150,7 +150,7 @@ function CoursesListCtrl($scope, $location, user, course) {
         else {
             $location.path('/edit/template/' + templateId);
         }
-    }
+    };
 
     if(course.getTemplateId()) {
         $scope.startNotes(course.getTemplateId());
@@ -241,9 +241,10 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
 
     $scope.endLoading = function () {
         $scope.loading = false;
-    }
+    };
 
     $scope.$on('shortcut', $scope.pauseVideo);
+    $scope.$on('loadSampleVideo', $scope.sampleVideo);
     $scope.$on('loaded', $scope.loadVideo);
     $scope.$on('videoLoaded', $scope.endLoading);
 }
