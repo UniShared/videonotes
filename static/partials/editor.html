@@ -3,7 +3,7 @@
         <form id="video-url-form" ng-submit="loadVideo()">
             <h3>Enter the video URL:</h3>
             <input type="url" id="videoUrl" name="videoUrl" ng-model="videoUrl" required>
-            <input type="submit" class="btn btn-primary" value="Validate" ng-hide="loading">
+            <input type="submit" class="btn btn-primary" value="Load video" ng-hide="loading">
             <img class="loading" src="/img/loading.gif" ng-show="loading">
 
             <a id="help-coursera-dialog-link" data-toggle="modal" href="#help-coursera-dialog" ng-hide="doc.info.video" ng-click="pushAnalytics('Video','help Coursera')"><h4>Help for Coursera</h4></a>
