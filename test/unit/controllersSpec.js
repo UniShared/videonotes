@@ -13,6 +13,7 @@ describe('Controllers', function () {
             scope.tour = {
                 next: function () {}
             };
+            scope.pushAnalytics = jasmine.createSpy('pushAnalytics');
             spyOn(scope, '$on');
             videoCtrl = $controller(VideoCtrl, {$scope: scope});
         }));
@@ -30,7 +31,7 @@ describe('Controllers', function () {
         });
 
         it('should listen for shortcuts event', inject(function ($rootScope) {
-            expect(scope.$on).toHaveBeenCalledWith('shortcut', scope.pauseVideo);
+            expect(scope.$on).toHaveBeenCalledWith('shortcut', jasmine.any(Function));
         }));
 
         it('should listen for loaded event', inject(function ($rootScope) {
@@ -84,7 +85,7 @@ describe('Controllers', function () {
             expect(scope.videoStatus.playYoutube).toBe(true);
             expect(scope.videoStatus.playHtml5).toBe(false);
 
-            expect($window._gaq.push).toHaveBeenCalledWith(['_trackEvent', appName, 'Video', scope.videoStatus]);
+            expect(scope.pushAnalytics).toHaveBeenCalledWith('Video', scope.videoStatus);
         }));
 
         it('has a loadVideo method which works for Youtube player', inject(function ($window, appName, youtubePlayerApi) {
@@ -95,7 +96,6 @@ describe('Controllers', function () {
             spyOn(scope, 'endLoading').andCallThrough();
 
             spyOn(youtubePlayerApi, 'loadPlayer').andCallThrough();
-            $window._gaq.push = jasmine.createSpy('gaq');
 
             scope.doc.info = {
                 video: 'http://www.youtube.com/watch?v=GKfHdOrR3lw'
@@ -110,7 +110,7 @@ describe('Controllers', function () {
             expect(scope.endLoading).toHaveBeenCalled();
             expect(youtubePlayerApi.videoId).toEqual('GKfHdOrR3lw');
             expect(youtubePlayerApi.loadPlayer).toHaveBeenCalled();
-            expect($window._gaq.push).toHaveBeenCalledWith(['_trackEvent', appName, 'Video', scope.doc.info.video]);
+            expect(scope.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
         }));
 
         it('has a loadVideo method which works for HTML5 player', inject(function ($rootScope, $window, appName, youtubePlayerApi) {
@@ -119,7 +119,6 @@ describe('Controllers', function () {
             spyOn(scope, 'getYoutubeVideoId').andCallThrough();
             spyOn(scope, 'getCourseLectureCoursera').andCallThrough();
             spyOn(scope, 'endLoading').andCallThrough();
-            $window._gaq.push = jasmine.createSpy('gaq');
 
             scope.doc.info = {
                 video: 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7'
@@ -131,7 +130,7 @@ describe('Controllers', function () {
             expect(scope.getCourseLectureCoursera).toHaveBeenCalled();
             expect(scope.endLoading).not.toHaveBeenCalled();
             expect(youtubePlayerApi.videoId).toEqual(null);
-            expect($window._gaq.push).toHaveBeenCalledWith(['_trackEvent', appName, 'Video', scope.doc.info.video]);
+            expect(scope.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
 
             expect(scope.loading).toBe(true);
         }));

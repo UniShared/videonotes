@@ -53,13 +53,13 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
             useLocalStorage: false,
             debug: false,
             onStart: function () {
-                $window._gaq.push(['_trackEvent', appName, 'Tour', 'started']);
+                $scope.pushAnalytics('Tour', 'started');
             },
             onShow: function (tour) {
-                $window._gaq.push(['_trackEvent', appName, 'Tour', 'show step {0}'.format(tour._current)]);
+                $scope.pushAnalytics('Tour', 'show step {0}'.format(tour._current));
             },
             onEnd: function () {
-                $window._gaq.push(['_trackEvent', appName, 'Tour', 'ended']);
+                $scope.pushAnalytics('Tour', 'ended');
             }
         });
 
@@ -125,6 +125,18 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
         $log.log($event);
         $scope.$broadcast('shortcut', $event);
         $event.preventDefault();
+    };
+
+    $scope.pushAnalytics = function (category, event) {
+        if(category) {
+            if(event) {
+                $log.info('Tracking event to Google Analytics', category, event);
+                $window._gaq.push(['_trackEvent', appName, category, event]);
+            }
+            else {
+                $window._gaq.push(['_trackEvent', appName, category]);
+            }
+        }
     };
 
     $scope.$on('authentified', $scope.init);
@@ -225,8 +237,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
                     }
 
                 }
-
-                $window._gaq.push(['_trackEvent', appName, 'Video', $scope.videoUrl]);
+                $scope.pushAnalytics('Video', $scope.videoUrl);
             }
         }
     };
@@ -235,7 +246,7 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
         if(doc.info && doc.info.video) {
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
             $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
-            $window._gaq.push(['_trackEvent', appName, 'Video', $scope.videoStatus]);
+            $scope.pushAnalytics('Video', $scope.videoStatus);
         }
     };
 
@@ -284,15 +295,15 @@ function MenuCtrl($scope, $location, $window, appName, appId, editor) {
             .setCallback(angular.bind(this, onFilePicked))
             .build();
         picker.setVisible(true);
-        $window._gaq.push(['_trackEvent', appName, 'Open document']);
+        $scope.pushAnalytics('Open document');
     };
     $scope.create = function () {
         editor.create();
-        $window._gaq.push(['_trackEvent', appName, 'Create new document']);
+        $scope.pushAnalytics('Create new document');
     };
     $scope.save = function () {
         editor.save(true);
-        $window._gaq.push(['_trackEvent', appName, 'Save document']);
+        $scope.pushAnalytics('Save document');
     }
 }
 
@@ -302,7 +313,7 @@ function RenameCtrl($scope, $window, appName, doc) {
             $scope.$apply(function () {
                 $scope.newFileName = doc.info.title;
                 $scope.tour.next();
-                $window._gaq.push(['_trackEvent', appName, 'Rename document']);
+                $scope.pushAnalytics('Rename document');
             });
         });
     $scope.save = function () {
