@@ -8,6 +8,10 @@
   font-style: normal;
 }
 
+body {
+  height: 100%;
+}
+
 [ng\:cloak], [ng-cloak], .ng-cloak {
   display: none !important;
 }
@@ -37,20 +41,50 @@ h2, h3, h4 {
   }
 }
 
-#social_panel {
-  position : relative;
-  width: 266px;
-  margin: 0 auto;
+.navbar {
+  .brand {
+    padding: 0px;
+  }
 
-  ul {
-    list-style-type : none;
-    margin: 0 0 0px 25px;
+  .navbar-inner {
+    height: 70px;
+    background-color: rgba(241, 241, 241, 0.9);
+    border-bottom: 1px solid white;
+    box-shadow: 0px 0px 50px rgba(0, 0, 0, 0.2);
 
-    li {
-      display: inline;
-      float: left;
-      padding : 6px;
-      margin : 2px;
+    .profile-picture {
+      width: 22px;
+    }
+
+    .nav {
+      li {
+        float: none;
+      }
+      .subnav {
+        margin-bottom: 0px;
+
+        .nav > li > a {
+          color: #333;
+          padding-top: 2px;
+          padding-bottom: 2px;
+
+          &:hover {
+            background-color: #F5F5F5;
+            color: #333;
+          }
+        }
+      }
+
+      .social-button {
+        float: right;
+        display: inline;
+        padding : 6px;
+        margin : 2px;
+      }
+
+      .width-75 {
+        width: 75px;
+      }
     }
   }
 }
@@ -178,34 +212,12 @@ h2, h3, h4 {
   line-height: 27px;
 }
 
-.profile-picture {
-  width: 22px;
-}
-
 #error {
   position: absolute;
   bottom: 10px;
   right: 10px;
 }
 
-body {
-  height: 100%;
-}
-
-.subnav {
-  margin-bottom: 0px;
-}
-
-.subnav .nav > li > a {
-  color: #333;
-  padding-top: 2px;
-  padding-bottom: 2px;
-}
-
-.subnav .nav > li > a:hover {
-  background-color: #F5F5F5;
-  color: #333;
-}
 .dropdown-menu span {
   display: block;
   padding: 3px 15px;

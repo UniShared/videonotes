@@ -20,38 +20,45 @@
 </head>
 <body ng-cloak class="ng-cloak">
 <div id="fb-root" />
-<div class="navbar navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </a>
-            <a class="brand" href="#"><img src="/img/unishared-logo.png"></a>
-            <div id="social_panel">
-                <ul>
-                    <li><div class="fb-like" data-send="false" data-layout="box_count" data-url="http://video.unishared.com" data-width="60" data-show-faces="true"></div></li>
-                    <li><a href="https://twitter.com/share" data-count="vertical" data-url="http://video.unishared.com" class="twitter-share-button" data-via="UniShared" data-lang="en" data-hashtags="mooc"
-                       data-text="I'm taking note while watching my online course. Want to try?">Tweeter</a></li>
-                    <li><div class="g-plusone" data-url="http://video.unishared.com" data-size="tall"></div></li>
+<header>
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="#"><img src="/img/unishared-logo.png"></a>
+                <ul class="nav pull-right">
+                    <li>
+                        <ul class="nav pull-right" ng-controller="UserCtrl">
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    {{user.email}}
+                                    <img class="profile-picture" src="{{user.picture}}"/>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{{user.link}}" target="_blank">Profile</a></li>
+                                </ul>
+
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <ul class="nav">
+                            <li class="social-button width-75"><div class="g-plusone" data-url="http://video.unishared.com" data-size="medium"></div></li>
+                            <li class="social-button width-75"><a href="https://twitter.com/share" data-count="horizontal" data-url="http://video.unishared.com" class="twitter-share-button" data-via="UniShared" data-lang="en" data-hashtags="mooc"
+                                                         data-text="I'm taking note while watching my online course. Want to try?">Tweeter</a></li>
+                            <li class="social-button"><div class="fb-like" data-send="false" data-layout="button_count" data-url="http://video.unishared.com" data-width="60" data-show-faces="true"></div></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
-            <ul class="nav pull-right" ng-controller="UserCtrl">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        {{user.email}}
-                        <img class="profile-picture" src="{{user.picture}}"/>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="{{user.link}}" target="_blank">Profile</a></li>
-                    </ul>
-
-                </li>
-            </ul>
         </div>
     </div>
-</div>
+</header>
+
 
 <div id="overlay" class="sign-in" ng-controller="OverlayCtrl" ng-show="loading">
     <div class="loading">
