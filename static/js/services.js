@@ -71,6 +71,17 @@ module.factory('editor',
             lastRow: -1,
             rebind:function (element) {
                 editor = ace.edit(element);
+                editor.on("gutterclick", function(e){
+                    var lineCursorPosition = e.getDocumentPosition().row,
+                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
+
+                    if(youtubePlayerApi.player) {
+                        youtubePlayerApi.player.seekTo(timestamp);
+                    }
+                    else if(video.player) {
+                        video.player.currentTime = timestamp;
+                    }
+                });
                 this.updateEditor(doc.info);
             },
 
@@ -251,18 +262,6 @@ module.factory('editor',
 
                             }
                         }
-                    }
-                });
-
-                editor.on("gutterclick", function(e){
-                    var lineCursorPosition = e.getDocumentPosition().row,
-                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
-
-                    if(youtubePlayerApi.player) {
-                        youtubePlayerApi.player.seekTo(timestamp);
-                    }
-                    else if(video.player) {
-                        video.player.currentTime = timestamp;
                     }
                 });
 
