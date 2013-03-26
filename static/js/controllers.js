@@ -178,7 +178,7 @@ function UserCtrl($scope, user, backend) {
     });
 }
 
-function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
+function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi) {
     $scope.canReadH264 = Modernizr.video.h264;
     $scope.youtubeVideo = false;
     $scope.doc = doc;
@@ -263,6 +263,12 @@ function VideoCtrl($scope, $window, appName, doc, youtubePlayerApi) {
 
     $scope.endLoading = function () {
         $scope.loading = false;
+    };
+
+    $scope.loadSampleVideo = function () {
+        $scope.pushAnalytics('Video', 'load sample');
+        $scope.videoUrl = sampleVideo;
+        $scope.loadVideo();
     };
 
     $scope.$on('shortcut', $scope.shortcuts);
