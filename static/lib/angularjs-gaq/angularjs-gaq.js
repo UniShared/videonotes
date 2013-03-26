@@ -2,14 +2,15 @@ var _gaq = _gaq || [];
 
 angular.module('analytics', ['ng']).run(['$http', function($http) {
 
-	_gaq.push(['_setAccount', 'UA-31995478-4']);
-	_gaq.push(['_trackPageview']);
+    $http.get('/config').then(function (response) {
+        _gaq.push(['_setAccount', response.data.googleAnalyticsAccount]);
+        _gaq.push(['_trackPageview']);
 
-	var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-	var s = document.getElementsByTagName('script')[0];
-	s.parentNode.insertBefore(ga, s);
-
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(ga, s);
+    });
 }]).service('analytics', function($rootScope, $window, $location, $routeParams) {
 
 	$rootScope.$on('$viewContentLoaded', track);

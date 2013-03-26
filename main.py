@@ -600,6 +600,13 @@ class AboutHandler(BaseDriveHandler):
             # Authorization URL.
             return self.abort(401)
 
+class ConfigHandler(BaseHandler):
+    def get(self):
+        production = 'production' in os.environ['CURRENT_VERSION_ID']
+        google_analytics_account = [os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_STAGING'), os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION')][production]
+        config = {'googleAnalyticsAccount': google_analytics_account}
+
+        return self.RespondJSON(config)
 
 class MediaInMemoryUpload(MediaUpload):
     """MediaUpload for a chunk of bytes.
@@ -685,7 +692,8 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/svc', ServiceHandler),
         webapp2.Route(r'/about', AboutHandler),
         webapp2.Route(r'/auth', AuthHandler, 'auth'),
-        webapp2.Route(r'/user', UserHandler)
+        webapp2.Route(r'/user', UserHandler),
+        webapp2.Route(r'/config', ConfigHandler)
     ],
     # XXX Set to False in production.
     debug=False, config=config
