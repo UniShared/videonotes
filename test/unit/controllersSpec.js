@@ -134,5 +134,16 @@ describe('Controllers', function () {
 
             expect(scope.loading).toBe(true);
         }));
+
+        it('should have a loadSampleVideo method', inject(function (doc, sampleVideo) {
+            scope.loadVideo = jasmine.createSpy();
+            expect(scope.videoUrl).toBe(null);
+            expect(doc.info).toBeUndefined();
+
+            scope.loadSampleVideo();
+
+            expect(scope.videoUrl).toEqual(sampleVideo);
+            expect(scope.loadVideo).toHaveBeenCalled();
+        }))
     });
 });

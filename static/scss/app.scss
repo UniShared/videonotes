@@ -125,12 +125,17 @@ h2, h3, h4 {
     }
 
     #help-coursera-dialog-link {
+      display: inline-block;
       cursor: help;
     }
 
     #help-coursera-dialog {
       width: 960px;
       left: 35%;
+    }
+
+    #load-sample-video {
+      margin-right: 6px;
     }
 
     .video {

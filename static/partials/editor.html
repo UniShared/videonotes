@@ -6,19 +6,22 @@
             <input type="submit" class="btn btn-primary" value="Load video" ng-hide="loading">
             <img class="loading" src="/img/loading.gif" ng-show="loading">
 
-            <a id="help-coursera-dialog-link" data-toggle="modal" href="#help-coursera-dialog" ng-hide="doc.info.video" ng-click="pushAnalytics('Video','help Coursera')"><h4>Help for Coursera</h4></a>
-            <div class="modal hide" id="help-coursera-dialog" ng-controller="RenameCtrl">
-                <div class="modal-header">
-                    <h3>How to find the video URL on Coursera?</h3>
+            <div ng-hide="doc.info.video">
+                <a id="help-coursera-dialog-link" data-toggle="modal" href="#help-coursera-dialog" ng-hide="doc.info.video" ng-click="pushAnalytics('Video','help Coursera')"><h4>Help for Coursera</h4></a>
+                <div class="modal hide" id="help-coursera-dialog" ng-controller="RenameCtrl">
+                    <div class="modal-header">
+                        <h3>How to find the video URL on Coursera?</h3>
+                    </div>
+                    <div class="modal-body">
+                        <img ng-show="canReadH264" src="/img/video_url.png">
+                        <img ng-show="!canReadH264" src="/img/video_url_no_h264.png">
+                    </div>
+                    <div class="modal-footer">
+                        <h4>Don't forget to be enrolled and login on Coursera first!</h4>
+                        <a href class="btn btn-primary" data-dismiss="modal">Got it!</a>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <img ng-show="canReadH264" src="/img/video_url.png">
-                    <img ng-show="!canReadH264" src="/img/video_url_no_h264.png">
-                </div>
-                <div class="modal-footer">
-                    <h4>Don't forget to be enrolled and login on Coursera first!</h4>
-                    <a href class="btn btn-primary" data-dismiss="modal">Got it!</a>
-                </div>
+                <a id="load-sample-video" href class="btn btn-primary pull-right" ng-click="loadSampleVideo()">Load a sample video</a>
             </div>
         </form>
 
