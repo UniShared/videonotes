@@ -27,7 +27,7 @@ from webapp2_extras import sessions
 from apiclient.discovery import build
 from apiclient.errors import HttpError
 import webapp2
-from models import CourseModel, Credentials
+from models import CourseModel, Credentials, RegisteredUser
 from apiclient.http import MediaUpload
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
@@ -233,18 +233,20 @@ class BaseDriveHandler(BaseHandler):
             return None
 
         # Create an API service that can use the userinfo API. Authorize it with our
-        # credentials that we gained from the code exchange.
+        # credentials that we gained from the code exchange.              ut
         users_service = CreateService('oauth2', 'v2', creds)
 
         # Make a call against the userinfo service to retrieve the user's information.
         # In this case we are interested in the user's "id" field.
-        userid = users_service.userinfo().get().execute().get('id')
+        user = users_service.userinfo().get().execute()
+        userid = user['id']
 
         # Store the user id in the user's cookie-based session.
         self.session['userid'] = userid
 
         # Store the credentials in the data store using the userid as the key.
         StorageByKeyName(Credentials, userid, 'credentials').put(creds)
+        StorageByKeyName(RegisteredUser, userid, 'email').put(user['email'])
         return creds
 
     def GetSessionCredentials(self):
@@ -349,7 +351,6 @@ class MainPage(BaseHandler):
         """
         # Generate a state instance for the request, this includes the action, and
         # the file id(s) that have been sent from the Drive user interface.
-
         user_agent = self.request.headers.get('User-Agent', None)
         if user_agent == 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)':
             return self.RenderTemplate(INDEX_HTML)
