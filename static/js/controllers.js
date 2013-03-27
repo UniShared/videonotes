@@ -64,7 +64,7 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, edito
         });
 
         $scope.tour.addStep({
-            element: "#video-url-form",
+            element: "#videoUrl",
             content: "Welcome!<br> First, copy/paste your video URL from Coursera, Youtube, etc.",
             placement: "bottom"
         });
