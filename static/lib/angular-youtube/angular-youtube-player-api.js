@@ -22,8 +22,6 @@ angular.module('youtube', ['ng']).run(function () {
         service.playerId = null;
         service.player = null;
         service.videoId = null;
-        service.playerHeight = '390';
-        service.playerWidth = '640';
 
         service.bindVideoPlayer = function (elementId) {
             $log.info('Binding to player ' + elementId);
@@ -33,8 +31,6 @@ angular.module('youtube', ['ng']).run(function () {
         service.createPlayer = function () {
             $log.info('Creating a new Youtube player for DOM id ' + this.playerId + ' and video ' + this.videoId);
             return new YT.Player(this.playerId, {
-                height: this.playerHeight,
-                width: this.playerWidth,
                 videoId: this.videoId
             });
         };

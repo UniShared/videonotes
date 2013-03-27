@@ -44,6 +44,7 @@ h2, h3, h4 {
 .navbar {
   .brand {
     padding: 0px;
+    margin-left: 0px;
   }
 
   .navbar-inner {
@@ -93,7 +94,8 @@ h2, h3, h4 {
   margin-top: 88px;
 
   #video-container {
-    width: 50%;
+    padding-left: 10px;
+    width: 49%;
 
     h3 {
       display: inline;
@@ -101,10 +103,9 @@ h2, h3, h4 {
 
     form {
       margin-top: 5px;
-      margin-left: 10px;
 
-      #videoUrl {
-        width: 310px;
+      h3 {
+        margin: 0px;
       }
 
       .loading {
@@ -116,11 +117,6 @@ h2, h3, h4 {
 
       label {
         display: inline;
-      }
-
-      input[type="submit"] {
-        margin-bottom: 10px;
-        margin-left: 10px;
       }
     }
 
@@ -135,10 +131,12 @@ h2, h3, h4 {
     }
 
     #load-sample-video {
-      margin-right: 6px;
+      width: 160px;
+      float: right;
     }
 
     .video {
+      height: 50%;
       .loading {
         display: block;
         margin: 0 auto;
@@ -147,6 +145,10 @@ h2, h3, h4 {
       video {
         width: 100%;
       }
+    }
+
+    #ytplayer {
+      width: 100%;
     }
 
     #shortcuts {
@@ -191,7 +193,6 @@ h2, h3, h4 {
 
       .editor-state {
         font-size: 13px;
-        margin-top: 10px;
       }
     }
 
