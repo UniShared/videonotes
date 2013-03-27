@@ -1,17 +1,12 @@
 var _gaq = _gaq || [];
 
-angular.module('analytics', ['ng']).run(['$http', function($http) {
-
-    $http.get('/config').then(function (response) {
-        _gaq.push(['_setAccount', response.data.googleAnalyticsAccount]);
-        _gaq.push(['_trackPageview']);
-
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(ga, s);
-    });
-}]).service('analytics', function($rootScope, $window, $location, $routeParams) {
+angular.module('analytics', ['ng']).run(function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(ga, s);
+}).service('analytics', function($rootScope, $window, $location, $routeParams, $log) {
+    var _this = this;
 
 	$rootScope.$on('$viewContentLoaded', track);
 
@@ -32,4 +27,23 @@ angular.module('analytics', ['ng']).run(['$http', function($http) {
 
 		return path + "?" + querystring;
 	};
+
+    $rootScope.$on('configLoaded', function (event, config) {
+        _gaq.push(['_setAccount', config.googleAnalyticsAccount]);
+        _gaq.push(['_trackPageview']);
+
+        _this.appName = config.appName;
+    });
+
+    this.pushAnalytics = function (category, event) {
+        if(category) {
+            if(event) {
+                $log.info('Tracking event to Google Analytics', category, event);
+                $window._gaq.push(['_trackEvent', this.appName, category, event]);
+            }
+            else {
+                $window._gaq.push(['_trackEvent', this.appName, category]);
+            }
+        }
+    };
 });

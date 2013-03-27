@@ -27,6 +27,14 @@ module.config(function ($httpProvider) {
     $httpProvider.responseInterceptors.push('httpInterceptor401');
 });
 
+module.factory('config', function ($http) {
+    return {
+        load : function () {
+            return $http.get('/config');
+        }
+    };
+});
+
 // Shared model for current document
 module.factory('doc',
     function ($rootScope) {

@@ -46,4 +46,11 @@ angular.module('app', ['app.filters', 'app.services', 'app.directives', 'ui.dire
                 this.$on(events[i], fn);
             }
         };
+    }).run(function($rootScope, config, appName) {
+        var configData = {appName: appName};
+
+        config.load().then(function (response) {
+            $.extend(configData, response.data);
+            $rootScope.$broadcast('configLoaded', configData);
+        });
     });
