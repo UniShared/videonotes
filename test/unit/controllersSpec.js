@@ -3,18 +3,30 @@
 /* jasmine specs for controllers go here */
 
 describe('Controllers', function () {
-    beforeEach(angular.mock.module('app'));
+    var scope;
+
+    var httpBackend;
+
+    beforeEach(module('app'));
+    beforeEach(inject(function($httpBackend) {
+        httpBackend = $httpBackend;
+        $httpBackend.expectGET('/config').respond(200, {'googleAnalyticsAccount': 'something'});
+    }));
+
+    beforeEach(inject(function($rootScope, analytics) {
+        scope = $rootScope.$new();
+        scope.tour = {
+            next: function () {}
+        };
+        analytics.pushAnalytics = jasmine.createSpy('pushAnalytics');
+        spyOn(scope, '$on');
+    }));
+
 
     describe('VideoCtrl', function () {
-        var videoCtrl, scope;
+        var videoCtrl;
 
         beforeEach(inject(function ($rootScope, $controller) {
-            scope = $rootScope.$new();
-            scope.tour = {
-                next: function () {}
-            };
-            scope.pushAnalytics = jasmine.createSpy('pushAnalytics');
-            spyOn(scope, '$on');
             videoCtrl = $controller(VideoCtrl, {$scope: scope});
         }));
 

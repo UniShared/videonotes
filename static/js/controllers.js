@@ -14,7 +14,7 @@ function OverlayCtrl($scope, $log, editor, doc) {
     });
 }
 
-function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $window, appName, editor) {
+function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, editor, analytics) {
     $scope.redirectToDocument = function (event, fileInfo) {
         $location.path('/edit/' + fileInfo.id);
     };
@@ -53,13 +53,13 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
             useLocalStorage: false,
             debug: false,
             onStart: function () {
-                $scope.pushAnalytics('Tour', 'started');
+                analytics.pushAnalytics('Tour', 'started');
             },
             onShow: function (tour) {
-                $scope.pushAnalytics('Tour', 'show step {0}'.format(tour._current));
+                analytics.pushAnalytics('Tour', 'show step {0}'.format(tour._current));
             },
             onEnd: function () {
-                $scope.pushAnalytics('Tour', 'ended');
+                analytics.pushAnalytics('Tour', 'ended');
             }
         });
 
@@ -126,18 +126,6 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, $wind
         $scope.$broadcast('shortcut', $event);
     };
 
-    $scope.pushAnalytics = function (category, event) {
-        if(category) {
-            if(event) {
-                $log.info('Tracking event to Google Analytics', category, event);
-                $window._gaq.push(['_trackEvent', appName, category, event]);
-            }
-            else {
-                $window._gaq.push(['_trackEvent', appName, category]);
-            }
-        }
-    };
-
     $scope.$on('authentified', $scope.init);
     $scope.$onMany(['firstSaved', 'copied'], $scope.redirectToDocument);
     $scope.$on('loaded', $scope.startTour);
@@ -178,7 +166,7 @@ function UserCtrl($scope, user, backend) {
     });
 }
 
-function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi) {
+function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
     $scope.canReadH264 = Modernizr.video.h264;
     $scope.youtubeVideo = false;
     $scope.doc = doc;
@@ -236,7 +224,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi) {
                     }
 
                 }
-                $scope.pushAnalytics('Video', $scope.videoUrl);
+                analytics.pushAnalytics('Video', $scope.videoUrl);
             }
         }
     };
@@ -257,7 +245,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi) {
         if(doc.info && doc.info.video) {
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
             $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
-            $scope.pushAnalytics('Video', $scope.videoStatus);
+            analytics.pushAnalytics('Video', $scope.videoStatus);
         }
     };
 
@@ -266,7 +254,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi) {
     };
 
     $scope.loadSampleVideo = function () {
-        $scope.pushAnalytics('Video', 'load sample');
+        analytics.pushAnalytics('Video', 'load sample');
         $scope.videoUrl = sampleVideo;
         $scope.loadVideo();
     };
@@ -294,7 +282,7 @@ function ShareCtrl($scope, appId, doc) {
      */
 }
 
-function MenuCtrl($scope, $location, $window, appName, appId, editor) {
+function MenuCtrl($scope, $location, appId, editor, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -312,25 +300,25 @@ function MenuCtrl($scope, $location, $window, appName, appId, editor) {
             .setCallback(angular.bind(this, onFilePicked))
             .build();
         picker.setVisible(true);
-        $scope.pushAnalytics('Open document');
+        analytics.pushAnalytics('Open document');
     };
     $scope.create = function () {
         editor.create();
-        $scope.pushAnalytics('Create new document');
+        analytics.pushAnalytics('Create new document');
     };
     $scope.save = function () {
         editor.save(true);
-        $scope.pushAnalytics('Save document');
+        analytics.pushAnalytics('Save document');
     }
 }
 
-function RenameCtrl($scope, $window, appName, doc) {
+function RenameCtrl($scope, doc, analytics) {
     $('#rename-dialog').on('show',
         function () {
             $scope.$apply(function () {
                 $scope.newFileName = doc.info.title;
                 $scope.tour.next();
-                $scope.pushAnalytics('Rename document');
+                analytics.pushAnalytics('Rename document');
             });
         });
     $scope.save = function () {
