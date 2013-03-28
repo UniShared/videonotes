@@ -14,7 +14,7 @@ function OverlayCtrl($scope, $log, editor, doc) {
     });
 }
 
-function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, editor, analytics) {
+function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appName, editor, analytics) {
     $scope.redirectToDocument = function (event, fileInfo) {
         $location.path('/edit/' + fileInfo.id);
     };
@@ -71,7 +71,9 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, edito
 
         $scope.tour.addStep({
             element: "#editor",
-            content: "This is the note editor.<br>All your notes will be automatically synchronized with the video",
+            content: "This is the note editor." +
+                "<br>All your notes will be automatically synchronized with the video. " +
+                "<br>Just click on a line to jump to the right time!",
             placement: "left"
         });
 
@@ -156,7 +158,7 @@ function CoursesListCtrl($scope, $location, user, course) {
     }
 }
 
-function UserCtrl($scope, user, backend) {
+function UserCtrl($scope, $rootScope, user, backend) {
     if(!user.isAuthenticated()) {
         user.login();
     }
@@ -195,13 +197,19 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
         return url.match(regex);
     };
 
+    $scope.submitVideo = function () {
+        $scope.tour.start();
+        $scope.tour.next();
+
+        $scope.loadVideo();
+    };
+
     $scope.loadVideo = function () {
         if(doc && doc.info) {
             $scope.videoUrl = $scope.videoUrl || doc.info.video;
 
             if($scope.videoUrl) {
                 $scope.loading = true;
-                $scope.tour.next();
 
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
 
