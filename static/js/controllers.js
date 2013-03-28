@@ -15,6 +15,8 @@ function OverlayCtrl($scope, $log, editor, doc) {
 }
 
 function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appName, editor, analytics) {
+    $scope.appName = appName;
+
     $scope.redirectToDocument = function (event, fileInfo) {
         $location.path('/edit/' + fileInfo.id);
     };

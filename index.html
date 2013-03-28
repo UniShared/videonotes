@@ -2,11 +2,11 @@
 <html lang="en" ng-app="app" class="no-js" ng-controller="MainCtrl">
 <head>
     <!-- Le styles -->
-    <title>UniShared</title>
-    <meta property="og:title" content="UniShared video"/>
+    <title>{{appName}}</title>
+    <meta property="og:title" content="{{appName}}"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="http://video.unishared.com"/>
-    <meta property="og:image" content="http://video.unishared.com/img/unishared-logo-simple-128.png"/>
+    <meta property="og:image" content="http://video.unishared.com/img/logo.png"/>
     <meta property="og:site_name" content="UniShared"/>
     <meta property="fb:admins" content="1312243132,726961638"/>
     <meta property="og:description" content="Your place for social note-taking."/>
@@ -29,7 +29,9 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </a>
-                <a class="brand" href="#"><img src="/img/logo-header.png"></a>
+                <a class="brand" href="#" alt="{{appName}}" title="{{appName}}">
+                    <img src="/img/logo-header.png">
+                </a>
                 <ul class="nav pull-right">
                     <li>
                         <ul class="nav pull-right" ng-controller="UserCtrl">
