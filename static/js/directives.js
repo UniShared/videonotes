@@ -91,3 +91,12 @@ module.directive('playPauseVideoYoutube', function(youtubePlayerApi) {
         }
     }
 });
+
+module.directive('bootstrapTooltip', function(youtubePlayerApi) {
+    return {
+        restrict:'A',
+        link: function(scope, element, attrs) {
+            $(element).tooltip();
+        }
+    }
+});
