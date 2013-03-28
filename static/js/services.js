@@ -181,7 +181,7 @@ module.factory('editor',
 
                         if(!doc.info.id) {
                             doc.info.id = result.data.id;
-                            $rootScope.$broadcast('firstSaved', doc.info);
+                            $rootScope.$broadcast('firstSaved', doc.info.id);
                         }
 
                         doc.lastSave = new Date().getTime();

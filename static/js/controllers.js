@@ -17,8 +17,8 @@ function OverlayCtrl($scope, $log, editor, doc) {
 function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appName, editor, analytics) {
     $scope.appName = appName;
 
-    $scope.redirectToDocument = function (event, fileInfo) {
-        $location.path('/edit/' + fileInfo.id);
+    $scope.redirectToDocument = function (event, fileId) {
+        $location.path('/edit/' + fileId);
     };
 
     $scope.init = function () {
@@ -130,8 +130,8 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
         $scope.$broadcast('shortcut', $event);
     };
 
-    $scope.$on('authentified', $scope.init);
-    $scope.$onMany(['firstSaved', 'copied'], $scope.redirectToDocument);
+    $scope.$on('$routeChangeSuccess', $scope.init);
+    $scope.$onMany(['firstSaved', 'copied', 'opened'], $scope.redirectToDocument);
     $scope.$on('loaded', $scope.startTour);
 }
 
@@ -203,18 +203,28 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
         $scope.tour.start();
         $scope.tour.next();
 
-        $scope.loadVideo();
+        var matchVideoCoursera = $scope.getCourseLectureCoursera($scope.videoUrl);
+        if(matchVideoCoursera && matchVideoCoursera.length == 3) {
+            $scope.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
+        }
+
+        doc.info.video = $scope.videoUrl;
+
+        $scope.loadPlayer();
     };
 
     $scope.loadVideo = function () {
-        if(doc && doc.info) {
-            $scope.videoUrl = $scope.videoUrl || doc.info.video;
+        $scope.videoUrl = doc.info.video;
 
-            if($scope.videoUrl) {
+        $scope.loadPlayer();
+    };
+
+    $scope.loadPlayer = function () {
+        if(doc && doc.info) {
+            if(doc.info.video) {
                 $scope.loading = true;
 
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
-
                 if(videoId != null) {
                     $scope.youtubeVideo = true;
                     doc.info.video = $scope.videoUrl;
@@ -224,16 +234,8 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
                 }
                 else {
                     $scope.youtubeVideo = false;
-
-                    var matchVideoCoursera = $scope.getCourseLectureCoursera($scope.videoUrl);
-                    if(matchVideoCoursera && matchVideoCoursera.length == 3) {
-                        doc.info.video = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
-                    }
-                    else {
-                        doc.info.video = $scope.videoUrl;
-                    }
-
                 }
+
                 analytics.pushAnalytics('Video', $scope.videoUrl);
             }
         }
@@ -292,12 +294,12 @@ function ShareCtrl($scope, appId, doc) {
      */
 }
 
-function MenuCtrl($scope, $location, appId, editor, analytics) {
+function MenuCtrl($scope, $rootScope, appId, editor, doc, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
                 var id = data.docs[0].id;
-                $location.path('/edit/' + id);
+                $rootScope.$broadcast('opened', id);
             }
         });
     };
