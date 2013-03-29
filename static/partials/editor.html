@@ -27,9 +27,9 @@
                             <img class="loading pull-right" src="/img/loading.gif" ng-show="loading">
                         </div>
                     </div>
-                    <div class="row-fluid" ng-hide="doc.info.video">
+                    <div class="row-fluid" ng-show="videoStatus.error || !doc.info.video">
                         <a id="help-coursera-dialog-link" class="span8" data-toggle="modal" href="#help-coursera-dialog"
-                           ng-hide="doc.info.video" ng-click="pushAnalytics('Video','help Coursera')"><h4>Help for
+                            ng-click="pushAnalytics('Video','help Coursera')"><h4>Help for
                             Coursera</h4></a>
 
                         <div class="modal hide" id="help-coursera-dialog" ng-controller="RenameCtrl">
@@ -61,12 +61,12 @@
                         <img class="loading" src="/img/loading.gif" ng-show="loading">
 
                         <div ng-hide="loading">
-                            <video src="{{doc.info.video}}" ng-hide="youtubeVideo" controls
+                            <video ng-hide="youtubeVideo" controls
                                    play-pause-video-html5="videoStatus.playHtml5"
-                                   html5-video-player></video>
+                                   html5-video-player="doc.info.video"></video>
                             <div ng-show="youtubeVideo">
                                 <div id="ytplayer" play-pause-video-youtube="videoStatus.playYoutube"
-                                     youtube-player></div>
+                                     youtube-player="doc.info.video"></div>
                             </div>
                         </div>
                     </div>
@@ -166,7 +166,7 @@
 
             <div id="editor" ace-editor></div>
 
-            <alert id="error"></div>
+            <alert id="error"></alert>
         </div>
     </div>
 </div>

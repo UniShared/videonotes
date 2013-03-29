@@ -170,7 +170,7 @@ function UserCtrl($scope, $rootScope, user, backend) {
     });
 }
 
-function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
+function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics) {
     $scope.canReadH264 = Modernizr.video.h264;
     $scope.youtubeVideo = false;
     $scope.doc = doc;
@@ -178,7 +178,8 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
 
     $scope.videoStatus = {
         playYoutube: false,
-        playHtml5: false
+        playHtml5: false,
+        error: false
     };
 
     $scope.getYoutubeVideoId = function(url) {
@@ -200,6 +201,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
     };
 
     $scope.submitVideo = function () {
+        $scope.videoStatus.error = false;
         $scope.tour.start();
         $scope.tour.next();
 
@@ -227,13 +229,14 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
                 if(videoId != null) {
                     $scope.youtubeVideo = true;
-                    doc.info.video = $scope.videoUrl;
                     youtubePlayerApi.videoId = videoId;
                     youtubePlayerApi.loadPlayer();
                     $scope.endLoading();
                 }
                 else {
                     $scope.youtubeVideo = false;
+                    video.videoUrl = doc.info.video;
+                    video.load();
                 }
 
                 analytics.pushAnalytics('Video', $scope.videoUrl);
@@ -263,6 +266,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
 
     $scope.endLoading = function () {
         $scope.loading = false;
+        $scope.$apply();
     };
 
     $scope.loadSampleVideo = function () {
@@ -271,9 +275,15 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, analytics) {
         $scope.loadVideo();
     };
 
+    $scope.errorLoadVideo = function () {
+        $scope.videoStatus.error = true;
+        $scope.endLoading();
+    };
+
     $scope.$on('shortcut', $scope.shortcuts);
     $scope.$on('loaded', $scope.loadVideo);
     $scope.$on('videoLoaded', $scope.endLoading);
+    $scope.$on('videoError', $scope.errorLoadVideo);
 }
 
 function EditorCtrl($scope, editor, doc, autosaver) {
