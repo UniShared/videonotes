@@ -12,7 +12,7 @@ $font-family: 'BebasNeueRegular', Impact;
   font-family: 'BebasNeueRegular';
   src: url('../font/bebasneue-webfont.eot');
   src: url('../font/bebasneue-webfont.eot?#iefix') format("embedded-opentype"), url('../font/bebasneue-webfont.woff') format("woff"), url('../font/bebasneue-webfont.ttf') format("truetype"), url('../font/bebasneue-webfont.svg#BebasNeueRegular') format("svg");
-  font-weight: normal;
+  font-weight: normal !important;
   font-style: normal;
 }
 
