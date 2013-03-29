@@ -47,22 +47,25 @@ module.directive('star',
     });
 
 module.directive('alert',
-    function ($rootScope) {
+    function ($rootScope, analytics) {
         return {
             restrict:'E',
             replace:true,
             link:function (scope, element) {
                 $rootScope.$on('error',
                     function (event, data) {
-                        scope.message = data.message;
-                        element.show();
+                        scope.$apply(function () {
+                            analytics.pushAnalytics('Error', data.message);
+                            scope.message = data.message;
+                            $(element).show();
+                        });
                     });
                 scope.close = function () {
-                    element.hide();
+                    $(element).hide();
                 };
             },
             template:'<div class="hide alert alert-error">' +
-                '  <span class="close" ng-click="close()">×</span>' +
+                '  <span class="close" ng-click="close()">&times;</span>' +
                 '  {{message}}' +
                 '</div>'
         }
