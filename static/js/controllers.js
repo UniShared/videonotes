@@ -271,7 +271,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
 
     $scope.loadSampleVideo = function () {
         analytics.pushAnalytics('Video', 'load sample');
-        $scope.videoUrl = sampleVideo;
+        doc.info.video = sampleVideo;
         $scope.loadVideo();
     };
 
