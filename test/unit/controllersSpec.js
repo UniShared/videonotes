@@ -156,7 +156,6 @@ describe('Controllers', function () {
 
             expect(scope.videoUrl).toEqual(sampleVideo);
             expect(scope.loadVideo).toHaveBeenCalled();
-            expect(scope.pushAnalytics).toHaveBeenCalledWith(['Video', 'load sample']);
-        }))
+        }));
     });
 });
