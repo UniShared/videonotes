@@ -54,15 +54,52 @@ module.factory('doc',
         return service;
     });
 
-module.factory('video', function($rootScope, $log) {
+module.factory('video', function($rootScope, $log, analytics) {
     return {
         player: null,
-        playing: false,
+        videoUrl: null,
+        load: function() {
+            if(this.videoUrl) {
+                this.player.src = this.videoUrl;
+                this.player.load();
+            }
+        },
         bindVideoPlayer:function (element) {
             $log.info("Bind video player to element", element.id);
             this.player = element;
             this.player.addEventListener("canplay", function () {
                 $rootScope.$broadcast('videoLoaded');
+            }, false);
+
+            this.player.addEventListener("error", function (e) {
+                $rootScope.$broadcast('videoError');
+
+                var message;
+                switch (e.target.error.code) {
+                    case e.target.error.MEDIA_ERR_ABORTED:
+                        message ='You aborted the video playback.';
+                        break;
+                    case e.target.error.MEDIA_ERR_NETWORK:
+                        message ='A network error caused the video download to fail part-way.';
+                        break;
+                    case e.target.error.MEDIA_ERR_DECODE:
+                        message ='The video playback was aborted due to a corruption problem or because the video used features your browser did not support.';
+                        break;
+                    case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        message ='The video could not be loaded, either because the server or network failed or because the format is not supported.';
+                        break;
+                    default:
+                        message ='An unknown error occurred.';
+                        break;
+                }
+
+                analytics.pushAnalytics('Video', 'load', message);
+                $log.info("Error while loading the video", message);
+
+                $rootScope.$broadcast('error', {
+                    action:'load video',
+                    message: 'An error occurred while loading the video'
+                });
             }, false);
         }
     };
