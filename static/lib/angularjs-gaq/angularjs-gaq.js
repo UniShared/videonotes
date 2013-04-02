@@ -35,16 +35,8 @@ angular.module('analytics', ['ng']).run(function() {
         _this.appName = config.appName;
     });
 
-    this.pushAnalytics = function (category, event) {
-        if(category) {
-            if(event) {
-                $log.info('Tracking event to Google Analytics', category, event);
-                $window._gaq.push(['_trackEvent', this.appName, category, event]);
-            }
-            else {
-                $log.info('Tracking event to Google Analytics', category);
-                $window._gaq.push(['_trackEvent', this.appName, category]);
-            }
-        }
+    this.pushAnalytics = function (category, event, label) {
+        $log.info('Tracking event to Google Analytics', category, event, label);
+        $window._gaq.push(['_trackEvent', category, event, label]);
     };
 });
