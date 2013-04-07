@@ -98,8 +98,35 @@ module.directive('playPauseVideoYoutube', function(youtubePlayerApi) {
 module.directive('bootstrapTooltip', function(youtubePlayerApi) {
     return {
         restrict:'A',
-        link: function(scope, element, attrs) {
+        link: function(scope, element) {
             $(element).tooltip();
         }
+    }
+});
+
+module.directive('bootstrapSwitch', function() {
+    return {
+        restrict:'E',
+        scope: {
+            property: "="
+        },
+        link: function(scope, element) {
+            $(element).bootstrapSwitch();
+
+            scope.$watch('property', function () {
+                if(scope.property)
+                    $(element).bootstrapSwitch('setState', scope.property);
+            });
+
+            $(element).on('switch-change', function (e, data) {
+                scope.property = data.value;
+                scope.$apply();
+            });
+        },
+        replace: true,
+        template:
+            '<div class="switch switch-small">'
+        +     '<input type="checkbox" />'
+        +    '</div>'
     }
 });
