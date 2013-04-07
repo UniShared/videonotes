@@ -114,7 +114,7 @@ module.directive('bootstrapSwitch', function() {
             $(element).bootstrapSwitch();
 
             scope.$watch('property', function () {
-                if(scope.property)
+                if(scope.property !== undefined)
                     $(element).bootstrapSwitch('setState', scope.property);
             });
 

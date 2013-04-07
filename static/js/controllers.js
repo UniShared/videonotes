@@ -246,7 +246,6 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
 
     $scope.shortcuts = function (event, eventData) {
         switch (eventData.which) {
-            case 0:
             case 32:
                 if(eventData.ctrlKey) {
                     event.preventDefault();
@@ -300,7 +299,19 @@ function EditorCtrl($scope, editor, doc, autosaver) {
         }
     }, true);
 
+    $scope.disableSync = function (event, eventData) {
+        switch (eventData.which) {
+            case 83: // "s" on OS X
+                if(eventData.ctrlKey && eventData.altKey) {
+                    event.preventDefault();
+                    $scope.sync = !$scope.sync;
+                }
+                break;
+        }
+    };
+
     $scope.$on('loaded', $scope.init);
+    $scope.$on('shortcut', $scope.disableSync);
 
     $scope.init();
 }
