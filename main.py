@@ -471,7 +471,7 @@ class ServiceHandler(BaseDriveHandler):
                 else:
                     f['content'] = {'content': ''}
                     f['video'] = {'video': ''}
-                    f['syncNotesVideo'] = {'syncNotesVideo': {}}
+                    f['syncNotesVideo'] = {'syncNotesVideo': {'enabled': True}}
             else:
                 f = None
                 # Generate a JSON response with the file data and return to the client.
