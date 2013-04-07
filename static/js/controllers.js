@@ -289,6 +289,20 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
 function EditorCtrl($scope, editor, doc, autosaver) {
     $scope.editor = editor;
     $scope.doc = doc;
+
+    $scope.init = function () {
+        $scope.sync = doc.info && doc.info.syncNotesVideo && doc.info.syncNotesVideo.enabled && true;
+    };
+
+    $scope.$watch('sync', function () {
+        if(doc && doc.info) {
+            doc.info.syncNotesVideo.enabled = $scope.sync;
+        }
+    }, true);
+
+    $scope.$on('loaded', $scope.init);
+
+    $scope.init();
 }
 
 function ShareCtrl($scope, appId, doc) {
