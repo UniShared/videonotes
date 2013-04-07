@@ -72,11 +72,13 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
         });
 
         $scope.tour.addStep({
-            element: "#editor",
+            element: "#sync-switch",
             content: "This is the note editor." +
                 "<br>All your notes will be automatically synchronized with the video. " +
-                "<br>Just click on a line to jump to the right time!",
-            placement: "left"
+                "<br>Just click on a line to jump to the right time!" +
+                "<br>You can toggle it at any time." +
+                "<br>Shortcut is CTRL-ALT-s",
+            placement: "bottom"
         });
 
         $scope.tour.addStep({
