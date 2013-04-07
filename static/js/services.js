@@ -1,19 +1,19 @@
 'use strict';
 
-var module = angular.module('app.services', [], function($locationProvider) {
+var module = angular.module('app.services', [], function ($locationProvider) {
     $locationProvider.html5Mode(true);
 });
 
 var ONE_HOUR_IN_MS = 1000 * 60 * 60;
 
 // Http interceptor for error 401 (authorization)
-module.factory('httpInterceptor401', function($q, $location) {
+module.factory('httpInterceptor401', function ($q, $location) {
     return function (promise) {
         return promise.then(function (response) {
             // do something on response 401
             return response;
-        }, function(response) {
-            if(response.status === 401){
+        }, function (response) {
+            if (response.status === 401) {
                 window.location.href = response.data.redirectUri;
             }
             else {
@@ -29,7 +29,7 @@ module.config(function ($httpProvider) {
 
 module.factory('config', function ($http) {
     return {
-        load : function () {
+        load: function () {
             return $http.get('/config');
         }
     };
@@ -51,20 +51,28 @@ module.factory('doc',
                 }
             },
             true);
+
+        service.$watch('info.syncNotesVideo.enabled',
+            function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    $rootScope.$broadcast('syncChanged', newValue);
+                }
+            },
+            true);
         return service;
     });
 
-module.factory('video', function($rootScope, $log, analytics) {
+module.factory('video', function ($rootScope, $log, analytics) {
     return {
         player: null,
         videoUrl: null,
-        load: function() {
-            if(this.videoUrl) {
+        load: function () {
+            if (this.videoUrl) {
                 this.player.src = this.videoUrl;
                 this.player.load();
             }
         },
-        bindVideoPlayer:function (element) {
+        bindVideoPlayer: function (element) {
             $log.info("Bind video player to element", element.id);
             this.player = element;
             this.player.addEventListener("canplay", function () {
@@ -77,19 +85,19 @@ module.factory('video', function($rootScope, $log, analytics) {
                 var message;
                 switch (e.target.error.code) {
                     case e.target.error.MEDIA_ERR_ABORTED:
-                        message ='You aborted the video playback.';
+                        message = 'You aborted the video playback.';
                         break;
                     case e.target.error.MEDIA_ERR_NETWORK:
-                        message ='A network error caused the video download to fail part-way.';
+                        message = 'A network error caused the video download to fail part-way.';
                         break;
                     case e.target.error.MEDIA_ERR_DECODE:
-                        message ='The video playback was aborted due to a corruption problem or because the video used features your browser did not support.';
+                        message = 'The video playback was aborted due to a corruption problem or because the video used features your browser did not support.';
                         break;
                     case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                        message ='The video could not be loaded, either because the server or network failed or because the format is not supported.';
+                        message = 'The video could not be loaded, either because the server or network failed or because the format is not supported.';
                         break;
                     default:
-                        message ='An unknown error occurred.';
+                        message = 'An unknown error occurred.';
                         break;
                 }
 
@@ -97,7 +105,7 @@ module.factory('video', function($rootScope, $log, analytics) {
                 $log.info("Error while loading the video", message);
 
                 $rootScope.$broadcast('error', {
-                    action:'load video',
+                    action: 'load video',
                     message: 'An error occurred while loading the video'
                 });
             }, false);
@@ -111,26 +119,26 @@ module.factory('editor',
         var EditSession = require("ace/edit_session").EditSession;
 
         var service = {
-            loading:false,
-            saving:false,
+            loading: false,
+            saving: false,
             lastRow: -1,
-            rebind:function (element) {
+            rebind: function (element) {
                 editor = ace.edit(element);
-                editor.on("gutterclick", function(e){
+                editor.on("gutterclick", function (e) {
                     var lineCursorPosition = e.getDocumentPosition().row,
                         timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                    if(youtubePlayerApi.player) {
+                    if (youtubePlayerApi.player) {
                         youtubePlayerApi.player.seekTo(timestamp);
                     }
-                    else if(video.player) {
+                    else if (video.player) {
                         video.player.currentTime = timestamp;
                     }
                 });
                 this.updateEditor(doc.info);
             },
 
-            snapshot:function () {
+            snapshot: function () {
                 doc.dirty = false;
                 var data = angular.extend({}, doc.info);
                 if (doc.info.editable) {
@@ -138,40 +146,42 @@ module.factory('editor',
                 }
                 return data;
             },
-            create:function (parentId) {
+            create: function (parentId) {
                 $log.info("Creating new doc");
                 doc.dirty = false;
                 this.updateEditor({
-                    id:null,
+                    id: null,
                     content: '',
                     video: null,
-                    syncNotesVideo: {},
-                    labels:{
-                        starred:false
+                    syncNotesVideo: {
+                        enabled: true
                     },
-                    editable:true,
-                    title:'Your notes',
-                    description:'',
-                    mimeType:'application/vnd.unishared.document',
+                    labels: {
+                        starred: false
+                    },
+                    editable: true,
+                    title: 'Your notes',
+                    description: '',
+                    mimeType: 'application/vnd.unishared.document',
                     parent: parentId || null
                 });
             },
             copy: function (templateId) {
                 $log.info("Copying template", templateId);
                 backend.copy(templateId).then(angular.bind(this,
-                function (result) {
-                    doc.info.id = result.data.id;
-                    $rootScope.$broadcast('copied', result.data.id);
-                }),
-                angular.bind(this, function () {
-                    $log.warn("Error copying", templateId);
-                    $rootScope.$broadcast('error', {
-                        action:'copy',
-                        message:"An error occurred while copying the template"
-                    });
-                }));
+                    function (result) {
+                        doc.info.id = result.data.id;
+                        $rootScope.$broadcast('copied', result.data.id);
+                    }),
+                    angular.bind(this, function () {
+                        $log.warn("Error copying", templateId);
+                        $rootScope.$broadcast('error', {
+                            action: 'copy',
+                            message: "An error occurred while copying the template"
+                        });
+                    }));
             },
-            load:function (id, reload) {
+            load: function (id, reload) {
                 $log.info("Loading resource", id, doc.info && doc.info.id);
                 if (!reload && doc.info && id == doc.info.id) {
                     this.updateEditor(doc.info);
@@ -190,13 +200,13 @@ module.factory('editor',
                         $log.warn("Error loading", result);
                         this.loading = false;
                         $rootScope.$broadcast('error', {
-                            action:'load',
-                            message:"An error occured while loading the file"
+                            action: 'load',
+                            message: "An error occured while loading the file"
                         });
                         return result;
                     }));
             },
-            save:function (newRevision) {
+            save: function (newRevision) {
                 $log.info("Saving file", newRevision);
                 if (this.saving || this.loading) {
                     throw 'Save called from incorrect state';
@@ -204,7 +214,7 @@ module.factory('editor',
                 this.saving = true;
                 var file = this.snapshot();
 
-                if(!doc.info.id) {
+                if (!doc.info.id) {
                     $rootScope.$broadcast('firstSaving');
                 }
 
@@ -216,7 +226,7 @@ module.factory('editor',
                         $log.info("Saved file", result);
                         this.saving = false;
 
-                        if(!doc.info.id) {
+                        if (!doc.info.id) {
                             doc.info.id = result.data.id;
                             $rootScope.$broadcast('firstSaved', doc.info.id);
                         }
@@ -229,15 +239,15 @@ module.factory('editor',
                         this.saving = false;
                         doc.dirty = true;
                         $rootScope.$broadcast('error', {
-                            action:'save',
-                            message:"An error occurred while saving the file"
+                            action: 'save',
+                            message: "An error occurred while saving the file"
                         });
                         return result;
                     }));
                 return promise;
             },
-            updateEditor:function (fileInfo) {
-                if(!fileInfo) {
+            updateEditor: function (fileInfo) {
+                if (!fileInfo) {
                     return;
                 }
 
@@ -246,7 +256,7 @@ module.factory('editor',
                 var session = new EditSession(fileInfo.content);
 
                 session.on('change', function () {
-                    if(doc && doc.info) {
+                    if (doc && doc.info) {
                         doc.dirty = true;
                         doc.info.content = session.getValue();
                         $rootScope.$apply();
@@ -257,61 +267,68 @@ module.factory('editor',
                     var lineCursorPosition = editor.getCursorPosition().row,
                         timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                    if(session.getLine(lineCursorPosition).trim() != '') {
-                        if(lineCursorPosition != service.lastRow) {
+                    if (session.getLine(lineCursorPosition).trim() != '') {
+                        if (lineCursorPosition != service.lastRow) {
                             service.lastRow = lineCursorPosition;
-                            if(timestamp) {
-                                if(youtubePlayerApi.player) {
-                                    youtubePlayerApi.player.seekTo(timestamp);
+                            if (timestamp) {
+                                if (timestamp > -1) {
+                                    if (youtubePlayerApi.player) {
+                                        youtubePlayerApi.player.seekTo(timestamp);
+                                    }
+                                    else if (video.player) {
+                                        video.player.currentTime = timestamp;
+                                    }
                                 }
-                                else if(video.player) {
-                                    video.player.currentTime = timestamp;
+                            }
+                            else if (doc.info.video) {
+                                if (doc.info.syncNotesVideo.enabled) {
+                                    // Is there some texts before and after?
+                                    var timestampBefore, lineBefore = false,
+                                        timestampAfter, lineAfter = false;
+                                    for (var line in doc.info.syncNotesVideo) {
+                                        if (!lineBefore && line < lineCursorPosition) {
+                                            lineBefore = true;
+                                            timestampBefore = doc.info.syncNotesVideo[line];
+                                        }
+                                        else if (!lineAfter && line > lineCursorPosition) {
+                                            lineAfter = true;
+                                            timestampAfter = doc.info.syncNotesVideo[line];
+                                        }
+
+                                        if (lineBefore && lineAfter) {
+                                            break;
+                                        }
+                                    }
+
+                                    if (lineBefore && lineAfter) {
+                                        // Text before and after
+                                        // Timestamp for this line must be average time between nearest line before/after
+                                        doc.info.syncNotesVideo[lineCursorPosition] = (timestampBefore + timestampAfter) / 2;
+                                    }
+                                    else {
+                                        // No text or only before / after
+                                        // Using current player time
+                                        if (youtubePlayerApi.player) {
+                                            doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime();
+                                            session.setBreakpoint(lineCursorPosition);
+                                        }
+                                        else if (video.player) {
+                                            doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime;
+                                            session.setBreakpoint(lineCursorPosition);
+                                        }
+                                    }
                                 }
                             }
                             else {
-                                // Is there some texts before and after?
-                                var timestampBefore, lineBefore = false,
-                                    timestampAfter, lineAfter = false;
-                                for(var line in doc.info.syncNotesVideo) {
-                                    if (!lineBefore && line < lineCursorPosition) {
-                                        lineBefore = true;
-                                        timestampBefore = doc.info.syncNotesVideo[line];
-                                    }
-                                    else if (!lineAfter && line > lineCursorPosition) {
-                                        lineAfter = true;
-                                        timestampAfter = doc.info.syncNotesVideo[line];
-                                    }
-
-                                    if(lineBefore && lineAfter) {
-                                        break;
-                                    }
-                                }
-
-                                if(lineBefore && lineAfter) {
-                                    // Text before and after
-                                    // Timestamp for this line must be average time between nearest line before/after
-                                    doc.info.syncNotesVideo[lineCursorPosition] = (timestampBefore + timestampAfter) / 2;
-                                }
-                                else {
-                                    // No text or only before / after
-                                    // Using current player time
-                                    if(youtubePlayerApi.player) {
-                                        doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime();
-                                        session.setBreakpoint(lineCursorPosition);
-                                    }
-                                    else if(video.player) {
-                                        doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime;
-                                        session.setBreakpoint(lineCursorPosition);
-                                    }
-                                }
-
+                                doc.info.syncNotesVideo[lineCursorPosition] = -1;
                             }
                         }
                     }
                 });
 
-                for(var line in fileInfo.syncNotesVideo) {
-                    session.setBreakpoint(line);
+                for (var line in fileInfo.syncNotesVideo) {
+                    if(fileInfo.syncNotesVideo[line] > -1)
+                        session.setBreakpoint(line);
                 }
 
                 doc.lastSave = 0;
@@ -322,7 +339,7 @@ module.factory('editor',
                 session.setWrapLimitRange(80);
                 editor.focus();
             },
-            state:function () {
+            state: function () {
                 if (this.loading) {
                     return EditorState.LOAD;
                 } else if (this.saving) {
@@ -335,6 +352,7 @@ module.factory('editor',
                 return EditorState.CLEAN;
             }
         };
+
         return service;
     });
 
@@ -344,46 +362,46 @@ module.factory('backend',
             return angular.fromJson(data);
         };
         var service = {
-            courses: function() {
+            courses: function () {
                 return $http.get('/courses')
             },
-            user:function () {
+            user: function () {
                 return $http.get('/user');
             },
-            about:function () {
+            about: function () {
                 return $http.get('/about');
             },
-            copy: function(templateId) {
+            copy: function (templateId) {
                 return $http.post('/svc', {
-                    templateId:templateId
+                    templateId: templateId
                 });
             },
-            load:function (id) {
+            load: function (id) {
                 return $http.get('/svc', {
-                    params:{
-                        'file_id':id
+                    params: {
+                        'file_id': id
                     }
                 });
             },
-            save:function (fileInfo, newRevision) {
+            save: function (fileInfo, newRevision) {
                 $log.info('Saving', fileInfo);
                 return $http({
-                    url:'/svc',
-                    method:fileInfo.id ? 'PUT' : 'POST',
-                    headers:{
-                        'Content-Type':'application/json'
+                    url: '/svc',
+                    method: fileInfo.id ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
                     },
-                    params:{
-                        'newRevision':newRevision
+                    params: {
+                        'newRevision': newRevision
                     },
-                    data:JSON.stringify(fileInfo)
+                    data: JSON.stringify(fileInfo)
                 });
             }
         };
         return service;
     });
 
-module.factory('course', function(backend) {
+module.factory('course', function (backend) {
     var _this = this;
     this.templateId = null;
 
@@ -391,28 +409,28 @@ module.factory('course', function(backend) {
         list: function () {
             return backend.courses();
         },
-        setTemplateId: function(templateId) {
+        setTemplateId: function (templateId) {
             _this.templateId = templateId;
         },
-        getTemplateId: function() {
+        getTemplateId: function () {
             return _this.templateId;
         }
     }
 });
 
-module.factory('user', function($rootScope, backend) {
+module.factory('user', function ($rootScope, backend) {
     var _this = this;
     this.authenticated = false;
     this.info = null;
 
     return {
-        isAuthenticated: function() {
+        isAuthenticated: function () {
             return _this.authenticated;
         },
-        getInfo: function() {
+        getInfo: function () {
             return _this.info;
         },
-        login: function() {
+        login: function () {
             backend.user().then(function (response) {
                 _this.authenticated = true;
                 _this.info = response.data;
