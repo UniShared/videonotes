@@ -15,7 +15,7 @@ angular.module('app.filters', [])
             } else if (state == EditorState.READONLY) {
                 return "Read only"
             } else {
-                return 'Video and notes synced in Google Drive';
+                return 'Video and notes saved in Google Drive';
             }
         };
     })
