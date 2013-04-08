@@ -134,6 +134,9 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
 
     $scope.$on('$routeChangeSuccess', $scope.init);
     $scope.$onMany(['firstSaved', 'copied', 'opened'], $scope.redirectToDocument);
+    $scope.$on('firstSaved', function () {
+        analytics.pushAnalytics('Document', 'created');
+    });
     $scope.$on('loaded', $scope.startTour);
 }
 
