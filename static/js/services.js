@@ -52,13 +52,6 @@ module.factory('doc',
             },
             true);
 
-        service.$watch('info.syncNotesVideo.enabled',
-            function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $rootScope.$broadcast('syncChanged', newValue);
-                }
-            },
-            true);
         return service;
     });
 
