@@ -6,8 +6,17 @@ module.directive('aceEditor',
     function (editor) {
         return {
             restrict:'A',
+            scope: {
+                sync: "="
+            },
             link:function (scope, element) {
                 editor.rebind(element[0]);
+
+                scope.$watch('sync', function(newValue, oldValue) {
+                    if(newValue !== oldValue) {
+                        newValue ? $('.ace_gutter').removeClass('inactive') : $('.ace_gutter').addClass('inactive');
+                    }
+                }, true);
             }
         };
     });
