@@ -113,7 +113,7 @@ module.directive('bootstrapTooltip', function(youtubePlayerApi) {
     }
 });
 
-module.directive('bootstrapSwitch', function() {
+module.directive('bootstrapSwitch', function($rootScope) {
     return {
         restrict:'E',
         scope: {
@@ -129,7 +129,7 @@ module.directive('bootstrapSwitch', function() {
 
             $(element).on('switch-change', function (e, data) {
                 scope.property = data.value;
-                scope.$apply();
+                $rootScope.$$phase || $rootScope.$apply();
             });
         },
         replace: true,
