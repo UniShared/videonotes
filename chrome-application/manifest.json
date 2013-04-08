@@ -1,0 +1,30 @@
+{
+    "name" : "VideoNot.es",
+    "version" : "0.1",
+    "manifest_version" : 2,
+    "description" : "The easiest way to take notes from videos. Everything synchronized!",
+    "container" : "GOOGLE_DRIVE",
+    "api_console_project_id" : "653335932456",
+    "icons": {
+        "128": "icon-128.png"
+    },
+    "app" : {
+        "urls": [
+            "http://video.unishared.com/",
+            "http://video.unishared.com/edit/"
+        ],
+        "launch" : {
+            "web_url" : "http://video.unishared.com/"
+        }
+    },
+    "gdrive_mime_types": {
+        "http://drive.google.com/intents/opendrivedoc": [
+            {
+                "type": ["application/vnd.unishared.document", "application/vnd.google.drive.ext-type.videonotes"],
+                "href": "http://video.unishared.com/",
+                "title" : "Open",
+                "disposition" : "window"
+            }
+        ]
+    }
+}
