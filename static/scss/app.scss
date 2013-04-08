@@ -237,9 +237,14 @@ h2, h3, h4 {
         }
       }
 
+      #sync-switch {
+        margin-left: 80px;
+        margin-top: 7px;
+      }
+
       .editor-state {
         font-size: 13px;
-        margin-top: -38px;
+        margin-top: 10px;
         margin-right: 10px;
       }
     }
@@ -268,9 +273,18 @@ h2, h3, h4 {
       height: 65.5%;
       border-bottom-left-radius: 5px;
 
-      .ace_gutter-cell.ace_breakpoint{
-        background-color: $main-yellow-color;
+      .ace_gutter {
+        .ace_gutter-cell.ace_breakpoint {
+          background-color: $main-yellow-color;
+        }
+
+        &.inactive {
+          .ace_gutter-cell.ace_breakpoint {
+            background-color: #FFEFBF;
+          }
+        }
       }
+
     }
   }
 }

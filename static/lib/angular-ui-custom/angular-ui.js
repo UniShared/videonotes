@@ -1,6 +1,6 @@
 /**
  * AngularUI - The companion suite for AngularJS
- * @version v0.3.2 - 2013-01-31
+ * @version v0.4.0 - 2013-04-07
  * @link http://angular-ui.github.com
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -58,9 +58,9 @@ angular.module('ui.directives').factory('keypressHelper', ['$parse', function ke
     // Check only matching of pressed keys one of the conditions
     elm.bind(mode, function (event) {
       // No need to do that inside the cycle
-      var altPressed = event.metaKey || event.altKey;
-      var ctrlPressed = event.ctrlKey;
-      var shiftPressed = event.shiftKey;
+      var altPressed = !!(event.metaKey || event.altKey);
+      var ctrlPressed = !!event.ctrlKey;
+      var shiftPressed = !!event.shiftKey;
       var keyCode = event.keyCode;
 
       // normalize keycodes
@@ -70,12 +70,11 @@ angular.module('ui.directives').factory('keypressHelper', ['$parse', function ke
 
       // Iterate over prepared combinations
       angular.forEach(combinations, function (combination) {
+        var mainKeyPressed = combination.keys[keysByCode[event.keyCode]] || combination.keys[event.keyCode.toString()];
 
-        var mainKeyPressed = (combination.keys[keysByCode[event.keyCode]] || combination.keys[event.keyCode.toString()]) || false;
-
-        var altRequired = combination.keys.alt || false;
-        var ctrlRequired = combination.keys.ctrl || false;
-        var shiftRequired = combination.keys.shift || false;
+        var altRequired = !!combination.keys.alt;
+        var ctrlRequired = !!combination.keys.ctrl;
+        var shiftRequired = !!combination.keys.shift;
 
         if (
           mainKeyPressed &&

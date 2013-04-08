@@ -6,8 +6,17 @@ module.directive('aceEditor',
     function (editor) {
         return {
             restrict:'A',
+            scope: {
+                sync: "="
+            },
             link:function (scope, element) {
                 editor.rebind(element[0]);
+
+                scope.$watch('sync', function(newValue, oldValue) {
+                    if(newValue !== oldValue) {
+                        newValue ? $('.ace_gutter').removeClass('inactive') : $('.ace_gutter').addClass('inactive');
+                    }
+                }, true);
             }
         };
     });
@@ -98,8 +107,33 @@ module.directive('playPauseVideoYoutube', function(youtubePlayerApi) {
 module.directive('bootstrapTooltip', function(youtubePlayerApi) {
     return {
         restrict:'A',
-        link: function(scope, element, attrs) {
+        link: function(scope, element) {
             $(element).tooltip();
         }
+    }
+});
+
+module.directive('bootstrapSwitch', function($rootScope) {
+    return {
+        restrict:'E',
+        scope: {
+            property: "="
+        },
+        link: function(scope, element) {
+            $(element).bootstrapSwitch();
+
+            scope.$watch('property', function () {
+                if(scope.property !== undefined)
+                    $(element).bootstrapSwitch('setState', scope.property);
+            });
+
+            $(element).on('switch-change', function (e, data) {
+                scope.property = data.value;
+                $rootScope.$$phase || $rootScope.$apply();
+            });
+        },
+        replace: true,
+        template: '<div class="switch switch-small">\n    <input type="checkbox" />\n</div>'
+
     }
 });

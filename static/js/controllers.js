@@ -72,11 +72,13 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
         });
 
         $scope.tour.addStep({
-            element: "#editor",
+            element: "#sync-switch",
             content: "This is the note editor." +
                 "<br>All your notes will be automatically synchronized with the video. " +
-                "<br>Just click on a line to jump to the right time!",
-            placement: "left"
+                "<br>Just click on a line to jump to the right time!" +
+                "<br>You can toggle it at any time." +
+                "<br>Shortcut is CTRL-ALT-s",
+            placement: "bottom"
         });
 
         $scope.tour.addStep({
@@ -132,6 +134,9 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
 
     $scope.$on('$routeChangeSuccess', $scope.init);
     $scope.$onMany(['firstSaved', 'copied', 'opened'], $scope.redirectToDocument);
+    $scope.$on('firstSaved', function () {
+        analytics.pushAnalytics('Document', 'created');
+    });
     $scope.$on('loaded', $scope.startTour);
 }
 
@@ -246,7 +251,6 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
 
     $scope.shortcuts = function (event, eventData) {
         switch (eventData.which) {
-            case 0:
             case 32:
                 if(eventData.ctrlKey) {
                     event.preventDefault();
@@ -286,9 +290,36 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
     $scope.$on('videoError', $scope.errorLoadVideo);
 }
 
-function EditorCtrl($scope, editor, doc, autosaver) {
+function EditorCtrl($scope, editor, doc, autosaver, analytics) {
     $scope.editor = editor;
     $scope.doc = doc;
+
+    $scope.init = function () {
+        $scope.sync = doc.info && doc.info.syncNotesVideo && doc.info.syncNotesVideo.enabled && true;
+    };
+
+    $scope.$watch('sync', function () {
+        if(doc && doc.info) {
+            doc.info.syncNotesVideo.enabled = $scope.sync;
+            analytics.pushAnalytics('Editor', 'sync', $scope.sync);
+        }
+    }, true);
+
+    $scope.disableSync = function (event, eventData) {
+        switch (eventData.which) {
+            case 83: // "s" on OS X
+                if(eventData.ctrlKey && eventData.altKey) {
+                    event.preventDefault();
+                    $scope.sync = !$scope.sync;
+                }
+                break;
+        }
+    };
+
+    $scope.$on('loaded', $scope.init);
+    $scope.$on('shortcut', $scope.disableSync);
+
+    $scope.init();
 }
 
 function ShareCtrl($scope, appId, doc) {

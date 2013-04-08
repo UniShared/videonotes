@@ -16,10 +16,11 @@
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="/css/font-awesome.css" rel="stylesheet">
+    <link href="/lib/bootstrap-switch/bootstrapSwitch.css" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="/img/favicon.ico">
 </head>
-<body ng-cloak class="ng-cloak" ui-keypress="{'ctrl-0 ctrl-space':'shortcuts($event)'}">
+<body ng-cloak class="ng-cloak" ui-keydown="{'ctrl-space ctrl-alt-83':'shortcuts($event)'}">
 <div id="fb-root"></div>
 <header>
     <div class="navbar navbar-fixed-top">
@@ -130,6 +131,7 @@
 <script src="/lib/ace/ace.min.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-tour/bootstrap-tour.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-tour/deps/jquery.cookie.js" charset="utf-8"></script>
+<script src="/lib/bootstrap-switch/bootstrapSwitch.js" charset="utf-8"></script>
 <script src="/js/app.js"></script>
 <script src="/js/services.js"></script>
 <script src="/js/controllers.js"></script>
