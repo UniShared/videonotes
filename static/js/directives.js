@@ -124,9 +124,7 @@ module.directive('bootstrapSwitch', function() {
             });
         },
         replace: true,
-        template:
-            '<div class="switch switch-small">'
-        +     '<input type="checkbox" />'
-        +    '</div>'
+        template: '<div class="switch switch-small">\n    <input type="checkbox" />\n</div>'
+
     }
 });
