@@ -338,10 +338,13 @@ module.factory('editor',
                     }
                 });
 
-                this.updateBreakpoints(session);
+
 
                 doc.lastSave = 0;
                 doc.info = fileInfo;
+
+                this.updateBreakpoints(session);
+
                 editor.setSession(session);
                 editor.setReadOnly(!doc.info.editable);
                 session.setUseWrapMode(true);
