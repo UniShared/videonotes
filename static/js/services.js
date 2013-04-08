@@ -261,6 +261,13 @@ module.factory('editor',
                         doc.info.content = session.getValue();
                         $rootScope.$apply();
                     }
+
+                    // Removing sync mark if line is now empty
+                    var lineCursorPosition = editor.getCursorPosition().row;
+                    if(session.getLine(lineCursorPosition).trim() === '') {
+                        session.clearBreakpoint(lineCursorPosition);
+                        delete doc.info.syncNotesVideo[lineCursorPosition];
+                    }
                 });
 
                 session.getSelection().on('changeCursor', function () {
@@ -270,64 +277,58 @@ module.factory('editor',
                     if (session.getLine(lineCursorPosition).trim() != '') {
                         if (lineCursorPosition != service.lastRow) {
                             service.lastRow = lineCursorPosition;
-                            if (timestamp) {
-                                if (timestamp > -1) {
-                                    if (youtubePlayerApi.player) {
-                                        youtubePlayerApi.player.seekTo(timestamp);
-                                    }
-                                    else if (video.player) {
-                                        video.player.currentTime = timestamp;
-                                    }
+                            if (timestamp && doc.info.syncNotesVideo.enabled) {
+                                if (youtubePlayerApi.player) {
+                                    youtubePlayerApi.player.seekTo(timestamp);
+                                }
+                                else if (video.player) {
+                                    video.player.currentTime = timestamp;
                                 }
                             }
                             else if (doc.info.video) {
-                                if (doc.info.syncNotesVideo.enabled) {
-                                    // Is there some texts before and after?
-                                    var timestampBefore, lineBefore = false,
-                                        timestampAfter, lineAfter = false;
-                                    for (var line in doc.info.syncNotesVideo) {
-                                        if (!lineBefore && line < lineCursorPosition) {
-                                            lineBefore = true;
-                                            timestampBefore = doc.info.syncNotesVideo[line];
-                                        }
-                                        else if (!lineAfter && line > lineCursorPosition) {
-                                            lineAfter = true;
-                                            timestampAfter = doc.info.syncNotesVideo[line];
-                                        }
+                                // Is there some texts before and after?
+                                var timestampBefore, lineBefore = false,
+                                    timestampAfter, lineAfter = false;
 
-                                        if (lineBefore && lineAfter) {
-                                            break;
-                                        }
+                                session.setBreakpoint(lineCursorPosition);
+
+                                for (var line in doc.info.syncNotesVideo) {
+                                    if (!lineBefore && line < lineCursorPosition) {
+                                        lineBefore = true;
+                                        timestampBefore = doc.info.syncNotesVideo[line];
+                                    }
+                                    else if (!lineAfter && line > lineCursorPosition) {
+                                        lineAfter = true;
+                                        timestampAfter = doc.info.syncNotesVideo[line];
                                     }
 
                                     if (lineBefore && lineAfter) {
-                                        // Text before and after
-                                        // Timestamp for this line must be average time between nearest line before/after
-                                        doc.info.syncNotesVideo[lineCursorPosition] = (timestampBefore + timestampAfter) / 2;
-                                    }
-                                    else {
-                                        // No text or only before / after
-                                        // Using current player time
-                                        if (youtubePlayerApi.player) {
-                                            doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime();
-                                            session.setBreakpoint(lineCursorPosition);
-                                        }
-                                        else if (video.player) {
-                                            doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime;
-                                            session.setBreakpoint(lineCursorPosition);
-                                        }
+                                        break;
                                     }
                                 }
-                            }
-                            else {
-                                doc.info.syncNotesVideo[lineCursorPosition] = -1;
+
+                                if (lineBefore && lineAfter) {
+                                    // Text before and after
+                                    // Timestamp for this line must be average time between nearest line before/after
+                                    doc.info.syncNotesVideo[lineCursorPosition] = (timestampBefore + timestampAfter) / 2;
+                                }
+                                else {
+                                    // No text or only before / after
+                                    // Using current player time
+                                    if (youtubePlayerApi.player) {
+                                        doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime();
+                                    }
+                                    else if (video.player) {
+                                        doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime;
+                                    }
+                                }
                             }
                         }
                     }
                 });
 
                 for (var line in fileInfo.syncNotesVideo) {
-                    if(fileInfo.syncNotesVideo[line] > -1)
+                    if (fileInfo.syncNotesVideo[line] > -1)
                         session.setBreakpoint(line);
                 }
 
