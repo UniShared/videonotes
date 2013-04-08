@@ -287,7 +287,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
     $scope.$on('videoError', $scope.errorLoadVideo);
 }
 
-function EditorCtrl($scope, editor, doc, autosaver) {
+function EditorCtrl($scope, editor, doc, autosaver, analytics) {
     $scope.editor = editor;
     $scope.doc = doc;
 
@@ -298,6 +298,7 @@ function EditorCtrl($scope, editor, doc, autosaver) {
     $scope.$watch('sync', function () {
         if(doc && doc.info) {
             doc.info.syncNotesVideo.enabled = $scope.sync;
+            analytics.pushAnalytics('Editor', 'sync', $scope.sync);
         }
     }, true);
 
