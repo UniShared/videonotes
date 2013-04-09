@@ -229,6 +229,8 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
         if(doc && doc.info) {
             if(doc.info.video) {
                 $scope.loading = true;
+                $scope.videoStatus.playHtml5 = false;
+                $scope.videoStatus.playYoutube = false;
 
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
                 if(videoId != null) {
