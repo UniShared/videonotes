@@ -295,7 +295,12 @@ function EditorCtrl($scope, editor, doc, autosaver, analytics) {
     $scope.doc = doc;
 
     $scope.init = function () {
-        $scope.sync = doc.info && doc.info.syncNotesVideo && doc.info.syncNotesVideo.enabled && true;
+        if(doc.info && doc.info.syncNotesVideo) {
+            $scope.sync = doc.info.syncNotesVideo.enabled;
+        }
+        else {
+            $scope.sync = true;
+        }
     };
 
     $scope.$watch('sync', function () {
