@@ -39,18 +39,18 @@ angular.module('app', ['app.filters', 'app.services', 'app.directives', 'ui.dire
             .when('/edit/', {action: Actions.CREATE})
             .when('/edit/:id', {action: Actions.LOAD})
             .otherwise({redirectTo: '/edit/'});
-    }]).run(function ($rootScope) {
+    }]).run(['$rootScope', function ($rootScope) {
         // Many events binding
         $rootScope.$onMany = function (events, fn) {
             for (var i = 0; i < events.length; i++) {
                 this.$on(events[i], fn);
             }
         };
-    }).run(function($rootScope, config, appName) {
+    }]).run(['$rootScope', 'config', 'appName', function($rootScope, config, appName) {
         var configData = {appName: appName};
 
         config.load().then(function (response) {
             $.extend(configData, response.data);
             $rootScope.$broadcast('configLoaded', configData);
         });
-    });
+    }]);
