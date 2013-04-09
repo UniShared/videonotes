@@ -258,14 +258,52 @@ module.factory('editor',
                         doc.info.content = session.getValue();
                         $rootScope.$apply();
                     }
-
-                    // Removing sync mark if line is now empty
-                    var lineCursorPosition = editor.getCursorPosition().row;
-                    if (session.getLine(lineCursorPosition).trim() === '') {
-                        session.clearBreakpoint(lineCursorPosition);
-                        delete doc.info.syncNotesVideo[lineCursorPosition];
-                    }
                 });
+
+                session.$breakpointListener = function(e) {
+                    if (!doc.info && !doc.info.syncNotesVideo)
+                        return;
+                    var delta = e.data;
+                    var range = delta.range;
+                    if (range.end.row == range.start.row) {
+                        // Removing sync mark if line is now empty
+                        if (session.getLine(range.start.row).trim() === '') {
+                            session.clearBreakpoint(range.start.row);
+                            delete doc.info.syncNotesVideo[range.start.row];
+                        }
+
+                        return
+                    }
+
+                    var len, firstRow, shift;
+                    if (delta.action == "insertText") {
+                        firstRow = range.start.column ? range.start.row + 1 : range.start.row;
+                        shift = 1;
+                    }
+                    else {
+                        firstRow = range.start.row;
+                        shift = -1;
+                    }
+
+                    var shiftedSyncNotesVideo = {};
+                    for (var line in doc.info.syncNotesVideo) {
+                        var intLine = parseInt(line);
+                        if (!isNaN(intLine)) {
+                            if (line < firstRow) {
+                                shiftedSyncNotesVideo[line] = doc.info.syncNotesVideo[line];
+                            }
+                            else {
+                                var nextLine = parseInt(line)+shift;
+                                shiftedSyncNotesVideo[nextLine] = doc.info.syncNotesVideo[line];
+                            }
+                        }
+                    }
+                    shiftedSyncNotesVideo.enabled = doc.info.syncNotesVideo.enabled;
+                    doc.info.syncNotesVideo = shiftedSyncNotesVideo;
+
+                    service.updateBreakpoints(session);
+                }.bind(session);
+                session.on("change", session.$breakpointListener);
 
                 session.getSelection().on('changeCursor', function () {
                     var lineCursorPosition = editor.getCursorPosition().row,
@@ -275,7 +313,7 @@ module.factory('editor',
                         if (lineCursorPosition != service.lastRow) {
                             service.lastRow = lineCursorPosition;
                             if (timestamp) {
-//                                $log.info('Timestamp', lineCursorPosition, timestamp);
+                                $log.info('Timestamp', lineCursorPosition, timestamp);
                                 if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
                                     if (youtubePlayerApi.player) {
                                         youtubePlayerApi.player.seekTo(timestamp);
@@ -286,10 +324,10 @@ module.factory('editor',
                                 }
                             }
                             else {
-//                                $log.info('No timestamp');
+                                $log.info('No timestamp');
                                 // Is there a video loaded?
                                 if (doc.info.video) {
-//                                    $log.info('Video loaded');
+                                    $log.info('Video loaded');
                                     // Is there some texts before and after?
                                     var timestampBefore, isLineBefore = false,
                                         timestampAfter, isLineAfter = false;
@@ -326,11 +364,11 @@ module.factory('editor',
                                             doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime || 0.01;
                                         }
                                     }
-//                                    $log.info('Setting timestamp', lineCursorPosition, doc.info.syncNotesVideo[lineCursorPosition]);
+                                    $log.info('Setting timestamp', lineCursorPosition, doc.info.syncNotesVideo[lineCursorPosition]);
                                 }
                                 // No video => mark it anyway, don't want to sync this line
                                 else {
-//                                    $log.info('No video');
+                                    $log.info('No video');
                                     doc.info.syncNotesVideo[lineCursorPosition] = -1
                                 }
                             }
