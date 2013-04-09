@@ -188,13 +188,12 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
     };
 
     $scope.getYoutubeVideoId = function(url) {
-        var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]{11,11}).*/,
+        var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
             match = url.match(regex);
 
-        if(match && match.length >= 2) {
+        if (match&&match[2].length==11){
             return match[2];
-        }
-        else {
+        }else{
             return null;
         }
     };
