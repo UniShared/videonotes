@@ -3,14 +3,21 @@ basePath = '../';
 files = [
     JASMINE,
     JASMINE_ADAPTER,
+    'test/lib/jasmine-jquery/jasmine-jquery.js',
     'test/lib/jquery/jquery-1.9.1.js',
-    'test/lib/angular/angular.js',
+    'static/lib/angular/angular.js',
     'test/lib/angular/angular-mocks.js',
     'test/lib/google/jsapi.js',
     'static/lib/**/*.js',
-    'static/js/**/*.js',
+    'static/js/app.js',
+    'static/js/controllers.js',
+    'static/js/directives.js',
+    'static/js/filters.js',
+    'static/js/services.js',
     'test/unit/**/servicesSpec.js',
-    'test/unit/**/controllersSpec.js'
+    'test/unit/**/controllersSpec.js',
+    'test/unit/**/directivesSpec.js',
+    'test/unit/**/filtersSpec.js'
 ];
 
 autoWatch = true;
