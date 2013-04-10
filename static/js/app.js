@@ -15,9 +15,9 @@ var Actions = {
 
 //first, checks if it isn't implemented yet
 if (!String.prototype.format) {
-    String.prototype.format = function() {
+    String.prototype.format = function () {
         var args = arguments;
-        return this.replace(/{(\d+)}/g, function(match, number) {
+        return this.replace(/{(\d+)}/g, function (match, number) {
             return typeof args[number] != 'undefined'
                 ? args[number]
                 : match
@@ -29,7 +29,7 @@ if (!String.prototype.format) {
 google.load('picker', '1');
 //gapi.load('drive-share');
 
-angular.module('app', ['app.filters', 'app.services', 'app.directives', 'ui.directives', 'analytics', 'youtube'])
+angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.directives', 'analytics', 'youtube'])
     .constant('appName', 'VideoNot.es')
     .constant('saveInterval', 15000)
     .constant('appId', '653335932456-b0rsc2sq9ftn5l69p72710lh4n8tujtr.apps.googleusercontent.com') // Please replace this with your Application ID.
@@ -46,7 +46,7 @@ angular.module('app', ['app.filters', 'app.services', 'app.directives', 'ui.dire
                 this.$on(events[i], fn);
             }
         };
-    }]).run(['$rootScope', 'config', 'appName', function($rootScope, config, appName) {
+    }]).run(['$rootScope', 'config', 'appName', function ($rootScope, config, appName) {
         var configData = {appName: appName};
 
         config.load().then(function (response) {
