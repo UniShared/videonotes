@@ -1,13 +1,13 @@
 'use strict';
 
-var module = angular.module('app.services', [], function ($locationProvider) {
+var module = angular.module('app.services', [], ['$locationProvider', function ($locationProvider) {
     $locationProvider.html5Mode(true);
-});
+}]);
 
 var ONE_HOUR_IN_MS = 1000 * 60 * 60;
 
 // Http interceptor for error 401 (authorization)
-module.factory('httpInterceptor401', function ($q, $location) {
+module.factory('httpInterceptor401', ['$q', function ($q) {
     return function (promise) {
         return promise.then(function (response) {
             // do something on response 401
@@ -21,23 +21,23 @@ module.factory('httpInterceptor401', function ($q, $location) {
             }
         });
     };
-});
+}]);
 
-module.config(function ($httpProvider) {
+module.config(['$httpProvider', function ($httpProvider) {
     $httpProvider.responseInterceptors.push('httpInterceptor401');
-});
+}]);
 
-module.factory('config', function ($http) {
+module.factory('config', ['$http', function ($http) {
     return {
         load: function () {
             return $http.get('/config');
         }
     };
-});
+}]);
 
 // Shared model for current document
 module.factory('doc',
-    function ($rootScope) {
+    ['$rootScope', function ($rootScope) {
         var service = $rootScope.$new(true);
         service.dirty = false;
         service.lastSave = 0;
@@ -53,9 +53,9 @@ module.factory('doc',
             true);
 
         return service;
-    });
+    }]);
 
-module.factory('video', function ($rootScope, $log, analytics) {
+module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope, $log, analytics) {
     return {
         player: null,
         videoUrl: null,
@@ -104,10 +104,10 @@ module.factory('video', function ($rootScope, $log, analytics) {
             }, false);
         }
     };
-});
+}]);
 
 module.factory('editor',
-    function (doc, backend, youtubePlayerApi, video, $q, $rootScope, $log, $timeout) {
+    ['doc', 'backend', 'youtubePlayerApi', 'video', '$q', '$rootScope', '$log', function (doc, backend, youtubePlayerApi, video, $q, $rootScope, $log) {
         var editor = null;
         var EditSession = require("ace/edit_session").EditSession;
 
@@ -260,7 +260,7 @@ module.factory('editor',
                     }
                 });
 
-                session.$breakpointListener = function(e) {
+                session.$breakpointListener = function (e) {
                     if (!doc.info && !doc.info.syncNotesVideo)
                         return;
                     var delta = e.data;
@@ -293,7 +293,7 @@ module.factory('editor',
                                 shiftedSyncNotesVideo[line] = doc.info.syncNotesVideo[line];
                             }
                             else {
-                                var nextLine = parseInt(line)+shift;
+                                var nextLine = parseInt(line) + shift;
                                 shiftedSyncNotesVideo[nextLine] = doc.info.syncNotesVideo[line];
                             }
                         }
@@ -377,7 +377,6 @@ module.factory('editor',
                 });
 
 
-
                 doc.lastSave = 0;
                 doc.info = fileInfo;
 
@@ -413,10 +412,10 @@ module.factory('editor',
         };
 
         return service;
-    });
+    }]);
 
 module.factory('backend',
-    function ($http, $log) {
+    ['$http', '$log', function ($http, $log) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
@@ -458,9 +457,9 @@ module.factory('backend',
             }
         };
         return service;
-    });
+    }]);
 
-module.factory('course', function (backend) {
+module.factory('course', ['backend', function (backend) {
     var _this = this;
     this.templateId = null;
 
@@ -475,9 +474,9 @@ module.factory('course', function (backend) {
             return _this.templateId;
         }
     }
-});
+}]);
 
-module.factory('user', function ($rootScope, backend) {
+module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) {
     var _this = this;
     this.authenticated = false;
     this.info = null;
@@ -497,10 +496,10 @@ module.factory('user', function ($rootScope, backend) {
             });
         }
     };
-});
+}]);
 
 module.factory('autosaver',
-    function (editor, saveInterval, $timeout) {
+    ['editor', 'saveInterval', '$timeout', function (editor, saveInterval, $timeout) {
         var saveFn = function () {
             if (editor.state() == EditorState.DIRTY) {
                 editor.save(false);
@@ -508,6 +507,6 @@ module.factory('autosaver',
         };
         var createTimeout = function () {
             return $timeout(saveFn, saveInterval).then(createTimeout);
-        }
+        };
         return createTimeout();
-    });
+    }]);
