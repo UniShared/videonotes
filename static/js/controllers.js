@@ -1,6 +1,8 @@
 'use strict';
 
-function OverlayCtrl($scope, $log, editor, doc) {
+var controllersModule = angular.module('app.controllers', []);
+
+controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
     $scope.loading = editor.loading;
 
     $scope.$onMany(['loading'], function ($event) {
@@ -12,9 +14,10 @@ function OverlayCtrl($scope, $log, editor, doc) {
         $log.info('Disable loading from event ' + $event.name);
         $scope.loading = false;
     });
-}
+}]);
 
-function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appName, editor, analytics) {
+controllersModule.controller('MainCtrl', ['$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'editor', 'analytics',
+    function ($scope, $location, $route, $routeParams, $timeout, $log, appName, editor, analytics) {
     $scope.appName = appName;
 
     $scope.redirectToDocument = function (event, fileId) {
@@ -22,7 +25,7 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
     };
 
     $scope.init = function () {
-        if($route.current.action === Actions.LOAD) {
+        if ($route.current.action === Actions.LOAD) {
             if ($routeParams.id) {
                 editor.load($routeParams.id);
             }
@@ -30,7 +33,7 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
                 editor.copy($routeParams.templateId);
             }
         }
-        else if($route.current.action === Actions.CREATE) {
+        else if ($route.current.action === Actions.CREATE) {
             // New doc, but defer to next event cycle to ensure init
             $timeout(function () {
                     var parentId = $location.search()['parent'];
@@ -138,44 +141,44 @@ function MainCtrl($scope, $location, $route, $routeParams, $timeout, $log, appNa
         analytics.pushAnalytics('Document', 'created');
     });
     $scope.$on('loaded', $scope.startTour);
-}
+}]);
 
-function CoursesListCtrl($scope, $location, user, course) {
-    course.list().then(function (courses) {
-         $scope.courses = courses.data;
-    });
+/*function CoursesListCtrl($scope, $location, user, course) {
+ course.list().then(function (courses) {
+ $scope.courses = courses.data;
+ });
 
-    $scope.$on('authentified', function () {
-        $location.path('/edit/template/' + course.getTemplateId());
-    });
+ $scope.$on('authentified', function () {
+ $location.path('/edit/template/' + course.getTemplateId());
+ });
 
-    $scope.startNotes = function (templateId) {
-        course.setTemplateId(templateId);
+ $scope.startNotes = function (templateId) {
+ course.setTemplateId(templateId);
 
-        if(!user.isAuthenticated()) {
-            user.login();
-        }
-        else {
-            $location.path('/edit/template/' + templateId);
-        }
-    };
+ if(!user.isAuthenticated()) {
+ user.login();
+ }
+ else {
+ $location.path('/edit/template/' + templateId);
+ }
+ };
 
-    if(course.getTemplateId()) {
-        $scope.startNotes(course.getTemplateId());
-    }
-}
+ if(course.getTemplateId()) {
+ $scope.startNotes(course.getTemplateId());
+ }
+ }*/
 
-function UserCtrl($scope, $rootScope, user, backend) {
-    if(!user.isAuthenticated()) {
+controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', function ($scope, $rootScope, user) {
+    if (!user.isAuthenticated()) {
         user.login();
     }
 
     $scope.$on('authentified', function () {
         $scope.user = user.getInfo();
     });
-}
+}]);
 
-function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics) {
+controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'youtubePlayerApi', 'video', 'analytics', function ($scope, sampleVideo, doc, youtubePlayerApi, video, analytics) {
     $scope.canReadH264 = Modernizr.video.h264;
     $scope.youtubeVideo = false;
     $scope.doc = doc;
@@ -187,13 +190,13 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
         error: false
     };
 
-    $scope.getYoutubeVideoId = function(url) {
+    $scope.getYoutubeVideoId = function (url) {
         var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
             match = url.match(regex);
 
-        if (match&&match[2].length==11){
+        if (match && match[2].length == 11) {
             return match[2];
-        }else{
+        } else {
             return null;
         }
     };
@@ -210,7 +213,7 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
         $scope.tour.next();
 
         var matchVideoCoursera = $scope.getCourseLectureCoursera($scope.videoUrl);
-        if(matchVideoCoursera && matchVideoCoursera.length == 3) {
+        if (matchVideoCoursera && matchVideoCoursera.length == 3) {
             $scope.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
         }
 
@@ -226,14 +229,14 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
     };
 
     $scope.loadPlayer = function () {
-        if(doc && doc.info) {
-            if(doc.info.video) {
+        if (doc && doc.info) {
+            if (doc.info.video) {
                 $scope.loading = true;
                 $scope.videoStatus.playHtml5 = false;
                 $scope.videoStatus.playYoutube = false;
 
                 var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
-                if(videoId != null) {
+                if (videoId != null) {
                     $scope.youtubeVideo = true;
                     youtubePlayerApi.videoId = videoId;
                     youtubePlayerApi.loadPlayer();
@@ -253,18 +256,21 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
     $scope.shortcuts = function (event, eventData) {
         switch (eventData.which) {
             case 32:
-                if(eventData.ctrlKey) {
+                if (eventData.ctrlKey) {
                     event.preventDefault();
                     $scope.pauseVideo();
                 }
-            break;
+                break;
         }
     };
 
-    $scope.pauseVideo = function() {
-        if(doc.info && doc.info.video) {
+    $scope.pauseVideo = function () {
+        if (doc.info && doc.info.video) {
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
             $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
+
+            $scope.videoStatus.playYoutube ? youtubePlayerApi.player.playVideo() : youtubePlayerApi.player.pauseVideo();
+            $scope.videoStatus.playHtml5 ? video.player.play() : video.player.pause();
             analytics.pushAnalytics('Video', $scope.videoStatus);
         }
     };
@@ -289,14 +295,14 @@ function VideoCtrl($scope, sampleVideo, doc, youtubePlayerApi, video, analytics)
     $scope.$on('loaded', $scope.loadVideo);
     $scope.$on('videoLoaded', $scope.endLoading);
     $scope.$on('videoError', $scope.errorLoadVideo);
-}
+}]);
 
-function EditorCtrl($scope, editor, doc, autosaver, analytics) {
+controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'analytics', function ($scope, editor, doc, autosaver, analytics) {
     $scope.editor = editor;
     $scope.doc = doc;
 
     $scope.init = function () {
-        if(doc.info && doc.info.syncNotesVideo) {
+        if (doc.info && doc.info.syncNotesVideo) {
             $scope.sync = doc.info.syncNotesVideo.enabled;
         }
         else {
@@ -305,7 +311,7 @@ function EditorCtrl($scope, editor, doc, autosaver, analytics) {
     };
 
     $scope.$watch('sync', function () {
-        if(doc && doc.info) {
+        if (doc && doc.info) {
             doc.info.syncNotesVideo.enabled = $scope.sync;
             analytics.pushAnalytics('Editor', 'sync', $scope.sync);
         }
@@ -314,7 +320,7 @@ function EditorCtrl($scope, editor, doc, autosaver, analytics) {
     $scope.disableSync = function (event, eventData) {
         switch (eventData.which) {
             case 83: // "s" on OS X
-                if(eventData.ctrlKey && eventData.altKey) {
+                if (eventData.ctrlKey && eventData.altKey) {
                     event.preventDefault();
                     $scope.sync = !$scope.sync;
                 }
@@ -326,22 +332,22 @@ function EditorCtrl($scope, editor, doc, autosaver, analytics) {
     $scope.$on('shortcut', $scope.disableSync);
 
     $scope.init();
-}
+}]);
 
-function ShareCtrl($scope, appId, doc) {
-    /*
-     var client = gapi.drive.share.ShareClient(appId);
-     $scope.enabled = function() {
-     return doc.resource_id != null;
-     };
-     $scope.share = function() {
-     client.setItemIds([doc.resource_id]);
-     client.showSharingSettings();
-     }
-     */
-}
+/*
+ function ShareCtrl($scope, appId, doc) {
+ var client = gapi.drive.share.ShareClient(appId);
+ $scope.enabled = function() {
+ return doc.resource_id != null;
+ };
+ $scope.share = function() {
+ client.setItemIds([doc.resource_id]);
+ client.showSharingSettings();
+ }
+ }
+ */
 
-function MenuCtrl($scope, $rootScope, appId, editor, doc, analytics) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, appId, editor, doc, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -369,9 +375,9 @@ function MenuCtrl($scope, $rootScope, appId, editor, doc, analytics) {
         editor.save(true);
         analytics.pushAnalytics('Save document');
     }
-}
+}]);
 
-function RenameCtrl($scope, doc, analytics) {
+controllersModule.controller('RenameCtrl', ['$scope', 'doc', 'analytics', function ($scope, doc, analytics) {
     $('#rename-dialog').on('show',
         function () {
             $scope.$apply(function () {
@@ -384,13 +390,13 @@ function RenameCtrl($scope, doc, analytics) {
         doc.info.title = $scope.newFileName;
         $('#rename-dialog').modal('hide');
     };
-}
+}]);
 
-function AboutCtrl($scope, backend) {
+controllersModule.controller('AboutCtrl', ['$scope', 'backend', function ($scope, backend) {
     $('#about-dialog').on('show',
         function () {
             backend.about().then(function (result) {
                 $scope.info = result.data;
             });
         });
-}
+}]);

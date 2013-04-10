@@ -7,13 +7,14 @@ describe('Controllers', function () {
 
     var httpBackend;
 
-    beforeEach(module('app'));
-    beforeEach(inject(function($httpBackend) {
+    beforeEach(angular.mock.module('app'));
+
+    beforeEach(angular.mock.inject(function($httpBackend) {
         httpBackend = $httpBackend;
         $httpBackend.expectGET('/config').respond(200, {'googleAnalyticsAccount': 'something'});
     }));
 
-    beforeEach(inject(function($rootScope, analytics) {
+    beforeEach(angular.mock.inject(function($rootScope, analytics) {
         scope = $rootScope.$new();
         scope.tour = {
             next: function () {}
@@ -26,8 +27,21 @@ describe('Controllers', function () {
     describe('VideoCtrl', function () {
         var videoCtrl;
 
-        beforeEach(inject(function ($rootScope, $controller) {
-            videoCtrl = $controller(VideoCtrl, {$scope: scope});
+        beforeEach(angular.mock.inject(function ($rootScope, $controller, doc, video, youtubePlayerApi) {
+            doc.info = {};
+
+            video.player = {
+                play: jasmine.createSpy(),
+                pause: jasmine.createSpy()
+            };
+            video.load = jasmine.createSpy();
+
+            youtubePlayerApi.player = {
+                playVideo: jasmine.createSpy(),
+                pauseVideo: jasmine.createSpy()
+            };
+
+            videoCtrl = $controller('VideoCtrl', {$scope: scope});
         }));
 
         it('should have a VideoCtrl controller', function () {
@@ -42,15 +56,15 @@ describe('Controllers', function () {
             expect(scope.youtubeVideo).toBe(false);
         });
 
-        it('should listen for shortcuts event', inject(function ($rootScope) {
+        it('should listen for shortcuts event', angular.mock.inject(function () {
             expect(scope.$on).toHaveBeenCalledWith('shortcut', jasmine.any(Function));
         }));
 
-        it('should listen for loaded event', inject(function ($rootScope) {
+        it('should listen for loaded event', angular.mock.inject(function () {
             expect(scope.$on).toHaveBeenCalledWith('loaded', scope.loadVideo);
         }));
 
-        it('should listen for videoLoaded event', inject(function ($rootScope) {
+        it('should listen for videoLoaded event', angular.mock.inject(function () {
             expect(scope.$on).toHaveBeenCalledWith('videoLoaded', scope.endLoading);
         }));
 
@@ -74,7 +88,8 @@ describe('Controllers', function () {
             expect(parseInt(match[2])).toEqual(lectureId);
         });
 
-        it('should be able to play/pause video', inject(function (appName, $window) {
+        it('should be able to play/pause video', angular.mock.inject(function (appName, $window, analytics, video, youtubePlayerApi) {
+            expect(scope.pauseVideo).toBeDefined();
             expect(scope.doc).toBeDefined();
             expect(scope.youtubeVideo).toBe(false);
             expect(scope.videoStatus.playYoutube).toBe(false);
@@ -83,24 +98,30 @@ describe('Controllers', function () {
             $window._gaq.push = jasmine.createSpy('gaq');
 
             scope.doc.info = {
-                video: 'http://www.youtube.com/watch?v=GKfHdOrR3lw'
+                video: 'http://video.unishared.com/test.mp4'
             };
 
             scope.pauseVideo();
 
             expect(scope.videoStatus.playYoutube).toBe(false);
             expect(scope.videoStatus.playHtml5).toBe(true);
+            expect(video.player.play).toHaveBeenCalled();
+
+            scope.doc.info = {
+                video: 'http://www.youtube.com/watch?v=GKfHdOrR3lw'
+            };
 
             scope.youtubeVideo = true;
             scope.pauseVideo();
 
             expect(scope.videoStatus.playYoutube).toBe(true);
             expect(scope.videoStatus.playHtml5).toBe(false);
+            expect(youtubePlayerApi.player.playVideo).toHaveBeenCalled();
 
-            expect(scope.pushAnalytics).toHaveBeenCalledWith('Video', scope.videoStatus);
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.videoStatus);
         }));
 
-        it('has a loadVideo method which works for Youtube player', inject(function ($window, appName, youtubePlayerApi) {
+        it('has a loadVideo method which works for Youtube player', angular.mock.inject(function ($window, appName, youtubePlayerApi, analytics) {
             expect(scope.loading).toBeUndefined();
 
             spyOn(scope, 'getYoutubeVideoId').andCallThrough();
@@ -122,10 +143,10 @@ describe('Controllers', function () {
             expect(scope.endLoading).toHaveBeenCalled();
             expect(youtubePlayerApi.videoId).toEqual('GKfHdOrR3lw');
             expect(youtubePlayerApi.loadPlayer).toHaveBeenCalled();
-            expect(scope.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
         }));
 
-        it('has a loadVideo method which works for HTML5 player', inject(function ($rootScope, $window, appName, youtubePlayerApi) {
+        it('has a loadVideo method which works for HTML5 player', angular.mock.inject(function ($rootScope, $window, appName, youtubePlayerApi, analytics) {
             expect(scope.loading).toBeUndefined();
 
             spyOn(scope, 'getYoutubeVideoId').andCallThrough();
@@ -139,22 +160,20 @@ describe('Controllers', function () {
 
             expect(scope.youtubeVideo).toBe(false);
             expect(scope.getYoutubeVideoId).toHaveBeenCalled();
-            expect(scope.getCourseLectureCoursera).toHaveBeenCalled();
             expect(scope.endLoading).not.toHaveBeenCalled();
             expect(youtubePlayerApi.videoId).toEqual(null);
-            expect(scope.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
 
             expect(scope.loading).toBe(true);
         }));
 
-        it('should have a loadSampleVideo method', inject(function (doc, sampleVideo) {
+        it('should have a loadSampleVideo method', angular.mock.inject(function (doc, sampleVideo) {
             scope.loadVideo = jasmine.createSpy();
             expect(scope.videoUrl).toBe(null);
-            expect(doc.info).toBeUndefined();
+            expect(doc.info.video).toBeUndefined();
 
             scope.loadSampleVideo();
 
-            expect(scope.videoUrl).toEqual(sampleVideo);
             expect(scope.loadVideo).toHaveBeenCalled();
         }));
     });
