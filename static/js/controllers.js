@@ -5,7 +5,7 @@ var controllersModule = angular.module('app.controllers', []);
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
     $scope.loading = editor.loading;
 
-    $scope.$onMany(['loading'], function ($event) {
+    $scope.$on('loading', function ($event) {
         $log.log('Enable loading from event ' + $event.name);
         $scope.loading = true;
     });
@@ -16,24 +16,42 @@ controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', functio
     });
 }]);
 
-controllersModule.controller('MainCtrl', ['$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'editor', 'analytics',
-    function ($scope, $location, $route, $routeParams, $timeout, $log, appName, editor, analytics) {
+controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', '$location', 'user', function($scope, $rootScope, $location, user) {
+    $scope.auth = function () {
+        if (!user.isAuthenticated()) {
+            $rootScope.$broadcast('loading');
+            user.login().then(function () {
+                $rootScope.$broadcast('loaded');
+                $location.path('/edit/');
+            });
+        }
+    };
+}]);
+
+controllersModule.controller('MainCtrl', ['$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'analytics',
+    function ($scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics) {
     $scope.appName = appName;
+
+    if (!user.isAuthenticated()) {
+        user.login();
+    }
 
     $scope.redirectToDocument = function (event, fileId) {
         $location.path('/edit/' + fileId);
     };
 
     $scope.init = function () {
-        if ($route.current.action === Actions.LOAD) {
+        //if ($route.current.action === Actions.LOAD) {
             if ($routeParams.id) {
                 editor.load($routeParams.id);
             }
             else if ($routeParams.templateId) {
                 editor.copy($routeParams.templateId);
             }
-        }
-        else if ($route.current.action === Actions.CREATE) {
+        else {
+
+        //}
+        //else if ($route.current.action === Actions.CREATE) {
             // New doc, but defer to next event cycle to ensure init
             $timeout(function () {
                     var parentId = $location.search()['parent'];
@@ -41,7 +59,8 @@ controllersModule.controller('MainCtrl', ['$scope', '$location', '$route', '$rou
                     $scope.startTour();
                 },
                 1);
-        }
+        //}
+            }
 
         $scope.initTour();
     };
@@ -169,10 +188,6 @@ controllersModule.controller('MainCtrl', ['$scope', '$location', '$route', '$rou
  }*/
 
 controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', function ($scope, $rootScope, user) {
-    if (!user.isAuthenticated()) {
-        user.login();
-    }
-
     $scope.$on('authentified', function () {
         $scope.user = user.getInfo();
     });
@@ -292,7 +307,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
     };
 
     $scope.$on('shortcut', $scope.shortcuts);
-    $scope.$on('loaded', $scope.loadVideo);
+    $scope.$onMany(['loaded','$routeChangeSuccess'], $scope.loadVideo);
     $scope.$on('videoLoaded', $scope.endLoading);
     $scope.$on('videoError', $scope.errorLoadVideo);
 }]);
