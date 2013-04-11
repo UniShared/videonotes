@@ -318,10 +318,11 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
 
     $scope.init = function () {
         if (doc.info && doc.info.syncNotesVideo) {
+            if (doc.info.syncNotesVideo.enabled === undefined) {
+                doc.info.syncNotesVideo.enabled = true;
+            }
+
             $scope.sync = doc.info.syncNotesVideo.enabled;
-        }
-        else {
-            $scope.sync = true;
         }
     };
 
