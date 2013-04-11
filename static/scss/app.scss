@@ -288,13 +288,19 @@ h1, h2, h3, h4 {
       right: $right;
 
       .notes-title {
+        img {
+          float: left;
+        }
+
         a {
           color: #000000;
         }
 
         .docTitle {
-          display: inline;
-          padding-right: 12px;
+          margin-top: 0;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
         }
 
         .star {
@@ -316,7 +322,7 @@ h1, h2, h3, h4 {
       .editor-state {
         font-size: 13px;
         margin-top: 10px;
-        margin-right: 10px;
+        text-align: right;
       }
     }
 
@@ -333,6 +339,10 @@ h1, h2, h3, h4 {
       bottom: 0px;
       right: $right;
       height: 69.5%;
+
+      .menu-switch-sync {
+        margin: 5px;
+      }
     }
 
     #editor {

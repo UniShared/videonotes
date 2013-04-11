@@ -90,19 +90,23 @@
     <div id="right">
         <div id="editor-container" class="span6" ng-controller="EditorCtrl">
             <div id="editor-title">
-                <div class="notes-title title pull-left">
-                    <img src="/img/logo-notes.png" alt="notes logo">
-                    <a href="#" data-toggle="tooltip" title="Click to change title" data-placement="right" bootstrap-tooltip>
-                        <h3 ng-show="doc.info.editable" ng-class="{docTitle : doc.info.editable}"
-                            data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
+                <div class="row-fluid">
 
-                        <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">{{doc.info.title}}</h3>
-                    </a>
+                    <div class="notes-title title pull-left span7">
+                        <img src="/img/logo-notes.png" alt="notes logo">
+
+                        <a href="#" data-toggle="tooltip" title="Click to change title" data-placement="right"
+                           bootstrap-tooltip>
+                            <h3 ng-show="doc.info.editable" ng-class="{docTitle : doc.info.editable}"
+                                data-toggle="modal" href="#rename-dialog">{{doc.info.title}}</h3>
+
+                            <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">
+                                {{doc.info.title}}</h3>
+                        </a>
+                    </div>
+
+                    <p class="editor-state span5 pull-right">{{editor.state() | saveStateFormatter }}</p>
                 </div>
-
-                <bootstrap-switch id="sync-switch" property="sync" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)" data-placement="right" bootstrap-tooltip></bootstrap-switch>
-
-                <p class="editor-state pull-right">{{editor.state() | saveStateFormatter }}</p>
                 <!--star value="doc.info.labels.starred" click="editor.dirty(true)"></star-->
                 <!--span class="span4" ng-controller="ShareCtrl"><a class="btn pull-right" href click="share">
                     Share</a></span-->
@@ -130,6 +134,9 @@
                                 </ul>
                             </li>
                             <li class="menu-help" ng-click="restartTour()"><a href>Help</a></li>
+                            <li class="menu-switch-sync">
+                                <bootstrap-switch id="sync-switch" property="sync" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)" data-placement="right" bootstrap-tooltip></bootstrap-switch>
+                            </li>
                             <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                         </ul>
                     </div>
