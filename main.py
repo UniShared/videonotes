@@ -27,6 +27,7 @@ from webapp2_extras import sessions
 from apiclient.discovery import build
 from apiclient.errors import HttpError
 import webapp2
+from webapp2_extras import jinja2
 from models import CourseModel, Credentials, RegisteredUser
 from apiclient.http import MediaUpload
 from oauth2client.client import flow_from_clientsecrets
@@ -57,8 +58,6 @@ def SibPath(name):
 # Create one of these for yourself with, for example:
 # python -c "import os; print os.urandom(64)" > session-secret
 SESSION_SECRET = open(SibPath('session.secret')).read()
-INDEX_HTML = open(SibPath('index.html')).read()
-
 
 def CreateService(service, version, creds):
     """Create a Google API service.
@@ -157,10 +156,22 @@ class BaseHandler(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(data))
 
-    def RenderTemplate(self, template):
+    @webapp2.cached_property
+    def jinja2(self):
+        # Returns a Jinja2 renderer cached in the app registry.
+        return jinja2.get_jinja2(app=self.app)
+
+    def RenderTemplate(self, template_name, context=None):
         """Render a named template in a context."""
         self.response.headers['Content-Type'] = 'text/html'
-        self.response.out.write(template)
+
+        version = {'production': 'production' in os.environ['CURRENT_VERSION_ID']}
+        if context:
+            context.update(version)
+        else:
+            context = version
+
+        self.response.write(self.jinja2.render_template(template_name, **context))
 
 class BaseDriveHandler(BaseHandler):
     """Base request handler for drive applications.
@@ -342,6 +353,8 @@ class MainPage(BaseHandler):
     appropriately.
     """
 
+    INDEX_HTML = 'index.html'
+
     def get(self, *args):
         """Handle GET for Create New and Open With.
 
@@ -353,7 +366,7 @@ class MainPage(BaseHandler):
         # the file id(s) that have been sent from the Drive user interface.
         user_agent = self.request.headers.get('User-Agent', None)
         if user_agent == 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)':
-            return self.RenderTemplate(INDEX_HTML)
+            return self.RenderTemplate(MainPage.INDEX_HTML)
 
         """
         creds = self.GetCodeCredentials() or self.GetSessionCredentials()
@@ -372,7 +385,7 @@ class MainPage(BaseHandler):
                 self.redirect('/edit/?parent={0}'.format(drive_state.parent))
                 return
 
-        self.RenderTemplate(INDEX_HTML)
+        return self.RenderTemplate(MainPage.INDEX_HTML)
 
 
 class ServiceHandler(BaseDriveHandler):
@@ -697,5 +710,5 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/config', ConfigHandler)
     ],
     # XXX Set to False in production.
-    debug=False, config=config
+    debug=True, config=config
 )

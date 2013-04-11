@@ -12,7 +12,7 @@
     <meta property="og:description" content="The easiest way to take notes from videos. Everything synchronized!"/>
     <meta name="google-site-verification" content="0qf1eWlI4Ee40rpKb4fpwYUUft__GxqwkhGeQKcp4BE" />
 
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="/css/font-awesome.css" rel="stylesheet">
@@ -23,6 +23,7 @@
 <body ng-cloak class="ng-cloak" ui-keydown="{'ctrl-space ctrl-alt-83':'shortcuts($event)'}">
 <div id="fb-root"></div>
 <header>
+    {% raw %}
     <div class="navbar navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container-fluid">
@@ -62,6 +63,7 @@
             </div>
         </div>
     </div>
+    {% endraw %}
 </header>
 
 
@@ -132,10 +134,14 @@
 <script src="/lib/bootstrap-tour/bootstrap-tour.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-tour/deps/jquery.cookie.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-switch/bootstrapSwitch.js" charset="utf-8"></script>
-<script src="/js/app.js"></script>
-<script src="/js/services.js"></script>
-<script src="/js/controllers.js"></script>
-<script src="/js/filters.js"></script>
-<script src="/js/directives.js"></script>
+{% if production == True %}
+    <script src="/js/app.min.js"></script>
+{% else %}
+    <script src="/js/app.js"></script>
+    <script src="/js/services.js"></script>
+    <script src="/js/controllers.js"></script>
+    <script src="/js/filters.js"></script>
+    <script src="/js/directives.js"></script>
+{% endif %}
 </body>
 </html>
