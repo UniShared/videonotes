@@ -489,11 +489,14 @@ module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) 
             return _this.info;
         },
         login: function () {
-            backend.user().then(function (response) {
+            var promise = backend.user();
+            promise.then(function (response) {
                 _this.authenticated = true;
                 _this.info = response.data;
                 $rootScope.$broadcast('authentified', _this);
             });
+
+            return promise;
         }
     };
 }]);
