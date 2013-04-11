@@ -26,7 +26,7 @@ body {
   display: none !important;
 }
 
-h2, h3, h4 {
+h1, h2, h3, h4 {
   font-family: $font-family;
 }
 
@@ -40,7 +40,7 @@ h2, h3, h4 {
   z-index: 1000;
 
   .loading {
-    top:35%;
+    top: 35%;
 
     position: relative;
     height: 0px;
@@ -88,13 +88,85 @@ h2, h3, h4 {
       .social-button {
         float: right;
         display: inline;
-        padding : 6px;
-        margin : 2px;
+        padding: 6px;
+        margin: 2px;
       }
 
       .width-75 {
         width: 75px;
       }
+    }
+  }
+}
+
+#home {
+  h1, h2, h3, h4 {
+    color: $main-grey-color;
+  }
+
+  .title {
+    margin-top: 20px;
+  }
+
+  .product {
+    .body {
+      background-image: url('/img/bg_top.png');
+      margin-top: 20px;
+      padding-top: 20px;
+      padding-bottom: 20px;
+    }
+
+    .signin {
+      margin-top: 110px;
+    }
+
+    .integrated-with-drive {
+      display: inline-block;
+      margin-left: 18px;
+      margin-top: 10px;
+      margin-right: 5px;
+    }
+
+    .drive-logo {
+      margin-bottom: 15px;
+    }
+  }
+
+  .container {
+    width: 960px;
+    margin: 0 auto;
+  }
+
+  .emphaze {
+    color: $main-yellow-color;
+  }
+
+  .partners {
+    margin-top: 15px;
+
+    .coursera {
+      margin-top: 18px;
+    }
+
+    .khan {
+      margin-left: 30px;
+    }
+
+    .youtube {
+      margin-top: 5px;
+    }
+
+    .edx {
+      margin-top: 7px;
+      margin-left: 20px;
+    }
+  }
+
+  .users_feedbacks {
+    margin-top: 30px;
+    .user_feedback {
+      text-align: center;
+      font-style: italic;
     }
   }
 }
@@ -116,14 +188,13 @@ h2, h3, h4 {
       padding: 20px;
       background-color: white;
 
-      -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-      -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-      box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+      -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
 
       -webkit-border-radius: 5px;
       -moz-border-radius: 5px;
       border-radius: 5px;
-
 
       h3 {
         display: inline;
@@ -198,9 +269,9 @@ h2, h3, h4 {
       -webkit-border-radius: 5px;
       -moz-border-radius: 5px;
       border-radius: 5px;
-      -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-      -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-      box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+      -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
     }
   }
 
@@ -222,7 +293,7 @@ h2, h3, h4 {
         }
 
         .docTitle {
-          display:inline;
+          display: inline;
           padding-right: 12px;
         }
 
