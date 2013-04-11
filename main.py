@@ -561,7 +561,7 @@ class AuthHandler(BaseDriveHandler):
             redirect_uri = self.RedirectAuth()
             return self.redirect(redirect_uri)
 
-        return self.redirect_to('home')
+        return self.redirect('/edit/')
 
 
 class UserHandler(BaseDriveHandler):
