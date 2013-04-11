@@ -334,7 +334,7 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.$watch('sync', function () {
         if (doc && doc.info) {
             doc.info.syncNotesVideo.enabled = $scope.sync;
-            analytics.pushAnalytics('Editor', 'sync', $scope.sync);
+            analytics.pushAnalytics('Editor', 'sync', $scope.sync ? "enable" : "disable");
         }
     }, true);
 
