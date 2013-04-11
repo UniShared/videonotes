@@ -1,6 +1,6 @@
 application: unishared-dredit
 #version: production
-#version: staging
+version: staging
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -12,6 +12,8 @@ handlers:
 
 - url: /js
   static_dir: static/js
+  http_headers:
+    X-SourceMap: /js/app.min.js.map
 
 - url: /css
   static_dir: static/css
@@ -30,6 +32,10 @@ handlers:
 
 builtins:
   - remote_api: on
+
+libraries:
+- name: jinja2
+  version: latest
 
 env_variables:
   GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION: 'UA-31995478-4'
