@@ -36,9 +36,10 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
     .constant('sampleVideo', 'http://www.youtube.com/watch?v=zDZFcDGpL4U') // Please replace this with your Application ID.
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
-            .when('/edit/', {action: Actions.CREATE})
-            .when('/edit/:id', {action: Actions.LOAD})
-            .otherwise({redirectTo: '/edit/'});
+            .when('/', {templateUrl: '/partials/home.html', controller: "HomeCtrl"})
+            .when('/edit/', {templateUrl: '/partials/editor.html', controller: 'MainCtrl', action: Actions.CREATE})
+            .when('/edit/:id', {templateUrl: '/partials/editor.html', controller: 'MainCtrl', action: Actions.LOAD})
+            .otherwise({redirectTo: '/'});
     }]).run(['$rootScope', function ($rootScope) {
         // Many events binding
         $rootScope.$onMany = function (events, fn) {
