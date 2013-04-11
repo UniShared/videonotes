@@ -710,5 +710,5 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/config', ConfigHandler)
     ],
     # XXX Set to False in production.
-    debug=True, config=config
+    debug=False, config=config
 )
