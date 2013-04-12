@@ -15,9 +15,13 @@
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet">
+    {% if production == True %}
+    <link href="/css/build/videonotes.min.css" rel="stylesheet">
+    {% else %}
     <link href="/css/font-awesome.css" rel="stylesheet">
     <link href="/lib/bootstrap-switch/bootstrapSwitch.css" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
+    {% endif %}
     <link rel="icon" type="image/png" href="/img/favicon.ico">
 </head>
 <body ng-cloak class="ng-cloak" ui-keydown="{'ctrl-space ctrl-alt-83':'shortcuts($event)'}">
@@ -126,6 +130,9 @@
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+{% if production == True %}
+<script src="/js/build/videonotes.min.js"></script>
+{% else %}
 <script src="/lib/angular-ui-custom/angular-ui.min.js"></script>
 <script src="/lib/modernizr-custom/modernizr.min.js"></script>
 <script src="/lib/angular-gaq/angular-gaq.js"></script>
@@ -134,14 +141,11 @@
 <script src="/lib/bootstrap-tour/bootstrap-tour.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-tour/deps/jquery.cookie.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-switch/bootstrapSwitch.js" charset="utf-8"></script>
-{% if production == True %}
-    <script src="/js/app.min.js"></script>
-{% else %}
-    <script src="/js/app.js"></script>
-    <script src="/js/services.js"></script>
-    <script src="/js/controllers.js"></script>
-    <script src="/js/filters.js"></script>
-    <script src="/js/directives.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/services.js"></script>
+<script src="/js/controllers.js"></script>
+<script src="/js/filters.js"></script>
+<script src="/js/directives.js"></script>
 {% endif %}
 </body>
 </html>

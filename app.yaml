@@ -1,6 +1,6 @@
-application: unishared-dredit
-#version: production
-version: staging
+application: unishared-gae
+version: production
+#version: staging
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -12,8 +12,6 @@ handlers:
 
 - url: /js
   static_dir: static/js
-  http_headers:
-    X-SourceMap: /js/app.min.js.map
 
 - url: /css
   static_dir: static/css

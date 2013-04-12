@@ -37,6 +37,7 @@ nosetests.xml
 *.iml
 
 # SASS cache and generated CSS
+.sass-cache*/
 static/.sass-cache
 static/css/app.css
 
@@ -44,3 +45,6 @@ static/css/app.css
 *.datastore
 client_secrets.json
 session.secret
+
+# NPM
+node_modules/
