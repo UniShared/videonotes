@@ -9,11 +9,6 @@ describe('Controllers', function () {
 
     beforeEach(angular.mock.module('app'));
 
-    beforeEach(angular.mock.inject(function($httpBackend) {
-        httpBackend = $httpBackend;
-        $httpBackend.expectGET('/config').respond(200, {'googleAnalyticsAccount': 'something'});
-    }));
-
     beforeEach(angular.mock.inject(function($rootScope, analytics) {
         scope = $rootScope.$new();
         scope.tour = {
