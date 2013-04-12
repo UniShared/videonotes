@@ -5,7 +5,7 @@ angular.module('analytics', ['ng']).run(function() {
     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     var s = document.getElementsByTagName('script')[0];
     s.parentNode.insertBefore(ga, s);
-}).service('analytics', function($rootScope, $window, $location, $routeParams, $log) {
+}).service('analytics', ['$rootScope', '$window', '$location', '$routeParams', '$log', function($rootScope, $window, $location, $routeParams, $log) {
     var _this = this;
 
 	$rootScope.$on('$viewContentLoaded', track);
@@ -39,4 +39,4 @@ angular.module('analytics', ['ng']).run(function() {
         $log.info('Tracking event to Google Analytics', category, event, label);
         $window._gaq.push(['_trackEvent', category, event, label]);
     };
-});
+}]);
