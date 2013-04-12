@@ -333,28 +333,25 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.doc = doc;
 
     $scope.init = function () {
+            $scope.sync = {};
         if (doc.info && doc.info.syncNotesVideo) {
             if (doc.info.syncNotesVideo.enabled === undefined) {
                 doc.info.syncNotesVideo.enabled = true;
             }
 
-            $scope.sync = doc.info.syncNotesVideo.enabled;
+            $scope.sync.enabled = doc.info.syncNotesVideo.enabled
+        }
+        else {
+            $scope.sync.enabled = true;
         }
     };
-
-    $scope.$watch('sync', function () {
-        if (doc && doc.info) {
-            doc.info.syncNotesVideo.enabled = $scope.sync;
-            analytics.pushAnalytics('Editor', 'sync', $scope.sync ? "enable" : "disable");
-        }
-    }, true);
 
     $scope.disableSync = function (event, eventData) {
         switch (eventData.which) {
             case 83: // "s" on OS X
                 if (eventData.ctrlKey && eventData.altKey) {
                     event.preventDefault();
-                    $scope.sync = !$scope.sync;
+                    $scope.sync.enabled = !$scope.sync.enabled;
                 }
                 break;
         }
@@ -407,6 +404,13 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
         editor.save(true);
         analytics.pushAnalytics('Save document');
     }
+
+    $scope.$watch('sync.enabled', function () {
+        if (doc && doc.info) {
+            doc.info.syncNotesVideo.enabled = $scope.sync.enabled;
+            analytics.pushAnalytics('Editor', 'sync', $scope.sync.enabled ? "enable" : "disable");
+        }
+    }, true);
 }]);
 
 controllersModule.controller('RenameCtrl', ['$scope', 'doc', 'analytics', function ($scope, doc, analytics) {

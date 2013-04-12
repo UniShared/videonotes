@@ -135,7 +135,7 @@
                             </li>
                             <li class="menu-help" ng-click="restartTour()"><a href>Help</a></li>
                             <li class="menu-switch-sync">
-                                <bootstrap-switch id="sync-switch" property="sync" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)" data-placement="right" bootstrap-tooltip></bootstrap-switch>
+                                <bootstrap-switch id="sync-switch" property="sync.enabled" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)" data-placement="right" bootstrap-tooltip></bootstrap-switch>
                             </li>
                             <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                         </ul>
@@ -173,7 +173,7 @@
                 </div>
             </div>
 
-            <div id="editor" ace-editor sync="sync"></div>
+            <div id="editor" ace-editor sync="sync.enabled"></div>
 
             <alert id="error"></alert>
         </div>

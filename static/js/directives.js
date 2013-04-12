@@ -14,7 +14,8 @@ module.directive('aceEditor',
 
                 scope.$watch('sync', function (newValue, oldValue) {
                     if (newValue !== oldValue) {
-                        newValue ? element.find('.ace_gutter').removeClass('inactive') : element.find('.ace_gutter').addClass('inactive');
+                        var gutter = $(element).find('.ace_gutter');
+                        newValue ? gutter.removeClass('inactive') : gutter.addClass('inactive');
                     }
                 }, true);
             }
