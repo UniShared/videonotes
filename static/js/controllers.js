@@ -2,8 +2,8 @@
 
 var controllersModule = angular.module('app.controllers', []);
 
-controllersModule.controller('AppCtrl', ['$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'analytics',
-    function ($scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics) {
+controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'analytics', 'config',
+    function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics, config) {
     $scope.appName = appName;
 
     $scope.redirectToDocument = function (event, fileId) {
@@ -27,7 +27,18 @@ controllersModule.controller('AppCtrl', ['$scope', '$location', '$route', '$rout
                 1);
         }
 
+        $scope.getConfig();
+
         $scope.initTour();
+    };
+
+    $scope.getConfig = function () {
+        var configData = {appName: appName};
+
+        config.load().then(function (response) {
+            $.extend(configData, response.data);
+            $rootScope.$broadcast('configLoaded', configData);
+        });
     };
 
     $scope.initTour = function () {
