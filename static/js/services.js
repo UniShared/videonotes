@@ -268,14 +268,16 @@ module.factory('editor',
                     if (range.end.row == range.start.row) {
                         // Removing sync mark if line is now empty
                         if (session.getLine(range.start.row).trim() === '') {
-                            session.clearBreakpoint(range.start.row);
-                            delete doc.info.syncNotesVideo[range.start.row];
+                            service.unsync(session, range.start.row);
+                        }
+                        else if(!(range.start.row in doc.info.syncNotesVideo)){
+                            service.syncLine(session, range.start.row);
                         }
 
-                        return
+                        return;
                     }
 
-                    var len, firstRow, shift;
+                    var firstRow, shift;
                     if (delta.action == "insertText") {
                         firstRow = range.start.column ? range.start.row + 1 : range.start.row;
                         shift = 1;
@@ -305,11 +307,11 @@ module.factory('editor',
                 }.bind(session);
                 session.on("change", session.$breakpointListener);
 
-                session.getSelection().on('changeCursor', function () {
+                session.getSelection().on('changeCursor', function (e) {
                     var lineCursorPosition = editor.getCursorPosition().row,
                         timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                    if (session.getLine(lineCursorPosition).trim() != '') {
+                    if (session.getLine(lineCursorPosition).trim() !== '') {
                         if (lineCursorPosition != service.lastRow) {
                             service.lastRow = lineCursorPosition;
                             if (timestamp) {
@@ -325,52 +327,6 @@ module.factory('editor',
                             }
                             else {
                                 $log.info('No timestamp');
-                                // Is there a video loaded?
-                                if (doc.info.video) {
-                                    $log.info('Video loaded');
-                                    // Is there some texts before and after?
-                                    var timestampBefore, isLineBefore = false,
-                                        timestampAfter, isLineAfter = false;
-
-                                    session.setBreakpoint(lineCursorPosition);
-
-                                    for (var line in doc.info.syncNotesVideo) {
-                                        if (!isLineBefore && line < lineCursorPosition) {
-                                            isLineBefore = true;
-                                            timestampBefore = doc.info.syncNotesVideo[line];
-                                        }
-                                        else if (!isLineAfter && line > lineCursorPosition) {
-                                            isLineAfter = true;
-                                            timestampAfter = doc.info.syncNotesVideo[line];
-                                        }
-
-                                        if (isLineBefore && isLineAfter) {
-                                            break;
-                                        }
-                                    }
-
-                                    if (isLineBefore && isLineAfter) {
-                                        // Text before and after
-                                        // Timestamp for this line must be average time between nearest line before/after
-                                        doc.info.syncNotesVideo[lineCursorPosition] = (timestampBefore + timestampAfter) / 2;
-                                    }
-                                    else {
-                                        // No text or only before / after
-                                        // Using current player time
-                                        if (youtubePlayerApi.player) {
-                                            doc.info.syncNotesVideo[lineCursorPosition] = youtubePlayerApi.player.getCurrentTime() || 0.01;
-                                        }
-                                        else if (video.player) {
-                                            doc.info.syncNotesVideo[lineCursorPosition] = video.player.currentTime || 0.01;
-                                        }
-                                    }
-                                    $log.info('Setting timestamp', lineCursorPosition, doc.info.syncNotesVideo[lineCursorPosition]);
-                                }
-                                // No video => mark it anyway, don't want to sync this line
-                                else {
-                                    $log.info('No video');
-                                    doc.info.syncNotesVideo[lineCursorPosition] = -1
-                                }
                             }
                         }
                     }
@@ -395,6 +351,60 @@ module.factory('editor',
                         if (doc.info.syncNotesVideo[line] > -1)
                             session.setBreakpoint(line);
                     }
+                }
+            },
+            syncLine: function(session, line) {
+                // Is there a video loaded?
+                if (doc.info && doc.info.syncNotesVideo && doc.info.video) {
+                    $log.info('Video loaded');
+                    // Is there some texts before and after?
+                    var timestampBefore, isLineBefore = false,
+                        timestampAfter, isLineAfter = false;
+
+                    session.setBreakpoint(line);
+
+                    for (var lineSynced in doc.info.syncNotesVideo) {
+                        if (!isLineBefore && lineSynced < line) {
+                            isLineBefore = true;
+                            timestampBefore = doc.info.syncNotesVideo[line];
+                        }
+                        else if (!isLineAfter && lineSynced > line) {
+                            isLineAfter = true;
+                            timestampAfter = doc.info.syncNotesVideo[line];
+                        }
+
+                        if (isLineBefore && isLineAfter) {
+                            break;
+                        }
+                    }
+
+                    if (isLineBefore && isLineAfter) {
+                        // Text before and after
+                        // Timestamp for this line must be average time between nearest line before/after
+                        doc.info.syncNotesVideo[line] = (timestampBefore + timestampAfter) / 2;
+                    }
+                    else {
+                        // No text or only before / after
+                        // Using current player time
+                        if (youtubePlayerApi.player) {
+                            doc.info.syncNotesVideo[line] = youtubePlayerApi.player.getCurrentTime() || 0.01;
+                        }
+                        else if (video.player) {
+                            doc.info.syncNotesVideo[line] = video.player.currentTime || 0.01;
+                        }
+                    }
+                    $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
+                }
+                // No video => mark it anyway, don't want to sync this line
+                else {
+                    $log.info('No video');
+                    doc.info.syncNotesVideo[line] = -1
+                }
+            },
+            unsync: function (session, line) {
+                if(doc.info && doc.info.syncNotesVideo && line in doc.info.syncNotesVideo) {
+                    session.clearBreakpoint(line);
+                    delete doc.info.syncNotesVideo[line];
                 }
             },
             state: function () {
