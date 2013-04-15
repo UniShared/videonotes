@@ -237,8 +237,10 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
 
     $scope.submitVideo = function () {
         $scope.videoStatus.error = false;
-        $scope.tour.start();
-        $scope.tour.next();
+        if(!$scope.tour.ended()) {
+            $scope.tour.hideStep(0);
+            $scope.tour.showStep(1);
+        }
 
         var matchVideoCoursera = $scope.getCourseLectureCoursera($scope.videoUrl);
         if (matchVideoCoursera && matchVideoCoursera.length == 3) {
