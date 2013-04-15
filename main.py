@@ -40,7 +40,6 @@ from oauth2client.appengine import simplejson as json
 
 
 ALL_SCOPES = ('https://www.googleapis.com/auth/drive.install '
-              'https://www.googleapis.com/auth/drive '
               'https://www.googleapis.com/auth/drive.file '
               'https://www.googleapis.com/auth/userinfo.email '
               'https://www.googleapis.com/auth/userinfo.profile')
