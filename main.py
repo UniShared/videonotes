@@ -750,5 +750,5 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/count', CountFile)
     ],
     # XXX Set to False in production.
-    debug=True, config=config
+    debug=False, config=config
 )
