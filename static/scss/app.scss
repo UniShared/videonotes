@@ -301,6 +301,11 @@ h1, h2, h3, h4 {
           text-overflow: ellipsis;
           white-space: nowrap;
           overflow: hidden;
+
+          .tooltip {
+            font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-weight: normal;
+          }
         }
 
         .star {
