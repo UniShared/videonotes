@@ -109,8 +109,7 @@
                     <p class="editor-state span5 pull-right">{{editor.state() | saveStateFormatter }}</p>
                 </div>
                 <!--star value="doc.info.labels.starred" click="editor.dirty(true)"></star-->
-                <!--span class="span4" ng-controller="ShareCtrl"><a class="btn pull-right" href click="share">
-                    Share</a></span-->
+
             </div>
             <div id="editor-info-bar">
                 <div class="container-fluid">
@@ -137,6 +136,9 @@
                             <li class="menu-help" ng-click="restartTour()"><a href>Help</a></li>
                             <li class="menu-switch-sync">
                                 <bootstrap-switch id="sync-switch" property="sync.enabled" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)" data-placement="right" bootstrap-tooltip></bootstrap-switch>
+                            </li>
+                            <li><span ng-controller="ShareCtrl"><a class="btn pull-right" ng-show="enabled()" href ng-click="enabled() && share()">
+                                Share</a></span>
                             </li>
                             <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                         </ul>

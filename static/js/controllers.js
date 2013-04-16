@@ -369,18 +369,16 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init();
 }]);
 
-/*
- function ShareCtrl($scope, appId, doc) {
- var client = gapi.drive.share.ShareClient(appId);
- $scope.enabled = function() {
- return doc.resource_id != null;
- };
- $scope.share = function() {
- client.setItemIds([doc.resource_id]);
- client.showSharingSettings();
- }
- }
- */
+controllersModule.controller('ShareCtrl', ['$scope','appId','doc', function($scope, appId, doc) {
+    var client = new gapi.drive.share.ShareClient(appId);
+    $scope.enabled = function () {
+        return doc.info.id != null;
+    };
+    $scope.share = function () {
+        client.setItemIds([doc.info.id]);
+        client.showSettingsDialog();
+    }
+}]);
 
 controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, appId, editor, doc, analytics) {
     var onFilePicked = function (data) {
