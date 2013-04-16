@@ -655,7 +655,7 @@ class AboutHandler(BaseDriveHandler):
 
 class ConfigHandler(BaseHandler):
     def get(self):
-        production = 'production' in os.environ['CURRENT_VERSION_ID']
+        production = 'production' in os.environ['CURRENT_VERSION_ID'] and not 'Development' in os.environ['SERVER_SOFTWARE']
         google_analytics_account = [os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_STAGING'), os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION')][production]
         config = {'googleAnalyticsAccount': google_analytics_account}
 
