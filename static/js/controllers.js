@@ -418,6 +418,11 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
                     }
                 }
                 break;
+            case 79:
+                if (eventData.ctrlKey) {
+                    event.preventDefault();
+                    $scope.open();
+                }
         }
     };
 
