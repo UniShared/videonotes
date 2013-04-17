@@ -81,15 +81,6 @@ module.directive('alert',
         }
     }]);
 
-module.directive('bootstrapTooltip', function () {
-    return {
-        restrict: 'A',
-        link: function (scope, element) {
-            $(element).tooltip();
-        }
-    }
-});
-
 module.directive('bootstrapSwitch', ['$rootScope', function ($rootScope) {
     return {
         restrict: 'E',
