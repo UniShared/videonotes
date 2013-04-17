@@ -46,7 +46,8 @@ module.exports = function (grunt) {
             js: {
                 src: ['static/lib/ace/ace.min.js', 'static/lib/angular-ui-custom/angular-ui.min.js',
                     'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
-                    'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/angular-youtube/build/angular-youtube-player-api.min.js',
+                    'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
+                    'static/lib/angular-youtube/build/angular-youtube-player-api.min.js',
                     'static/lib/angular-gaq/build/angular-gaq.min.js','static/js/build/tmp/app.min.js'],
                 dest: 'static/js/build/videonotes.min.js'
             },
