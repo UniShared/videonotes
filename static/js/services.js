@@ -120,6 +120,7 @@ module.factory('editor',
             rebind: function (element) {
                 editor = ace.edit(element);
                 editor.commands.removeCommand('splitline');
+                editor.commands.removeCommand('golinedown');
                 editor.on("gutterclick", function (e) {
                     if (doc.info.syncNotesVideo.enabled) {
                         var lineCursorPosition = e.getDocumentPosition().row,

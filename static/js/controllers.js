@@ -368,7 +368,7 @@ controllersModule.controller('ShareCtrl', ['$scope','appId','doc', function($sco
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, appId, editor, doc, analytics) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, appId, editor, doc, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -405,24 +405,22 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
     }, true);
 
     $scope.shortcuts = function (event, eventData) {
-        switch (eventData.which) {
-            case 83: // "s" on OS X
-                if (eventData.ctrlKey) {
-                    event.preventDefault();
-
+        if (eventData.ctrlKey) {
+            event.preventDefault();
+            switch (eventData.which) {
+                case 83: // "S"
                     if(eventData.altKey){
                         $scope.sync.enabled = !$scope.sync.enabled;
                     }
                     else {
                         $scope.save();
                     }
-                }
-                break;
-            case 79:
-                if (eventData.ctrlKey) {
-                    event.preventDefault();
+                    break;
+                case 79: // "O"
                     $scope.open();
-                }
+                case 78: // "N"
+                    $window.open('/#/edit/', '_blank');
+            }
         }
     };
 
