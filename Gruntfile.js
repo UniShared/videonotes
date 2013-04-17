@@ -7,22 +7,37 @@ module.exports = function (grunt) {
                 files: [ 'static/scss/*.scss' ],
                 tasks: [ 'compass:dev' ]
             },
-            karma: {
+            karmaUnit: {
                 files: ['static/js/*.js', 'test/unit/*.js'],
                 tasks: ['karma:unitBackground:run'] //NOTE the :run flag
+            },
+            karmaE2e: {
+                files: ['static/js/*.js', 'test/e2e/*.js'],
+                tasks: ['karma:e2eBackground:run'] //NOTE the :run flag
             }
         },
         karma: {
             options: {
-                configFile: 'config/karma.conf.js',
-                browsers: ['Chrome', 'Firefox']
+                browsers: ['Chrome']
             },
 
             unit: {
+                configFile: 'config/karma.conf.js',
                 singleRun: true
             },
 
             unitBackground: {
+                configFile: 'config/karma.conf.js',
+                background: true
+            },
+
+            e2e: {
+                configFile: 'config/karma-e2e.conf.js',
+                singleRun: true
+            },
+
+            e2eBackground: {
+                configFile: 'config/karma-e2e.conf.js',
                 background: true
             }
         },
