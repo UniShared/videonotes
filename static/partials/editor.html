@@ -13,7 +13,7 @@
                 <img src="/img/logo-video.png">
 
                 <h3>Video</h3>
-                <h4>(press ctrl and space to play/pause)</h4>
+                <h4>(press {{device.modifierSymbols.ctrl}} and space to play/pause)</h4>
             </div>
             <div id="video-body">
                 <form id="video-url-form" ng-submit="submitVideo()">
@@ -119,9 +119,9 @@
                         <ul ng-controller="MenuCtrl" class="nav">
                             <li tooltip="Create new notes" tooltip-placement="bottom">
                                 <a class="icon-large icon-file" target="_blank" href="/#/edit/"></a></li>
-                            <li tooltip="Open notes (Ctrl-O)" tooltip-placement="bottom" title="Open Notes"><a
+                            <li tooltip="Open notes ({{openShortcut}})" tooltip-placement="bottom" title="Open Notes"><a
                                     class="icon-large icon-folder-open" ng-click="open()" href ></a></li>
-                            <li tooltip="Save notes (Ctrl-S)" tooltip-placement="bottom" title="Save Notes"><a
+                            <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom" title="Save Notes"><a
                                     class="icon-large icon-save" ng-click="save()" href></a></li>
                             <!--li data-toggle="tooltip" title="Share notes" data-placement="bottom"
                                 bootstrap-tooltip ng-controller="ShareCtrl">
@@ -130,7 +130,7 @@
                             <li class="menu-help" tooltip="Help" title="Help" tooltip-placement="bottom"
                                 >
                                 <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
-                            <li class="menu-switch-sync" tooltip="Switch sync (Ctrl-Alt-S)"
+                            <li class="menu-switch-sync" tooltip="Switch sync ({{switchShortcut}})"
                                 tooltip-placement="bottom">
                                 <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
                             </li>
