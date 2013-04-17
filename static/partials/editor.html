@@ -118,30 +118,23 @@
                     </div>
                     <div class="navbar subnav menu">
                         <ul ng-controller="MenuCtrl" class="nav">
-                            <li class="dropdown menu-file">
-                                <a href class="dropdown-toggle" data-toggle="dropdown">
-                                    File <b class="caret"></b>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a target="_blank" href="/#/edit/">New</a></li>
-                                    <li><a ng-click="open()" href>Open</a></li>
-                                    <li>
-                                        <a ng-show="doc.info.editable" role="button" data-toggle="modal"
-                                           href="#rename-dialog">Rename</a>
-                                        <span ng-hide="doc.info.editable">Rename</span>
-                                    </li>
-                                    <li><a ng-click="save()" href>Save</a></li>
-                                </ul>
-                            </li>
-                            <li class="menu-help" ng-click="restartTour()"><a href>Help</a></li>
-                            <li class="menu-switch-sync">
-                                <bootstrap-switch id="sync-switch" property="sync.enabled" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)" data-placement="right" bootstrap-tooltip></bootstrap-switch>
-                            </li>
-                            <!--li>
-                                <span ng-controller="ShareCtrl">
-                                    <a class="btn pull-right" ng-show="enabled()" href ng-click="enabled() && share()">Share</a>
-                                </span>
+                            <li data-toggle="tooltip" title="Create new notes" data-placement="bottom" bootstrap-tooltip>
+                                <a class="icon-large icon-file" target="_blank" href="/#/edit/"></a></li>
+                            <li data-toggle="tooltip" title="Open notes" data-placement="bottom" bootstrap-tooltip><a
+                                    class="icon-large icon-folder-open" ng-click="open()" href></a></li>
+                            <li data-toggle="tooltip" title="Save notes" data-placement="bottom" bootstrap-tooltip><a
+                                    class="icon-large icon-save" ng-click="save()" href></a></li>
+                            <!--li data-toggle="tooltip" title="Share notes" data-placement="bottom"
+                                bootstrap-tooltip ng-controller="ShareCtrl">
+                                <a class="icon-large icon-share" ng-class="{disabled:!enabled()}" href ng-click="enabled() && share()"></a>
                             </li-->
+                            <li class="menu-help" data-toggle="tooltip" title="Help" data-placement="bottom"
+                                bootstrap-tooltip>
+                                <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
+                            <li class="menu-switch-sync" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)"
+                                data-placement="bottom" bootstrap-tooltip>
+                                <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
+                            </li>
                             <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                         </ul>
                     </div>
