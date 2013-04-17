@@ -512,8 +512,11 @@ module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) 
 }]);
 
 module.factory('autosaver',
-    ['$rootScope', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, editor, doc, saveInterval, $timeout) {
-        var confirmOnLeave = function(e) {
+    ['$rootScope', '$window', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, $window, editor, doc, saveInterval, $timeout) {
+
+        var scope = $rootScope.$new(true);
+        scope.doc = doc;
+        scope.confirmOnLeave = function(e) {
             var msg = "You have unsaved data.";
 
             // For IE and Firefox
@@ -523,23 +526,23 @@ module.factory('autosaver',
             // For Chrome and Safari
             return msg;
         };
-
-        var scope = $rootScope.$new(true);
-        scope.doc = doc;
         scope.$watch('doc.dirty', function (newValue, oldValue) {
             if(newValue !== oldValue) {
-                newValue ? $(window).on('beforeunload', confirmOnLeave) : $(window).off('beforeunload', confirmOnLeave);
+                newValue ? $window.addEventListener('beforeunload', scope.confirmOnLeave) : $window.removeEventListener('beforeunload', scope.confirmOnLeave);
             }
         });
 
-        var saveFn = function () {
+        scope.saveFn = function () {
             if (editor.state() == EditorState.DIRTY) {
                 editor.save(false);
             }
         };
 
         var createTimeout = function () {
-            return $timeout(saveFn, saveInterval).then(createTimeout);
+            return $timeout(scope.saveFn, saveInterval).then(createTimeout);
         };
-        return createTimeout();
+
+        createTimeout();
+
+        return scope;
     }]);
