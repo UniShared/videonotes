@@ -352,19 +352,7 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
         }
     };
 
-    $scope.disableSync = function (event, eventData) {
-        switch (eventData.which) {
-            case 83: // "s" on OS X
-                if (eventData.ctrlKey && eventData.altKey) {
-                    event.preventDefault();
-                    $scope.sync.enabled = !$scope.sync.enabled;
-                }
-                break;
-        }
-    };
-
     $scope.$on('loaded', $scope.init);
-    $scope.$on('shortcut', $scope.disableSync);
 
     $scope.init();
 }]);
@@ -407,7 +395,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
     $scope.save = function () {
         editor.save(true);
         analytics.pushAnalytics('Save document');
-    }
+    };
 
     $scope.$watch('sync.enabled', function () {
         if (doc && doc.info) {
@@ -415,6 +403,26 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
             analytics.pushAnalytics('Editor', 'sync', $scope.sync.enabled ? "enable" : "disable");
         }
     }, true);
+
+    $scope.shortcuts = function (event, eventData) {
+        switch (eventData.which) {
+            case 83: // "s" on OS X
+                if (eventData.ctrlKey) {
+                    event.preventDefault();
+
+                    if(eventData.altKey){
+                        $scope.sync.enabled = !$scope.sync.enabled;
+                    }
+                    else {
+                        $scope.save();
+                    }
+                }
+                break;
+        }
+    };
+
+    $scope.$on('shortcut', $scope.shortcuts);
+
 }]);
 
 controllersModule.controller('RenameCtrl', ['$scope', 'doc', 'analytics', function ($scope, doc, analytics) {
