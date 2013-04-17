@@ -98,8 +98,7 @@
                         <a href="#">
                             <h3 ng-show="doc.info.editable" ng-class="{'doc-title' : doc.info.editable}"
                                 data-toggle="modal" href="#rename-dialog"
-                                ><span data-toggle="tooltip" title="Click to change title" data-placement="right"
-                                       bootstrap-tooltip>{{doc.info.title}}</span></h3>
+                                ><span data-toggle="tooltip" tooltip="Click to change title" tooltip-placement="right">{{doc.info.title}}</span></h3>
 
                             <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">
                                 {{doc.info.title}}</h3>
@@ -118,21 +117,21 @@
                     </div>
                     <div class="navbar subnav menu">
                         <ul ng-controller="MenuCtrl" class="nav">
-                            <li data-toggle="tooltip" title="Create new notes (ctrl-n)" data-placement="bottom" bootstrap-tooltip>
+                            <li tooltip="Create new notes" tooltip-placement="bottom">
                                 <a class="icon-large icon-file" target="_blank" href="/#/edit/"></a></li>
-                            <li data-toggle="tooltip" title="Open notes (ctrl-o)" data-placement="bottom" bootstrap-tooltip><a
-                                    class="icon-large icon-folder-open" ng-click="open()" href></a></li>
-                            <li data-toggle="tooltip" title="Save notes (ctrl-s)" data-placement="bottom" bootstrap-tooltip><a
+                            <li tooltip="Open notes (Ctrl-O)" tooltip-placement="bottom" title="Open Notes"><a
+                                    class="icon-large icon-folder-open" ng-click="open()" href ></a></li>
+                            <li tooltip="Save notes (Ctrl-S)" tooltip-placement="bottom" title="Save Notes"><a
                                     class="icon-large icon-save" ng-click="save()" href></a></li>
                             <!--li data-toggle="tooltip" title="Share notes" data-placement="bottom"
                                 bootstrap-tooltip ng-controller="ShareCtrl">
                                 <a class="icon-large icon-share" ng-class="{disabled:!enabled()}" href ng-click="enabled() && share()"></a>
                             </li-->
-                            <li class="menu-help" data-toggle="tooltip" title="Help" data-placement="bottom"
-                                bootstrap-tooltip>
+                            <li class="menu-help" tooltip="Help" title="Help" tooltip-placement="bottom"
+                                >
                                 <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
-                            <li class="menu-switch-sync" data-toggle="tooltip" title="Switch sync (ctrl-alt-s)"
-                                data-placement="bottom" bootstrap-tooltip>
+                            <li class="menu-switch-sync" tooltip="Switch sync (Ctrl-Alt-S)"
+                                tooltip-placement="bottom">
                                 <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
                             </li>
                             <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
