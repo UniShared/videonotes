@@ -7,37 +7,22 @@ module.exports = function (grunt) {
                 files: [ 'static/scss/*.scss' ],
                 tasks: [ 'compass:dev' ]
             },
-            karmaUnit: {
+            karma: {
                 files: ['static/js/*.js', 'test/unit/*.js'],
                 tasks: ['karma:unitBackground:run'] //NOTE the :run flag
-            },
-            karmaE2e: {
-                files: ['static/js/*.js', 'test/e2e/*.js'],
-                tasks: ['karma:e2eBackground:run'] //NOTE the :run flag
             }
         },
         karma: {
             options: {
-                browsers: ['Chrome']
+                configFile: 'config/karma.conf.js',
+                browsers: ['Chrome', 'Firefox']
             },
 
             unit: {
-                configFile: 'config/karma.conf.js',
                 singleRun: true
             },
 
             unitBackground: {
-                configFile: 'config/karma.conf.js',
-                background: true
-            },
-
-            e2e: {
-                configFile: 'config/karma-e2e.conf.js',
-                singleRun: true
-            },
-
-            e2eBackground: {
-                configFile: 'config/karma-e2e.conf.js',
                 background: true
             }
         },
@@ -69,7 +54,7 @@ module.exports = function (grunt) {
         },
         cssmin: {
             build: {
-                src: 'static/css/build/tmp/concat.css',
+                src: ['static/css/bootstrap.icon-large.min.css','static/css/build/tmp/concat.css'],
                 dest: 'static/css/build/videonotes.min.css'
             }
         },
