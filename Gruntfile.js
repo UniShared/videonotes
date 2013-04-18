@@ -81,7 +81,7 @@ module.exports = function (grunt) {
         cssmin: {
             combine: {
                 files: {
-                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['static/css/font-awesome.min.css', '<%= concat.css.dest %>']
+                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['<%= concat.css.dest %>']
                 }
             }
         },
