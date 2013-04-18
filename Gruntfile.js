@@ -1,7 +1,17 @@
 module.exports = function (grunt) {
+    // Loading external tasks
+    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-concat');
+    grunt.loadNpmTasks('grunt-contrib-cssmin');
+    grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-compass');
+    grunt.loadNpmTasks('grunt-karma');
+
     // Project configuration.
     grunt.initConfig({
-        pkg: '<json:package.json>',
+        dist: 'build',
+        pkg: grunt.file.readJSON('package.json'),
         watch: {
             compass: {
                 files: [ 'static/scss/*.scss' ],
@@ -27,44 +37,61 @@ module.exports = function (grunt) {
             }
         },
         uglify: {
-            options: {
-                sourceMap: 'static/js/build/videonotes.min.map.js',
-                sourceMappingURL: '/js/build/videonotes.min.map.js'
-            },
             build: {
-                files: {
-                    'static/js/build/tmp/app.min.js': [
-                        'static/lib/bootstrap-tour/bootstrap-tour.js',
-                        'static/lib/bootstrap-switch/bootstrapSwitch.js',
-                        'static/lib/bootstrap-tour/deps/jquery.cookie.js',
-                        'static/js/app.js', 'static/js/controllers.js', 'static/js/directives.js', 'static/js/filters.js', 'static/js/services.js'
-                    ]
-                }
+                files: [
+                    {
+                        'static/js/<%= dist %>/tmp/external.min.js': [
+                            'static/lib/bootstrap-tour/bootstrap-tour.js',
+                            'static/lib/bootstrap-switch/bootstrapSwitch.js',
+                            'static/lib/bootstrap-tour/deps/jquery.cookie.js'
+                        ]
+                    },
+                    {
+                        'static/js/<%= dist %>/tmp/app.min.js': [
+                            'static/js/app.js',
+                            'static/js/controllers.js',
+                            'static/js/directives.js',
+                            'static/js/filters.js',
+                            'static/js/services.js'
+                        ]
+                    }
+                ]
             }
         },
         concat: {
+            options: {
+                stripBanners: true,
+                banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+                    '<%= grunt.template.today("yyyy-mm-dd") %> */'
+            },
             js: {
                 src: ['static/lib/ace/ace.min.js', 'static/lib/angular-ui-custom/angular-ui.min.js',
                     'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
                     'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
-                    'static/lib/angular-youtube/build/angular-youtube-player-api.min.js',
-                    'static/lib/angular-gaq/build/angular-gaq.min.js','static/js/build/tmp/app.min.js'],
-                dest: 'static/js/build/videonotes.min.js'
+                    'static/lib/angular-youtube/<%= dist %>/angular-youtube-player-api.min.js',
+                    'static/lib/angular-gaq/<%= dist %>/angular-gaq.min.js', 'static/js/<%= dist %>/tmp/external.min.js', 'static/js/<%= dist %>/tmp/app.min.js'],
+                dest: 'static/js/<%= dist %>/<%= pkg.name %>.min.js'
             },
             css: {
-                src: ['static/css/app.css', 'static/css/font-awesome.css', 'static/lib/bootstrap-switch/bootstrapSwitch.css'],
-                dest: 'static/css/build/tmp/concat.css'
+                src: ['static/css/font-awesome.css', 'static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/app.css', ],
+                dest: 'static/css/<%= dist %>/tmp/concat.css'
             }
         },
         cssmin: {
-            build: {
-                src: ['static/css/bootstrap.icon-large.min.css','static/css/build/tmp/concat.css'],
-                dest: 'static/css/build/videonotes.min.css'
+            combine: {
+                files: {
+                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['static/css/bootstrap.icon-large.min.css','<%= concat.css.dest %>']
+                }
             }
         },
+
         clean: {
+            build: {
+                src: ['static/css/<%= dist %>/*', 'static/js/<%= dist %>/*'],
+                filter: 'isFile'
+            },
             tmp: {
-                src: ['static/css/build/tmp/*', 'static/js/build/tmp/*'],
+                src: ['static/css/<%= dist %>/tmp/*', 'static/js/<%= dist %>/tmp/*'],
                 filter: 'isFile'
             }
         },
@@ -87,17 +114,8 @@ module.exports = function (grunt) {
         }
     });
 
-    // Loading external tasks
-    grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
-    grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.loadNpmTasks('grunt-css');
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-compass');
-    grunt.loadNpmTasks('grunt-karma');
-
     // Default task.
-    grunt.registerTask('prod', ['uglify', 'compass:prod', 'concat', 'cssmin', 'clean']);
+    grunt.registerTask('prod', ['clean:build','uglify', 'compass:prod', 'concat', 'cssmin', 'clean:tmp']);
     grunt.registerTask('default', ['prod']);
 
 };
