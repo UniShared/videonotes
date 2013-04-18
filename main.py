@@ -167,7 +167,7 @@ class BaseHandler(webapp2.RequestHandler):
         """Render a named template in a context."""
         self.response.headers['Content-Type'] = 'text/html'
 
-        version = {'production': 'production' in os.environ['CURRENT_VERSION_ID']}
+        version = {'production': not 'Development' in os.environ['SERVER_SOFTWARE']}
         if context:
             context.update(version)
         else:
