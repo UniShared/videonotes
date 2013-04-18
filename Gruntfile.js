@@ -41,6 +41,7 @@ module.exports = function (grunt) {
                 files: [
                     {
                         'static/js/<%= dist %>/tmp/external.min.js': [
+                            'static/lib/angular-ui-custom/angular-ui.js',
                             'static/lib/bootstrap-tour/bootstrap-tour.js',
                             'static/lib/bootstrap-switch/bootstrapSwitch.js',
                             'static/lib/bootstrap-tour/deps/jquery.cookie.js'
@@ -65,7 +66,7 @@ module.exports = function (grunt) {
                     '<%= grunt.template.today("yyyy-mm-dd") %> */'
             },
             js: {
-                src: ['static/lib/ace/ace.min.js', 'static/lib/angular-ui-custom/angular-ui.min.js',
+                src: ['static/lib/ace/ace.min.js',
                     'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
                     'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
                     'static/lib/angular-youtube/<%= dist %>/angular-youtube-player-api.min.js',
@@ -73,14 +74,14 @@ module.exports = function (grunt) {
                 dest: 'static/js/<%= dist %>/<%= pkg.name %>.min.js'
             },
             css: {
-                src: ['static/css/font-awesome.css', 'static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/app.css'],
+                src: ['static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/app.css'],
                 dest: 'static/css/<%= dist %>/tmp/concat.css'
             }
         },
         cssmin: {
             combine: {
                 files: {
-                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['<%= concat.css.dest %>']
+                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['static/css/font-awesome.min.css', '<%= concat.css.dest %>']
                 }
             }
         },
