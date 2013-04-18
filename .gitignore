@@ -47,7 +47,7 @@ static/js/build
 
 # Google AppEngine
 *.datastore
-client_secrets.json
+client_secrets_*.json
 session.secret
 
 # NPM

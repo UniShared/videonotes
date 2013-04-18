@@ -203,7 +203,7 @@ class BaseDriveHandler(BaseHandler):
         Returns:
           OAuth2.0 Flow instance suitable for performing OAuth2.0.
         """
-        flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        flow = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0]), scope='')
         # Dynamically set the redirect_uri based on the request URL. This is extremely
         # convenient for debugging to an alternative host without manually setting the
         # redirect URI.
