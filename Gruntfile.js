@@ -73,14 +73,14 @@ module.exports = function (grunt) {
                 dest: 'static/js/<%= dist %>/<%= pkg.name %>.min.js'
             },
             css: {
-                src: ['static/css/font-awesome.css', 'static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/app.css', ],
+                src: ['static/css/font-awesome.css', 'static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/app.css'],
                 dest: 'static/css/<%= dist %>/tmp/concat.css'
             }
         },
         cssmin: {
             combine: {
                 files: {
-                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['static/css/bootstrap.icon-large.min.css','<%= concat.css.dest %>']
+                    'static/css/<%= dist %>/<%= pkg.name %>.min.css': ['<%= concat.css.dest %>']
                 }
             }
         },
