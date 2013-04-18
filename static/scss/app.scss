@@ -346,22 +346,30 @@ h1, h2, h3, h4 {
       right: $right;
       height: 69.5%;
 
-      .menu-switch-sync {
-        margin: 5px;
+      .menu {
+        ul {
+          li {
+            margin-top: 5px;
+              &.menu-switch-sync {
+                margin: 5px;
 
-        .switch-right {
-          color: white;
-          background: #cf0404; /* Old browsers */
-          background: -moz-linear-gradient(top,  #cf0404 0%, #ff3019 100%); /* FF3.6+ */
-          background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cf0404), color-stop(100%,#ff3019)); /* Chrome,Safari4+ */
-          background: -webkit-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* Chrome10+,Safari5.1+ */
-          background: -o-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* Opera 11.10+ */
-          background: -ms-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* IE10+ */
-          background: linear-gradient(to bottom,  #cf0404 0%,#ff3019 100%); /* W3C */
-          filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cf0404', endColorstr='#ff3019',GradientType=0 ); /* IE6-9 */
+                .switch-right {
+                  color: white;
+                  background: #cf0404; /* Old browsers */
+                  background: -moz-linear-gradient(top,  #cf0404 0%, #ff3019 100%); /* FF3.6+ */
+                  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cf0404), color-stop(100%,#ff3019)); /* Chrome,Safari4+ */
+                  background: -webkit-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* Chrome10+,Safari5.1+ */
+                  background: -o-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* Opera 11.10+ */
+                  background: -ms-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* IE10+ */
+                  background: linear-gradient(to bottom,  #cf0404 0%,#ff3019 100%); /* W3C */
+                  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cf0404', endColorstr='#ff3019',GradientType=0 ); /* IE6-9 */
 
+                }
+              }
+          }
         }
       }
+
     }
 
     #editor {
