@@ -18,13 +18,14 @@
     {% if production == True %}
     <link href="/css/build/videonotes.min.css" rel="stylesheet">
     {% else %}
+    <link href="/css/bootstrap.icon-large.min.css" rel="stylesheet">
     <link href="/css/font-awesome.css" rel="stylesheet">
     <link href="/lib/bootstrap-switch/bootstrapSwitch.css" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
     {% endif %}
     <link rel="icon" type="image/png" href="/img/favicon.ico">
 </head>
-<body ng-cloak class="ng-cloak" ui-keydown="{'ctrl-space ctrl-alt-83':'shortcuts($event)'}">
+<body ng-cloak class="ng-cloak" ui-keydown="{'ctrl-space ctrl-alt-83 ctrl-83 ctrl-79 meta-83 meta-79':'shortcuts($event)'}">
 <div id="fb-root"></div>
 <header>
     {% raw %}
@@ -36,7 +37,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </a>
-                <a class="brand" href="#" alt="{{appName}}" data-toggle="tooltip" data-placement="right" title="Click me for help!" ng-click="restartTour()" bootstrap-tooltip>
+                <a class="brand" href="#" alt="{{appName}}" tooltip="Click me for help!" tooltip-placement="right" ng-click="restartTour()">
                     <img src="/img/logo-header.png">
                     <img src="/img/logo-appname-header.png">
                 </a>
@@ -59,7 +60,7 @@
                         <ul class="nav">
                             <li class="social-button width-75"><div class="g-plusone" href="https://plus.google.com/u/0/112441181479806615038" data-size="medium"></div></li>
                             <li class="social-button width-75"><a href="https://twitter.com/share" data-count="horizontal" data-url="http://video.unishared.com" class="twitter-share-button" data-via="videonotes" data-lang="en" data-hashtags="mooc"
-                                                         data-text="I'm taking notes while watching my online course. Want to try?">Tweeter</a></li>
+                                                         data-text="I'm taking note while watching my online course. Want to try?">Tweeter</a></li>
                             <li class="social-button">
                                 <div class="fb-like" data-href="https://www.facebook.com/pages/Videonotes/346878492080788" data-send="false" data-layout="button_count" data-width="450" data-show-faces="false"></div>
                             </li>
@@ -136,8 +137,10 @@
 {% if production == True %}
 <script src="/js/build/videonotes.min.js"></script>
 {% else %}
-<script src="/lib/angular-ui-custom/angular-ui.min.js"></script>
+<script src="/lib/angular-ui-custom/angular-ui.js"></script>
+<script src="/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.js"></script>
 <script src="/lib/modernizr-custom/modernizr.min.js"></script>
+<script src="/lib/detectizr/detectizr.js"></script>
 <script src="/lib/angular-gaq/angular-gaq.js"></script>
 <script src="/lib/angular-youtube/angular-youtube-player-api.js"></script>
 <script src="/lib/ace/ace.min.js" charset="utf-8"></script>

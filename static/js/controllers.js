@@ -6,6 +6,18 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics, config) {
     $scope.appName = appName;
 
+    Modernizr.Detectizr.detect({detectOs: true});
+
+    var isMac = Modernizr.Detectizr.device.os == "mac" && Modernizr.Detectizr.device.osVersion == "os x";
+    $scope.device = {
+        isMac: isMac,
+        modifierSymbols: {
+            meta: isMac ? '⌘' : '',
+            ctrl: isMac ? '⌃' : 'Ctrl',
+            alt:  isMac ? '⌥' : 'Alt'
+        }
+    };
+
     $scope.redirectToDocument = function (event, fileId) {
         $location.path('/edit/' + fileId);
     };
@@ -290,7 +302,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
         switch (eventData.which) {
             case 32:
                 if (eventData.ctrlKey) {
-                    event.preventDefault();
+                    eventData.preventDefault();
                     $scope.pauseVideo();
                 }
                 break;
@@ -352,19 +364,7 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
         }
     };
 
-    $scope.disableSync = function (event, eventData) {
-        switch (eventData.which) {
-            case 83: // "s" on OS X
-                if (eventData.ctrlKey && eventData.altKey) {
-                    event.preventDefault();
-                    $scope.sync.enabled = !$scope.sync.enabled;
-                }
-                break;
-        }
-    };
-
     $scope.$on('loaded', $scope.init);
-    $scope.$on('shortcut', $scope.disableSync);
 
     $scope.init();
 }]);
@@ -380,7 +380,7 @@ controllersModule.controller('ShareCtrl', ['$scope','appId','doc', function($sco
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, appId, editor, doc, analytics) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, appId, editor, doc, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -407,7 +407,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
     $scope.save = function () {
         editor.save(true);
         analytics.pushAnalytics('Save document');
-    }
+    };
 
     $scope.$watch('sync.enabled', function () {
         if (doc && doc.info) {
@@ -415,6 +415,33 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', 'appId', 'edit
             analytics.pushAnalytics('Editor', 'sync', $scope.sync.enabled ? "enable" : "disable");
         }
     }, true);
+
+    $scope.saveShortcut = ($scope.device.isMac ? "{0}S" : "{0}+S").format($scope.device.isMac ? $scope.device.modifierSymbols.meta : $scope.device.modifierSymbols.ctrl);
+    $scope.openShortcut = ($scope.device.isMac ? "{0}O" : "{0}+O").format($scope.device.isMac ? $scope.device.modifierSymbols.meta : $scope.device.modifierSymbols.ctrl);
+    $scope.switchShortcut = ($scope.device.isMac ? "{0}{1}S" : "{0}+{1}+S").format($scope.device.modifierSymbols.ctrl, $scope.device.modifierSymbols.alt);
+
+    $scope.shortcuts = function (event, eventData) {
+        switch (eventData.which) {
+            case 83: // "S"
+                if(eventData.ctrlKey && eventData.altKey){
+                    $scope.sync.enabled = !$scope.sync.enabled;
+                    eventData.preventDefault();
+                }
+                else if (($scope.device.isMac && eventData.metaKey) || (!$scope.device.isMac && eventData.ctrlKey)) {
+                    $scope.save();
+                    eventData.preventDefault();
+                }
+                break;
+            case 79: // "O"
+                if (($scope.device.isMac && eventData.metaKey) || (!$scope.device.isMac && eventData.ctrlKey)) {
+                    $scope.open();
+                    eventData.preventDefault();
+                }
+                break;
+        }
+    };
+
+    $scope.$on('shortcut', $scope.shortcuts);
 }]);
 
 controllersModule.controller('RenameCtrl', ['$scope', 'doc', 'analytics', function ($scope, doc, analytics) {

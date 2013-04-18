@@ -7,37 +7,22 @@ module.exports = function (grunt) {
                 files: [ 'static/scss/*.scss' ],
                 tasks: [ 'compass:dev' ]
             },
-            karmaUnit: {
+            karma: {
                 files: ['static/js/*.js', 'test/unit/*.js'],
                 tasks: ['karma:unitBackground:run'] //NOTE the :run flag
-            },
-            karmaE2e: {
-                files: ['static/js/*.js', 'test/e2e/*.js'],
-                tasks: ['karma:e2eBackground:run'] //NOTE the :run flag
             }
         },
         karma: {
             options: {
-                browsers: ['Chrome']
+                configFile: 'config/karma.conf.js',
+                browsers: ['Chrome', 'Firefox']
             },
 
             unit: {
-                configFile: 'config/karma.conf.js',
                 singleRun: true
             },
 
             unitBackground: {
-                configFile: 'config/karma.conf.js',
-                background: true
-            },
-
-            e2e: {
-                configFile: 'config/karma-e2e.conf.js',
-                singleRun: true
-            },
-
-            e2eBackground: {
-                configFile: 'config/karma-e2e.conf.js',
                 background: true
             }
         },
@@ -59,7 +44,11 @@ module.exports = function (grunt) {
         },
         concat: {
             js: {
-                src: ['static/lib/ace/ace.min.js', 'static/lib/angular-ui-custom/angular-ui.min.js', 'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/angular-youtube/build/angular-youtube-player-api.min.js', 'static/lib/angular-gaq/build/angular-gaq.min.js','static/js/build/tmp/app.min.js'],
+                src: ['static/lib/ace/ace.min.js', 'static/lib/angular-ui-custom/angular-ui.min.js',
+                    'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
+                    'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
+                    'static/lib/angular-youtube/build/angular-youtube-player-api.min.js',
+                    'static/lib/angular-gaq/build/angular-gaq.min.js','static/js/build/tmp/app.min.js'],
                 dest: 'static/js/build/videonotes.min.js'
             },
             css: {
@@ -69,7 +58,7 @@ module.exports = function (grunt) {
         },
         cssmin: {
             build: {
-                src: 'static/css/build/tmp/concat.css',
+                src: ['static/css/bootstrap.icon-large.min.css','static/css/build/tmp/concat.css'],
                 dest: 'static/css/build/videonotes.min.css'
             }
         },

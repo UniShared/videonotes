@@ -111,12 +111,16 @@ module.factory('editor',
         var editor = null;
         var EditSession = require("ace/edit_session").EditSession;
 
+        // Disable all editor shortcuts
+
         var service = {
             loading: false,
             saving: false,
             lastRow: -1,
             rebind: function (element) {
                 editor = ace.edit(element);
+                editor.commands.removeCommand('splitline');
+                editor.commands.removeCommand('golinedown');
                 editor.on("gutterclick", function (e) {
                     if (doc.info.syncNotesVideo.enabled) {
                         var lineCursorPosition = e.getDocumentPosition().row,
