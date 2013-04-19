@@ -334,23 +334,21 @@ module.factory('editor',
                     var lineCursorPosition = editor.getCursorPosition().row,
                         timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                    if (session.getLine(lineCursorPosition).trim() !== '') {
-                        if (lineCursorPosition != service.lastRow) {
-                            service.lastRow = lineCursorPosition;
-                            if (timestamp) {
-                                $log.info('Timestamp', lineCursorPosition, timestamp);
-                                if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
-                                    if (youtubePlayerApi.player) {
-                                        youtubePlayerApi.player.seekTo(timestamp);
-                                    }
-                                    else if (video.player) {
-                                        video.player.currentTime = timestamp;
-                                    }
+                    if (lineCursorPosition != service.lastRow) {
+                        service.lastRow = lineCursorPosition;
+                        if (timestamp) {
+                            $log.info('Timestamp', lineCursorPosition, timestamp);
+                            if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
+                                if (youtubePlayerApi.player) {
+                                    youtubePlayerApi.player.seekTo(timestamp);
+                                }
+                                else if (video.player) {
+                                    video.player.currentTime = timestamp;
                                 }
                             }
-                            else {
-                                $log.info('No timestamp');
-                            }
+                        }
+                        else {
+                            $log.info('No timestamp');
                         }
                     }
                 });
