@@ -1,0 +1,30 @@
+{
+    "name" : "VideoNot.es staging",
+    "version" : "0.1",
+    "manifest_version" : 2,
+    "description" : "The easiest way to take notes from videos. Everything synchronized!",
+    "container" : "GOOGLE_DRIVE",
+    "api_console_project_id" : "120016459711",
+    "icons": {
+        "128": "icon-128.png"
+    },
+    "app" : {
+        "urls": [
+            "http://staging.videonot.es/",
+            "http://staging.videonot.es/edit/"
+        ],
+        "launch" : {
+            "web_url" : "http://staging.videonot.es/"
+        }
+    },
+    "gdrive_mime_types": {
+        "http://drive.google.com/intents/opendrivedoc": [
+            {
+                "type": ["application/vnd.unishared.document", "application/vnd.google.drive.ext-type.videonotes"],
+                "href": "http://staging.videonot.es/edit/",
+                "title" : "Open",
+                "disposition" : "window"
+            }
+        ]
+    }
+}

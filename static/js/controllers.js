@@ -18,8 +18,9 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         }
     };
 
-    $scope.redirectToDocument = function (event, fileId) {
+    var redirectToDocument = function (event, fileId) {
         $location.path('/edit/' + fileId);
+        $scope.startTour();
     };
 
     $scope.init = function () {
@@ -34,26 +35,16 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
             $timeout(function () {
                     var parentId = $location.search()['parent'];
                     editor.create(parentId);
-                    $scope.startTour();
+                    editor.save();
                 },
                 1);
         }
 
-        $scope.getConfig();
-
-        $scope.initTour();
+        config.load();
+        initTour();
     };
 
-    $scope.getConfig = function () {
-        var configData = {appName: appName};
-
-        config.load().then(function (response) {
-            $.extend(configData, response.data);
-            $rootScope.$broadcast('configLoaded', configData);
-        });
-    };
-
-    $scope.initTour = function () {
+    var initTour = function () {
         $scope.tour = new Tour({
             name: "tour",
             keyboard: true,
@@ -90,15 +81,27 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         });
 
         $scope.tour.addStep({
-            element: ".docTitle",
+            element: ".doc-title span",
             content: "Now, you should name your notes",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-open",
+            content: "Later, you can open previous notes. <br> You can also manage them directly from your <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-help",
+            content: "This menu will show you this tour again.",
             placement: "bottom"
         });
 
         $scope.tour.addStep({
             element: "#sync-switch",
             content: "You can switch on/off sync at any time." +
-                     "<br>Shortcut is CTRL-ALT-s",
+                     "<br>Shortcut is {0}".format(($scope.device.isMac ? "{0}{1}S" : "{0}+{1}+S").format($scope.device.modifierSymbols.ctrl, $scope.device.modifierSymbols.alt)),
             placement: "bottom"
         });
 
@@ -109,21 +112,9 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         });
 
         $scope.tour.addStep({
-            element: ".menu-file",
-            content: "Later, you can find all your notes or create new one from this menu. <br> You can also manage them directly from <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
-            placement: "right"
-        });
-
-        $scope.tour.addStep({
-            element: ".menu-help",
-            content: "This menu will show you this tour again.",
-            placement: "bottom"
-        });
-
-        $scope.tour.addStep({
-            element: "#shortcuts",
-            content: "You can play/pause the video by pressing ctrl-enter",
-            placement: "right"
+            element: "#btn-share",
+            content: "You can already share your notes with anyone or make it private, as in <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "left"
         });
 
         $scope.tour.addStep({
@@ -148,22 +139,23 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.$on('$routeChangeSuccess', $scope.init);
-    $scope.$onMany(['firstSaved', 'copied', 'opened'], $scope.redirectToDocument);
+    $scope.$onMany(['firstSaved', 'copied', 'opened'], redirectToDocument);
     $scope.$on('firstSaved', function () {
         analytics.pushAnalytics('Document', 'created');
     });
     $scope.$on('loaded', $scope.startTour);
+    $scope.$on('configLoaded', $scope.setConfig)
 }]);
 
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
     $scope.loading = editor.loading;
 
-    $scope.$on('loading', function ($event) {
+    $scope.$onMany(['firstSaving', 'loading'], function ($event) {
         $log.log('Enable loading from event ' + $event.name);
         $scope.loading = true;
     });
 
-    $scope.$onMany(['loaded', 'error'], function ($event) {
+    $scope.$onMany(['firstSaved', 'loaded', 'error'], function ($event) {
         $log.info('Disable loading from event ' + $event.name);
         $scope.loading = false;
     });
@@ -369,18 +361,18 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init();
 }]);
 
-controllersModule.controller('ShareCtrl', ['$scope','appId','doc', function($scope, appId, doc) {
-    var client = new gapi.drive.share.ShareClient(appId);
+controllersModule.controller('ShareCtrl', ['$scope','config','doc', function($scope, config, doc) {
     $scope.enabled = function () {
-        return doc.info.id != null;
+        return doc && doc.info && doc.info.id != null;
     };
     $scope.share = function () {
+        var client = new gapi.drive.share.ShareClient(config.appId);
         client.setItemIds([doc.info.id]);
         client.showSettingsDialog();
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, appId, editor, doc, analytics) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, config, editor, doc, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -393,7 +385,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'ap
         var view = new google.picker.View(google.picker.ViewId.DOCS);
         view.setMimeTypes('application/vnd.unishared.document');
         var picker = new google.picker.PickerBuilder()
-            .setAppId(appId)
+            .setAppId(config.appId)
             .addView(view)
             .setCallback(angular.bind(this, onFilePicked))
             .build();

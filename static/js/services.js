@@ -27,10 +27,29 @@ module.config(['$httpProvider', function ($httpProvider) {
     $httpProvider.responseInterceptors.push('httpInterceptor401');
 }]);
 
-module.factory('config', ['$http', function ($http) {
+module.service('config', ['$rootScope', '$http', 'appName', function ($rootScope, $http, appName) {
     return {
+        appId: null,
+        appName: null,
+        googleAnalyticsAccount: null,
         load: function () {
-            return $http.get('/config');
+            var promise = $http.get('/config');
+            promise
+                .then(angular.bind(this, this.setConfig),
+                function () {
+                    $rootScope.$broadcast('error', {
+                        action: 'loadConfig',
+                        message: 'An error occurred when loading the configuration'
+                    })
+                });
+            return promise;
+        },
+        setConfig: function(response) {
+            this.appName = appName;
+            this.googleAnalyticsAccount = response.data.googleAnalyticsAccount;
+            this.appId = response.data.appId;
+
+            $rootScope.$broadcast('configLoaded', response.data);
         }
     };
 }]);
@@ -148,10 +167,9 @@ module.factory('editor',
             },
             create: function (parentId) {
                 $log.info("Creating new doc");
-                doc.dirty = false;
+                doc.dirty = true;
 
                 this.updateEditor({
-                    id: null,
                     content: '',
                     video: null,
                     syncNotesVideo: {
@@ -161,7 +179,7 @@ module.factory('editor',
                         starred: false
                     },
                     editable: true,
-                    title: 'Your notes',
+                    title: 'Untitled notes',
                     description: '',
                     mimeType: 'application/vnd.unishared.document',
                     parent: parentId || null
@@ -183,8 +201,8 @@ module.factory('editor',
                     }));
             },
             load: function (id, reload) {
-                $log.info("Loading resource", id, doc.info && doc.info.id);
-                if (!reload && doc.info && id == doc.info.id) {
+                $log.info("Loading resource", id, doc && doc.info && doc.info.id);
+                if (!reload && doc.info && doc.info.id === id) {
                     this.updateEditor(doc.info);
                     return $q.when(doc.info);
                 }
@@ -194,6 +212,7 @@ module.factory('editor',
                     function (result) {
                         this.loading = false;
                         this.updateEditor(result.data);
+                        doc.info.id = id;
                         $rootScope.$broadcast('loaded', doc.info);
                         return result;
                     }), angular.bind(this,
@@ -315,23 +334,21 @@ module.factory('editor',
                     var lineCursorPosition = editor.getCursorPosition().row,
                         timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                    if (session.getLine(lineCursorPosition).trim() !== '') {
-                        if (lineCursorPosition != service.lastRow) {
-                            service.lastRow = lineCursorPosition;
-                            if (timestamp) {
-                                $log.info('Timestamp', lineCursorPosition, timestamp);
-                                if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
-                                    if (youtubePlayerApi.player) {
-                                        youtubePlayerApi.player.seekTo(timestamp);
-                                    }
-                                    else if (video.player) {
-                                        video.player.currentTime = timestamp;
-                                    }
+                    if (lineCursorPosition != service.lastRow) {
+                        service.lastRow = lineCursorPosition;
+                        if (timestamp) {
+                            $log.info('Timestamp', lineCursorPosition, timestamp);
+                            if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
+                                if (youtubePlayerApi.player) {
+                                    youtubePlayerApi.player.seekTo(timestamp);
+                                }
+                                else if (video.player) {
+                                    video.player.currentTime = timestamp;
                                 }
                             }
-                            else {
-                                $log.info('No timestamp');
-                            }
+                        }
+                        else {
+                            $log.info('No timestamp');
                         }
                     }
                 });
@@ -370,11 +387,11 @@ module.factory('editor',
                     for (var lineSynced in doc.info.syncNotesVideo) {
                         if (!isLineBefore && lineSynced < line) {
                             isLineBefore = true;
-                            timestampBefore = doc.info.syncNotesVideo[line];
+                            timestampBefore = doc.info.syncNotesVideo[lineSynced];
                         }
                         else if (!isLineAfter && lineSynced > line) {
                             isLineAfter = true;
-                            timestampAfter = doc.info.syncNotesVideo[line];
+                            timestampAfter = doc.info.syncNotesVideo[lineSynced];
                         }
 
                         if (isLineBefore && isLineAfter) {
@@ -429,7 +446,7 @@ module.factory('editor',
     }]);
 
 module.factory('backend',
-    ['$http', '$log', function ($http, $log) {
+    ['$http', '$log', 'doc', function ($http, $log, doc) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
@@ -459,7 +476,7 @@ module.factory('backend',
                 $log.info('Saving', fileInfo);
                 return $http({
                     url: '/svc',
-                    method: fileInfo.id ? 'PUT' : 'POST',
+                    method: doc.info.id ? 'PUT' : 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -516,7 +533,7 @@ module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) 
 }]);
 
 module.factory('autosaver',
-    ['$rootScope', '$window', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, $window, editor, doc, saveInterval, $timeout) {
+    ['$rootScope', '$window', 'user', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, $window, user, editor, doc, saveInterval, $timeout) {
 
         var scope = $rootScope.$new(true);
         scope.doc = doc;
@@ -532,7 +549,7 @@ module.factory('autosaver',
         };
         scope.$watch('doc.dirty', function (newValue, oldValue) {
             if(newValue !== oldValue) {
-                newValue ? $window.addEventListener('beforeunload', scope.confirmOnLeave) : $window.removeEventListener('beforeunload', scope.confirmOnLeave);
+                newValue && user.isAuthenticated() ? $window.addEventListener('beforeunload', scope.confirmOnLeave) : $window.removeEventListener('beforeunload', scope.confirmOnLeave);
             }
         });
 

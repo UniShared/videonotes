@@ -1,6 +1,7 @@
 application: unishared-gae
 version: production
 #version: staging
+#version: local
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -8,6 +9,15 @@ api_version: 1
 skip_files: |
   ^(.*/)?(
   (node_modules/.*)|
+  (test/.*)|
+  (script/.*)|
+  (config/.*)|
+  (idea/.*)|
+  (chrome-application/.*)|
+  (static/scss/.*)|
+  (.*\.iml)|
+  (app\.yaml)|
+  (package\.json)|
   )$
 
 handlers:

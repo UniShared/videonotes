@@ -95,14 +95,12 @@
                     <div class="notes-title title pull-left span7">
                         <img src="/img/logo-notes.png" alt="notes logo">
 
-                        <a href="#">
-                            <h3 ng-show="doc.info.editable" ng-class="{'doc-title' : doc.info.editable}"
-                                data-toggle="modal" href="#rename-dialog"
-                                ><span data-toggle="tooltip" tooltip="Click to change title" tooltip-placement="right">{{doc.info.title}}</span></h3>
+                        <h3 ng-show="doc.info.editable" class="doc-title"
+                            data-toggle="modal" href="#rename-dialog"
+                            ><a href data-toggle="tooltip" tooltip="Click to change title" tooltip-placement="right">{{doc.info.title}}</a></h3>
 
-                            <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">
-                                {{doc.info.title}}</h3>
-                        </a>
+                        <h3 ng-hide="doc.info.editable" class="doc-title">
+                            {{doc.info.title}}</h3>
                     </div>
 
                     <p class="editor-state span5 pull-right">{{editor.state() | saveStateFormatter }}</p>
@@ -112,30 +110,24 @@
             </div>
             <div id="editor-info-bar">
                 <div class="container-fluid">
-                    <div id="doc-bar" class="row-fluid">
-
-                    </div>
                     <div class="navbar subnav menu">
                         <ul ng-controller="MenuCtrl" class="nav">
                             <li tooltip="Create new notes" tooltip-placement="bottom">
                                 <a class="icon-large icon-file" target="_blank" href="/#/edit/"></a></li>
-                            <li tooltip="Open notes ({{openShortcut}})" tooltip-placement="bottom"><a
+                            <li class="menu-open" tooltip="Open notes ({{openShortcut}})" tooltip-placement="bottom"><a
                                     class="icon-large icon-folder-open" ng-click="open()" href ></a></li>
                             <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom"><a
                                     class="icon-large icon-save" ng-click="save()" href></a></li>
-                            <!--li data-toggle="tooltip" data-placement="bottom"
-                                bootstrap-tooltip ng-controller="ShareCtrl">
-                                <a class="icon-large icon-share" ng-class="{disabled:!enabled()}" href ng-click="enabled() && share()"></a>
-                            </li-->
-                            <li class="menu-help" tooltip="Help" tooltip-placement="bottom"
-                                >
+                            <li class="menu-help" tooltip="Help" tooltip-placement="bottom">
                                 <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
                             <li class="menu-switch-sync" tooltip="Switch sync ({{switchShortcut}})"
                                 tooltip-placement="bottom">
                                 <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
                             </li>
-                            <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                         </ul>
+                        <div ng-controller="ShareCtrl">
+                            <a id="btn-share" tooltip="Share notes" tooltip-placement="bottom" class="btn btn-primary pull-right" ng-show="enabled()" href ng-click="share()">Share</a>
+                        </div>
                     </div>
                 </div>
 

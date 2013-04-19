@@ -474,12 +474,19 @@ class ServiceHandler(BaseDriveHandler):
                 ).execute()
 
                 if 'production' in os.environ['CURRENT_VERSION_ID']:
-                    new_permission = {
+                    clement_permission = {
                         'value': 'clement@unishared.com',
                         'type': 'user',
                         'role': 'reader'
                     }
-                    service.permissions().insert(fileId=resource['id'], body=new_permission).execute()
+
+                    anyone_permission = {
+                        'type': 'anyone',
+                        'role': 'reader',
+                        'withLink': True
+                    }
+                    service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
+                    service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
                 # Respond with the new file id as JSON.
             return self.RespondJSON({'id': resource['id']})
         except AccessTokenRefreshError:
@@ -656,8 +663,11 @@ class AboutHandler(BaseDriveHandler):
 class ConfigHandler(BaseHandler):
     def get(self):
         production = 'production' in os.environ['CURRENT_VERSION_ID'] and not 'Development' in os.environ['SERVER_SOFTWARE']
+
         google_analytics_account = [os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_STAGING'), os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION')][production]
-        config = {'googleAnalyticsAccount': google_analytics_account}
+        app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0]), scope='').client_id.split('.')[0].split('-')[0]
+
+        config = {'googleAnalyticsAccount': google_analytics_account, 'appId': app_id}
 
         return self.RespondJSON(config)
 
