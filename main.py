@@ -17,6 +17,7 @@ import random
 import time
 
 __author__ = 'afshar@google.com (Ali Afshar)'
+__author__ = 'arnaud@videonot.es (Arnaud BRETON)'
 
 # Add the library location to the path
 import sys
@@ -383,8 +384,7 @@ class CountFile(BaseDriveHandler):
                 #break
         return self.RespondJSON({'count':len(set(files_correct))})
 
-
-class MainPage(BaseHandler):
+class HomePage(BaseHandler):
     """Web handler for the main page.
 
     Handles requests and returns the user interface for Open With and Create
@@ -392,7 +392,29 @@ class MainPage(BaseHandler):
     appropriately.
     """
 
-    INDEX_HTML = 'index.html'
+    TEMPLATE = 'index.html'
+
+    def get(self, *args):
+        """Handle GET for Create New and Open With.
+
+        This creates an authorized client, and checks whether a resource id has
+        been passed or not. If a resource ID has been passed, this is the Open
+        With use-case, otherwise it is the Create New use-case.
+        """
+        # Generate a state instance for the request, this includes the action, and
+        # the file id(s) that have been sent from the Drive user interface.
+
+        return self.RenderTemplate(HomePage.TEMPLATE)
+
+class EditPage(BaseDriveHandler):
+    """Web handler for the main page.
+
+    Handles requests and returns the user interface for Open With and Create
+    cases. Responsible for parsing the state provided from the Drive UI and acting
+    appropriately.
+    """
+
+    TEMPLATE = 'index.html'
 
     def get(self, *args):
         """Handle GET for Create New and Open With.
@@ -405,13 +427,8 @@ class MainPage(BaseHandler):
         # the file id(s) that have been sent from the Drive user interface.
         user_agent = self.request.headers.get('User-Agent', None)
         if user_agent == 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)':
-            return self.RenderTemplate(MainPage.INDEX_HTML)
+            return self.RenderTemplate(EditPage.TEMPLATE)
 
-        """
-        creds = self.GetCodeCredentials() or self.GetSessionCredentials()
-        if not creds:
-            self.abort(401)
-        """
         drive_state = DriveState.FromRequest(self.request)
         if drive_state.action == 'open' and len(drive_state.ids) > 0:
             code = self.request.get('code')
@@ -424,7 +441,18 @@ class MainPage(BaseHandler):
                 self.redirect('/edit/?parent={0}'.format(drive_state.parent))
                 return
 
-        return self.RenderTemplate(MainPage.INDEX_HTML)
+        creds = self.GetCodeCredentials() or self.GetSessionCredentials()
+        if not creds:
+            resource_id_in_url = self.request.url.split('?', 1)[0].rsplit('/', 1)[1]
+            if resource_id_in_url:
+                self.session['resource_id'] = resource_id_in_url
+            return self.redirect('/auth')
+        elif 'resource_id' in self.session and self.session['resource_id']:
+            resource_id = self.session['resource_id']
+            del self.session['resource_id']
+            return self.redirect('/edit/' + resource_id)
+
+        return self.RenderTemplate(EditPage.TEMPLATE)
 
 
 class ServiceHandler(BaseDriveHandler):
@@ -749,8 +777,8 @@ config['webapp2_extras.sessions'] = {
 
 app = webapp2.WSGIApplication(
     [
-        webapp2.Route(r'/', MainPage, 'home'),
-        webapp2.Route(r'/edit/<:[A-Za-z0-9\-_]*>', MainPage, 'edit'),
+        webapp2.Route(r'/', HomePage, 'home'),
+        webapp2.Route(r'/edit/<:[A-Za-z0-9\-_]*>', EditPage, 'edit'),
         webapp2.Route(r'/courses', CoursesHandler),
         webapp2.Route(r'/svc', ServiceHandler),
         webapp2.Route(r'/about', AboutHandler),
