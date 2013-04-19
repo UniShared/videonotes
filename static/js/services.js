@@ -535,7 +535,7 @@ module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) 
 }]);
 
 module.factory('autosaver',
-    ['$rootScope', '$window', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, $window, editor, doc, saveInterval, $timeout) {
+    ['$rootScope', '$window', 'user', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, $window, user, editor, doc, saveInterval, $timeout) {
 
         var scope = $rootScope.$new(true);
         scope.doc = doc;
@@ -551,7 +551,7 @@ module.factory('autosaver',
         };
         scope.$watch('doc.dirty', function (newValue, oldValue) {
             if(newValue !== oldValue) {
-                newValue ? $window.addEventListener('beforeunload', scope.confirmOnLeave) : $window.removeEventListener('beforeunload', scope.confirmOnLeave);
+                newValue && user.isAuthenticated() ? $window.addEventListener('beforeunload', scope.confirmOnLeave) : $window.removeEventListener('beforeunload', scope.confirmOnLeave);
             }
         });
 
