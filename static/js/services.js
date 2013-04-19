@@ -387,11 +387,11 @@ module.factory('editor',
                     for (var lineSynced in doc.info.syncNotesVideo) {
                         if (!isLineBefore && lineSynced < line) {
                             isLineBefore = true;
-                            timestampBefore = doc.info.syncNotesVideo[line];
+                            timestampBefore = doc.info.syncNotesVideo[lineSynced];
                         }
                         else if (!isLineAfter && lineSynced > line) {
                             isLineAfter = true;
-                            timestampAfter = doc.info.syncNotesVideo[line];
+                            timestampAfter = doc.info.syncNotesVideo[lineSynced];
                         }
 
                         if (isLineBefore && isLineAfter) {
