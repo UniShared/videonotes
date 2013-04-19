@@ -27,10 +27,29 @@ module.config(['$httpProvider', function ($httpProvider) {
     $httpProvider.responseInterceptors.push('httpInterceptor401');
 }]);
 
-module.factory('config', ['$http', function ($http) {
+module.service('config', ['$rootScope', '$http', 'appName', function ($rootScope, $http, appName) {
     return {
+        appId: null,
+        appName: null,
+        googleAnalyticsAccount: null,
         load: function () {
-            return $http.get('/config');
+            var promise = $http.get('/config');
+            promise
+                .then(angular.bind(this, this.setConfig),
+                function () {
+                    $rootScope.$broadcast('error', {
+                        action: 'loadConfig',
+                        message: 'An error occurred when loading the configuration'
+                    })
+                });
+            return promise;
+        },
+        setConfig: function(response) {
+            this.appName = appName;
+            this.googleAnalyticsAccount = response.data.googleAnalyticsAccount;
+            this.appId = response.data.appId;
+
+            $rootScope.$broadcast('configLoaded', response.data);
         }
     };
 }]);

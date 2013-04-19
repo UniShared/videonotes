@@ -32,7 +32,6 @@ gapi.load('drive-share');
 angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.keypress', 'ui.bootstrap', 'analytics', 'youtube'])
     .constant('appName', 'VideoNot.es')
     .constant('saveInterval', 15000)
-    .constant('appId', '653335932456-b0rsc2sq9ftn5l69p72710lh4n8tujtr.apps.googleusercontent.com') // Please replace this with your Application ID.
     .constant('sampleVideo', 'http://www.youtube.com/watch?v=zDZFcDGpL4U') // Please replace this with your Application ID.
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider

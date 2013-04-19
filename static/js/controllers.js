@@ -39,21 +39,11 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
                 1);
         }
 
-        $scope.getConfig();
-
-        $scope.initTour();
+        config.load();
+        initTour();
     };
 
-    $scope.getConfig = function () {
-        var configData = {appName: appName};
-
-        config.load().then(function (response) {
-            $.extend(configData, response.data);
-            $rootScope.$broadcast('configLoaded', configData);
-        });
-    };
-
-    $scope.initTour = function () {
+    var initTour = function () {
         $scope.tour = new Tour({
             name: "tour",
             keyboard: true,
@@ -153,6 +143,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         analytics.pushAnalytics('Document', 'created');
     });
     $scope.$on('loaded', $scope.startTour);
+    $scope.$on('configLoaded', $scope.setConfig)
 }]);
 
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
@@ -369,18 +360,18 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init();
 }]);
 
-controllersModule.controller('ShareCtrl', ['$scope','appId','doc', function($scope, appId, doc) {
-    var client = new gapi.drive.share.ShareClient(appId);
+controllersModule.controller('ShareCtrl', ['$scope','config','doc', function($scope, config, doc) {
     $scope.enabled = function () {
         return doc && doc.info && doc.info.id != null;
     };
     $scope.share = function () {
+        var client = new gapi.drive.share.ShareClient(config.appId);
         client.setItemIds([doc.info.id]);
         client.showSettingsDialog();
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'appId', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, appId, editor, doc, analytics) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, config, editor, doc, analytics) {
     var onFilePicked = function (data) {
         $scope.$apply(function () {
             if (data.action == 'picked') {
@@ -393,7 +384,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'ap
         var view = new google.picker.View(google.picker.ViewId.DOCS);
         view.setMimeTypes('application/vnd.unishared.document');
         var picker = new google.picker.PickerBuilder()
-            .setAppId(appId)
+            .setAppId(config.appId)
             .addView(view)
             .setCallback(angular.bind(this, onFilePicked))
             .build();

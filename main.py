@@ -656,8 +656,11 @@ class AboutHandler(BaseDriveHandler):
 class ConfigHandler(BaseHandler):
     def get(self):
         production = 'production' in os.environ['CURRENT_VERSION_ID'] and not 'Development' in os.environ['SERVER_SOFTWARE']
+
         google_analytics_account = [os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_STAGING'), os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION')][production]
-        config = {'googleAnalyticsAccount': google_analytics_account}
+        app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0]), scope='').client_id.split('.')[0].split('-')[0]
+
+        config = {'googleAnalyticsAccount': google_analytics_account, 'appId': app_id}
 
         return self.RespondJSON(config)
 
