@@ -1,6 +1,7 @@
 application: unishared-gae
 version: production
 #version: staging
+#version: local
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -8,6 +9,15 @@ api_version: 1
 skip_files: |
   ^(.*/)?(
   (node_modules/.*)|
+  (test/.*)|
+  (script/.*)|
+  (config/.*)|
+  (idea/.*)|
+  (chrome-application/.*)|
+  (static/scss/.*)|
+  (.*\.iml)|
+  (app\.yaml)|
+  (package\.json)|
   )$
 
 handlers:
@@ -41,5 +51,5 @@ libraries:
   version: latest
 
 env_variables:
-  GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION: 'UA-31995478-4'
-  GOOGLE_ANALYTICS_ACCOUNT_STAGING: 'UA-31995478-5'
+  GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION: 'UA-40259566-1'
+  GOOGLE_ANALYTICS_ACCOUNT_STAGING: 'UA-40259566-2'
