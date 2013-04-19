@@ -293,15 +293,15 @@ h1, h2, h3, h4 {
           float: left;
         }
 
-        a {
-          color: #000000;
-        }
-
         .doc-title {
           margin-top: 0;
           text-overflow: ellipsis;
           white-space: nowrap;
           overflow: hidden;
+
+          a {
+            color: #000000;
+          }
 
           .tooltip {
             font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;

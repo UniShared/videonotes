@@ -95,14 +95,12 @@
                     <div class="notes-title title pull-left span7">
                         <img src="/img/logo-notes.png" alt="notes logo">
 
-                        <a href="#">
-                            <h3 ng-show="doc.info.editable" ng-class="{'doc-title' : doc.info.editable}"
-                                data-toggle="modal" href="#rename-dialog"
-                                ><span data-toggle="tooltip" tooltip="Click to change title" tooltip-placement="right">{{doc.info.title}}</span></h3>
+                        <h3 ng-show="doc.info.editable" class="doc-title"
+                            data-toggle="modal" href="#rename-dialog"
+                            ><a href data-toggle="tooltip" tooltip="Click to change title" tooltip-placement="right">{{doc.info.title}}</a></h3>
 
-                            <h3 ng-hide="doc.info.editable" ng-class="{docTitle : !doc.info.editable}">
-                                {{doc.info.title}}</h3>
-                        </a>
+                        <h3 ng-hide="doc.info.editable" class="doc-title">
+                            {{doc.info.title}}</h3>
                     </div>
 
                     <p class="editor-state span5 pull-right">{{editor.state() | saveStateFormatter }}</p>
