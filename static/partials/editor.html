@@ -112,9 +112,6 @@
             </div>
             <div id="editor-info-bar">
                 <div class="container-fluid">
-                    <div id="doc-bar" class="row-fluid">
-
-                    </div>
                     <div class="navbar subnav menu">
                         <ul ng-controller="MenuCtrl" class="nav">
                             <li tooltip="Create new notes" tooltip-placement="bottom">
@@ -123,19 +120,16 @@
                                     class="icon-large icon-folder-open" ng-click="open()" href ></a></li>
                             <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom"><a
                                     class="icon-large icon-save" ng-click="save()" href></a></li>
-                            <!--li data-toggle="tooltip" data-placement="bottom"
-                                bootstrap-tooltip ng-controller="ShareCtrl">
-                                <a class="icon-large icon-share" ng-class="{disabled:!enabled()}" href ng-click="enabled() && share()"></a>
-                            </li-->
-                            <li class="menu-help" tooltip="Help" tooltip-placement="bottom"
-                                >
+                            <li class="menu-help" tooltip="Help" tooltip-placement="bottom">
                                 <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
                             <li class="menu-switch-sync" tooltip="Switch sync ({{switchShortcut}})"
                                 tooltip-placement="bottom">
                                 <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
                             </li>
-                            <!--li><a href="#about-dialog" data-toggle="modal">About</a></li-->
                         </ul>
+                        <div ng-controller="ShareCtrl">
+                            <a tooltip="Share notes" tooltip-placement="bottom" class="btn btn-primary pull-right" ng-show="enabled()" href ng-click="share()">Share</a>
+                        </div>
                     </div>
                 </div>
 
