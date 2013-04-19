@@ -34,6 +34,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
             $timeout(function () {
                     var parentId = $location.search()['parent'];
                     editor.create(parentId);
+                    editor.save();
                     $scope.startTour();
                 },
                 1);
@@ -149,12 +150,12 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
     $scope.loading = editor.loading;
 
-    $scope.$on('loading', function ($event) {
+    $scope.$onMany(['firstSaving', 'loading'], function ($event) {
         $log.log('Enable loading from event ' + $event.name);
         $scope.loading = true;
     });
 
-    $scope.$onMany(['loaded', 'error'], function ($event) {
+    $scope.$onMany(['firstSaved', 'loaded', 'error'], function ($event) {
         $log.info('Disable loading from event ' + $event.name);
         $scope.loading = false;
     });

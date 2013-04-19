@@ -167,10 +167,9 @@ module.factory('editor',
             },
             create: function (parentId) {
                 $log.info("Creating new doc");
-                doc.dirty = false;
+                doc.dirty = true;
 
                 this.updateEditor({
-                    id: null,
                     content: '',
                     video: null,
                     syncNotesVideo: {
@@ -202,8 +201,8 @@ module.factory('editor',
                     }));
             },
             load: function (id, reload) {
-                $log.info("Loading resource", id, doc.info && doc.info.id);
-                if (!reload && doc.info && id == doc.info.id) {
+                $log.info("Loading resource", id, doc && doc.info && doc.info.id);
+                if (!reload && doc.info && doc.info.id === id) {
                     this.updateEditor(doc.info);
                     return $q.when(doc.info);
                 }
@@ -213,6 +212,7 @@ module.factory('editor',
                     function (result) {
                         this.loading = false;
                         this.updateEditor(result.data);
+                        doc.info.id = id;
                         $rootScope.$broadcast('loaded', doc.info);
                         return result;
                     }), angular.bind(this,
@@ -448,7 +448,7 @@ module.factory('editor',
     }]);
 
 module.factory('backend',
-    ['$http', '$log', function ($http, $log) {
+    ['$http', '$log', 'doc', function ($http, $log, doc) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
@@ -478,7 +478,7 @@ module.factory('backend',
                 $log.info('Saving', fileInfo);
                 return $http({
                     url: '/svc',
-                    method: fileInfo.id ? 'PUT' : 'POST',
+                    method: doc.info.id ? 'PUT' : 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
