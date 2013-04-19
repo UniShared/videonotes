@@ -372,7 +372,7 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
 controllersModule.controller('ShareCtrl', ['$scope','appId','doc', function($scope, appId, doc) {
     var client = new gapi.drive.share.ShareClient(appId);
     $scope.enabled = function () {
-        return doc.info.id != null;
+        return doc && doc.info && doc.info.id != null;
     };
     $scope.share = function () {
         client.setItemIds([doc.info.id]);
