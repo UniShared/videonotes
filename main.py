@@ -474,12 +474,19 @@ class ServiceHandler(BaseDriveHandler):
                 ).execute()
 
                 if 'production' in os.environ['CURRENT_VERSION_ID']:
-                    new_permission = {
+                    clement_permission = {
                         'value': 'clement@unishared.com',
                         'type': 'user',
                         'role': 'reader'
                     }
-                    service.permissions().insert(fileId=resource['id'], body=new_permission).execute()
+
+                    anyone_permission = {
+                        'type': 'anyone',
+                        'role': 'reader',
+                        'withLink': True
+                    }
+                    service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
+                    service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
                 # Respond with the new file id as JSON.
             return self.RespondJSON({'id': resource['id']})
         except AccessTokenRefreshError:
