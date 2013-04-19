@@ -18,8 +18,9 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         }
     };
 
-    $scope.redirectToDocument = function (event, fileId) {
+    var redirectToDocument = function (event, fileId) {
         $location.path('/edit/' + fileId);
+        $scope.startTour();
     };
 
     $scope.init = function () {
@@ -35,7 +36,6 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
                     var parentId = $location.search()['parent'];
                     editor.create(parentId);
                     editor.save();
-                    $scope.startTour();
                 },
                 1);
         }
@@ -139,7 +139,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.$on('$routeChangeSuccess', $scope.init);
-    $scope.$onMany(['firstSaved', 'copied', 'opened'], $scope.redirectToDocument);
+    $scope.$onMany(['firstSaved', 'copied', 'opened'], redirectToDocument);
     $scope.$on('firstSaved', function () {
         analytics.pushAnalytics('Document', 'created');
     });
