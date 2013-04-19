@@ -81,15 +81,27 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         });
 
         $scope.tour.addStep({
-            element: ".docTitle",
+            element: ".doc-title span",
             content: "Now, you should name your notes",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-open",
+            content: "Later, you can open previous notes. <br> You can also manage them directly from your <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-help",
+            content: "This menu will show you this tour again.",
             placement: "bottom"
         });
 
         $scope.tour.addStep({
             element: "#sync-switch",
             content: "You can switch on/off sync at any time." +
-                     "<br>Shortcut is CTRL-ALT-s",
+                     "<br>Shortcut is {0}".format(($scope.device.isMac ? "{0}{1}S" : "{0}+{1}+S").format($scope.device.modifierSymbols.ctrl, $scope.device.modifierSymbols.alt)),
             placement: "bottom"
         });
 
@@ -100,21 +112,9 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         });
 
         $scope.tour.addStep({
-            element: ".menu-file",
-            content: "Later, you can find all your notes or create new one from this menu. <br> You can also manage them directly from <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
-            placement: "right"
-        });
-
-        $scope.tour.addStep({
-            element: ".menu-help",
-            content: "This menu will show you this tour again.",
-            placement: "bottom"
-        });
-
-        $scope.tour.addStep({
-            element: "#shortcuts",
-            content: "You can play/pause the video by pressing ctrl-enter",
-            placement: "right"
+            element: "#btn-share",
+            content: "You can share your notes with anyone, as in <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "left"
         });
 
         $scope.tour.addStep({

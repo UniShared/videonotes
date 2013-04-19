@@ -116,7 +116,7 @@
                         <ul ng-controller="MenuCtrl" class="nav">
                             <li tooltip="Create new notes" tooltip-placement="bottom">
                                 <a class="icon-large icon-file" target="_blank" href="/#/edit/"></a></li>
-                            <li tooltip="Open notes ({{openShortcut}})" tooltip-placement="bottom"><a
+                            <li class="menu-open" tooltip="Open notes ({{openShortcut}})" tooltip-placement="bottom"><a
                                     class="icon-large icon-folder-open" ng-click="open()" href ></a></li>
                             <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom"><a
                                     class="icon-large icon-save" ng-click="save()" href></a></li>
@@ -128,7 +128,7 @@
                             </li>
                         </ul>
                         <div ng-controller="ShareCtrl">
-                            <a tooltip="Share notes" tooltip-placement="bottom" class="btn btn-primary pull-right" ng-show="enabled()" href ng-click="share()">Share</a>
+                            <a id="btn-share" tooltip="Share notes" tooltip-placement="bottom" class="btn btn-primary pull-right" ng-show="enabled()" href ng-click="share()">Share</a>
                         </div>
                     </div>
                 </div>
