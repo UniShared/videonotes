@@ -113,7 +113,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
 
         $scope.tour.addStep({
             element: "#btn-share",
-            content: "You can share your notes with anyone, as in <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            content: "You can already share your notes with anyone or make it private, as in <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
             placement: "left"
         });
 
