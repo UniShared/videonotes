@@ -179,7 +179,7 @@ module.factory('editor',
                         starred: false
                     },
                     editable: true,
-                    title: 'Your notes',
+                    title: 'Untitled notes',
                     description: '',
                     mimeType: 'application/vnd.unishared.document',
                     parent: parentId || null
