@@ -7,7 +7,7 @@ files = [
     'test/lib/jquery/jquery-1.9.1.js',
     'static/lib/angular/angular.js',
     'test/lib/angular/angular-mocks.js',
-    'test/lib/google/jsapi.js',
+    'test/lib/google/*.js',
     'static/lib/**/*.js',
     'static/js/app.js',
     'static/js/controllers.js',
