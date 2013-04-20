@@ -306,12 +306,9 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
             $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
 
-            if(youtubePlayerApi.player) {
-                $scope.videoStatus.playYoutube ? youtubePlayerApi.player.playVideo() : youtubePlayerApi.player.pauseVideo();
-            }
-            else if(video.player) {
-                $scope.videoStatus.playHtml5 ? video.player.play() : video.player.pause();
-            }
+            $scope.videoStatus.playYoutube ? youtubePlayerApi.player && youtubePlayerApi.player.playVideo() : youtubePlayerApi.player && youtubePlayerApi.player.pauseVideo();
+            $scope.videoStatus.playHtml5 ? video.player && video.player.play() : video.player && video.player.pause();
+
             analytics.pushAnalytics('Video', $scope.videoStatus);
         }
     };
@@ -361,7 +358,7 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init();
 }]);
 
-controllersModule.controller('ShareCtrl', ['$scope','config','doc', function($scope, config, doc) {
+controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'analytics', function($scope, config, doc, analytics) {
     $scope.enabled = function () {
         return doc && doc.info && doc.info.id != null;
     };
@@ -369,6 +366,7 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', function($sc
         var client = new gapi.drive.share.ShareClient(config.appId);
         client.setItemIds([doc.info.id]);
         client.showSettingsDialog();
+        analytics.pushAnalytics('Document', 'Share');
     }
 }]);
 
@@ -390,15 +388,15 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
             .setCallback(angular.bind(this, onFilePicked))
             .build();
         picker.setVisible(true);
-        analytics.pushAnalytics('Open document');
+        analytics.pushAnalytics('Document', 'Open');
     };
     $scope.create = function () {
         editor.create();
-        analytics.pushAnalytics('Create new document');
+        analytics.pushAnalytics('Document', 'Create new');
     };
     $scope.save = function () {
         editor.save(true);
-        analytics.pushAnalytics('Save document');
+        analytics.pushAnalytics('Document', 'Save');
     };
 
     $scope.$watch('sync.enabled', function () {
@@ -442,7 +440,7 @@ controllersModule.controller('RenameCtrl', ['$scope', 'doc', 'analytics', functi
             $scope.$apply(function () {
                 $scope.newFileName = doc.info.title;
                 $scope.tour.next();
-                analytics.pushAnalytics('Rename document');
+                analytics.pushAnalytics('Document', 'Rename');
             });
         });
     $scope.save = function () {

@@ -5,9 +5,7 @@
 describe('Controllers', function () {
     var scope;
 
-    var httpBackend;
-
-    beforeEach(angular.mock.module('app'));
+    beforeEach(angular.mock.module('app', 'analytics'));
 
     beforeEach(angular.mock.inject(function($rootScope, analytics) {
         scope = $rootScope.$new();
@@ -172,4 +170,47 @@ describe('Controllers', function () {
             expect(scope.loadVideo).toHaveBeenCalled();
         }));
     });
+
+    describe('ShareCtrl', function () {
+        var shareCtrl;
+
+        beforeEach(angular.mock.inject(function ($rootScope, $controller, doc) {
+            shareCtrl = $controller('ShareCtrl', {$scope: scope});
+
+            doc.info = {
+                id: '1234'
+            };
+        }));
+
+        it('should have a ShareCtrl controller', function () {
+            expect(shareCtrl).not.toEqual(null);
+            expect(scope).not.toEqual(null);
+
+            expect(scope.enabled).toBeDefined();
+            expect(scope.share).toBeDefined();
+        });
+
+
+        it('should call analytics on share', inject(function (analytics) {
+            scope.share();
+
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Document', 'Share');
+        }));
+
+        it('should call gapi on share', inject(function (config, doc) {
+            config.appId = 'testAppId';
+
+            var shareClientMock = {
+                setItemIds: jasmine.createSpy('setItemIds'),
+                showSettingsDialog: jasmine.createSpy('showSettingsDialog')
+            };
+            spyOn(gapi.drive.share, 'ShareClient').andReturn(shareClientMock);
+
+            scope.share();
+
+            expect(gapi.drive.share.ShareClient).toHaveBeenCalledWith(config.appId);
+            expect(shareClientMock.setItemIds).toHaveBeenCalledWith([doc.info.id]);
+            expect(shareClientMock.showSettingsDialog).toHaveBeenCalled();
+        }));
+    })
 });

@@ -4,8 +4,10 @@
 
 describe('service', function() {
     beforeEach(function () {
-        angular.module('saveIntervalMock', []).constant('saveInterval', function () { return 0; });
-        angular.mock.module('app.services', 'youtube', 'analytics', 'saveIntervalMock');
+        angular.module('appMock', [])
+            .constant('saveInterval', function () { return 0; })
+            .constant('appName', "VideoNotes test");
+        angular.mock.module('app.services', 'youtube', 'analytics', 'appMock');
     });
 
     describe('config', function () {
@@ -13,8 +15,8 @@ describe('service', function() {
             expect(config.load).toBeDefined();
         }));
 
-        it('should call the config endpoint on load call', inject(function ($httpBackend, config) {
-            var response = {googleAnalyticsAccount:'test'};
+        it('should call the config endpoint on load call', inject(function ($httpBackend, config, appName) {
+            var response = {googleAnalyticsAccount:'test', appId: '1234'};
             $httpBackend.expectGET('/config').respond(200, response);
 
             config.load();
@@ -27,9 +29,7 @@ describe('service', function() {
         it('should check document state each $saveInterval seconds', inject(function ($timeout, autosaver) {
             spyOn(autosaver, 'saveFn');
             $timeout.flush();
-            waitsFor(function() {
-                expect(autosaver.saveFn).toHaveBeenCalled();
-            }, "Spreadsheet calculation never completed", 10000);
+            expect(autosaver.saveFn).toHaveBeenCalled();
         }));
 
         it('should have a confirmOnLeave method which is returning a message', inject(function (doc, autosaver) {
@@ -44,7 +44,6 @@ describe('service', function() {
             doc.dirty = true;
             autosaver.$apply();
 
-            console.log($window.addEventListener.mostRecentCall);
             var msg = $window.addEventListener.mostRecentCall.args[1]({});
 
             expect(msg).toBeEqual("You have unsaved data.");
