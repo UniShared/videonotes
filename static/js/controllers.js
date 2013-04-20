@@ -20,12 +20,12 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
 
     var redirectToDocument = function (event, fileId) {
         $location.path('/edit/' + fileId);
-        $scope.startTour();
     };
 
     $scope.init = function () {
         if ($routeParams.id) {
             editor.load($routeParams.id);
+            //$scope.startTour();
         }
         else if ($routeParams.templateId) {
             editor.copy($routeParams.templateId);
@@ -81,7 +81,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         });
 
         $scope.tour.addStep({
-            element: ".doc-title span",
+            element: ".doc-title a",
             content: "Now, you should name your notes",
             placement: "bottom"
         });
@@ -125,12 +125,15 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.restartTour = function () {
-//        $scope.tour.end();
+        $scope.tour.end();
         $scope.tour.restart();
     };
 
     $scope.startTour = function () {
-        $scope.tour.start();
+        $timeout(function () {
+            $log.info('Start tour');
+            $scope.tour && $scope.tour.start();
+        }, 1);
     };
 
     $scope.shortcuts = function ($event) {
@@ -143,7 +146,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     $scope.$on('firstSaved', function () {
         analytics.pushAnalytics('Document', 'created');
     });
-    $scope.$on('loaded', $scope.startTour);
+    $scope.$onMany(['firstSaved', 'loaded'], $scope.startTour);
     $scope.$on('configLoaded', $scope.setConfig)
 }]);
 
@@ -434,12 +437,15 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
     $scope.$on('shortcut', $scope.shortcuts);
 }]);
 
-controllersModule.controller('RenameCtrl', ['$scope', 'doc', 'analytics', function ($scope, doc, analytics) {
+controllersModule.controller('RenameCtrl', ['$scope', '$timeout', 'doc', 'analytics', function ($scope, $timeout, doc, analytics) {
     $('#rename-dialog').on('show',
         function () {
             $scope.$apply(function () {
                 $scope.newFileName = doc.info.title;
-                $scope.tour.next();
+                if(!$scope.tour.ended()) {
+                    $scope.tour.hideStep(2);
+                    $scope.tour.showStep(3);
+                }
                 analytics.pushAnalytics('Document', 'Rename');
             });
         });
