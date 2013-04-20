@@ -306,12 +306,9 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
             $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
             $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
 
-            if(youtubePlayerApi.player) {
-                $scope.videoStatus.playYoutube ? youtubePlayerApi.player.playVideo() : youtubePlayerApi.player.pauseVideo();
-            }
-            else if(video.player) {
-                $scope.videoStatus.playHtml5 ? video.player.play() : video.player.pause();
-            }
+            $scope.videoStatus.playYoutube ? youtubePlayerApi.player && youtubePlayerApi.player.playVideo() : youtubePlayerApi.player && youtubePlayerApi.player.pauseVideo();
+            $scope.videoStatus.playHtml5 ? video.player && video.player.play() : video.player && video.player.pause();
+
             analytics.pushAnalytics('Video', $scope.videoStatus);
         }
     };
