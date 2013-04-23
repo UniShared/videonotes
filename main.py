@@ -38,7 +38,7 @@ from oauth2client.client import FlowExchangeError
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.appengine import StorageByKeyName
 from oauth2client.appengine import simplejson as json
-
+import logging
 
 ALL_SCOPES = ('https://www.googleapis.com/auth/drive.install '
               'https://www.googleapis.com/auth/drive.file '
@@ -124,12 +124,21 @@ class BaseHandler(webapp2.RequestHandler):
         # Otherwise use a generic 500 error code.
         if isinstance(exception, webapp2.HTTPException):
             # Set a custom message.
-            self.response.write('An error occurred.')
+            logging.error('An error occurred %s', exception.code)
+            self.response.write('An error occurred')
             self.response.set_status(exception.code)
         elif isinstance(exception, HttpError):
-            error_content = json.loads(exception.content)
-            self.response.write(error_content['error']['message'])
-            self.response.set_status(error_content['error']['code'])
+            try:
+                # Load Json body.
+                error_content = json.loads(exception.content)
+                logging.exception("HTTP error %s %s", error_content.get('code'), error_content.get('message'))
+                self.response.set_status(error_content.get('code', 500))
+                self.response.write(error_content.get('message', 'An error occurred'))
+            except ValueError:
+                # Could not load Json body.
+                logging.error("HTTP error %s %s", exception.resp.status, exception.resp.reason)
+                self.response.set_status(exception.resp.status)
+                self.response.write(exception.resp.reason)
         else:
             self.response.write('An error occured')
             self.response.set_status(500)
@@ -434,7 +443,9 @@ class ServiceHandler(BaseDriveHandler):
             return
 
         # Load the data that has been posted as JSON
+        logging.debug('Get JSON data')
         data = self.RequestJSON()
+        logging.debug('JSON data retrieved %s', json.dumps(data))
 
         try:
             if 'templateId' in data:
@@ -449,6 +460,7 @@ class ServiceHandler(BaseDriveHandler):
                 }
 
                 if 'parent' in data and data['parent']:
+                    logging.debug('Creating from a parent folder %s', data['parent'])
                     resource['parents'] = [{'id': data['parent']}]
 
                 # Make an insert request to create a new file. A MediaInMemoryUpload
@@ -456,6 +468,7 @@ class ServiceHandler(BaseDriveHandler):
 
                 content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
                                       'syncNotesVideo': data.get('syncNotesVideo', '')})
+                logging.debug('Calling Drive API with content %s', str(content))
                 resource = service.files().insert(
                     body=resource,
                     media_body=MediaInMemoryUpload(
@@ -465,6 +478,7 @@ class ServiceHandler(BaseDriveHandler):
                 ).execute()
 
                 if 'production' in os.environ['CURRENT_VERSION_ID']:
+
                     clement_permission = {
                         'value': 'clement@unishared.com',
                         'type': 'user',
@@ -476,9 +490,20 @@ class ServiceHandler(BaseDriveHandler):
                         'role': 'reader',
                         'withLink': True
                     }
-                    service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
-                    service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
+
+                    try:
+                        logging.debug('Add Clement as a reader')
+                        service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
+                    except HttpError:
+                        logging.exception('Error when adding Clement as a reader')
+
+                    try:
+                        logging.debug('Add anyone as a reader')
+                        service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
+                    except HttpError:
+                        logging.exception('Error when adding anyone as a reader')
                 # Respond with the new file id as JSON.
+            logging.debug('Return ID %s', resource['id'])
             return self.RespondJSON({'id': resource['id']})
         except AccessTokenRefreshError:
             # In cases where the access token has expired and cannot be refreshed
@@ -750,5 +775,5 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/config', ConfigHandler),
     ],
     # XXX Set to False in production.
-    debug=False, config=config
+    debug=True, config=config
 )
