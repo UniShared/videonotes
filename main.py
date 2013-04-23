@@ -347,43 +347,6 @@ class BaseDriveHandler(BaseHandler):
         """Create a user info client instance."""
         return self.CreateAuthorizedService('oauth2', 'v2')
 
-class CountFile(BaseDriveHandler):
-    def get(self):
-        service = self.CreateDrive()
-        if service is None:
-            return
-
-        n = 1
-        files_correct = []
-        count = 0
-        page_token = None
-        while True:
-            try:
-                if page_token:
-                    param = {
-                        'pageToken': page_token
-                    }
-                else:
-                    param = {
-                        'maxResults': 200,
-                        'q':"mimeType='application/vnd.unishared.document' and sharedWithMe"
-                    }
-                files = service.files().list(**param).execute()
-
-                files_correct.extend([file['id'] for file in files['items'] if file['mimeType'] == 'application/vnd.unishared.document'])
-                page_token = files.get('nextPageToken')
-                if not page_token:
-                    break
-            except HttpError, error:
-                if n < 5:
-                    n+=1
-                else:
-                    break
-                time.sleep((2 ** n) + random.randint(0, 1000) / 1000)
-                #print 'An error occurred: %s' % error
-                #break
-        return self.RespondJSON({'count':len(set(files_correct))})
-
 class HomePage(BaseHandler):
     """Web handler for the main page.
 
@@ -785,7 +748,6 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/auth', AuthHandler, 'auth'),
         webapp2.Route(r'/user', UserHandler),
         webapp2.Route(r'/config', ConfigHandler),
-        webapp2.Route(r'/count', CountFile)
     ],
     # XXX Set to False in production.
     debug=False, config=config
