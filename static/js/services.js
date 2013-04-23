@@ -63,13 +63,21 @@ module.factory('doc',
         service.timeSinceLastSave = function () {
             return new Date().getTime() - this.lastSave;
         };
-        service.$watch('info',
-            function (newValue, oldValue) {
-                if (oldValue != null && newValue !== oldValue) {
-                    service.dirty = true;
-                }
-            },
-            true);
+
+        var initWatcher =  function (event, fileInfo) {
+            if(fileInfo.editable) {
+                service.$watch('info',
+                    function (newValue, oldValue) {
+                        if (oldValue != null && newValue !== oldValue) {
+                            service.dirty = true;
+                        }
+                    },
+                    true);
+            }
+        };
+
+        service.$on('firstSaved', initWatcher);
+        service.$on('loaded', initWatcher);
 
         return service;
     }]);
@@ -535,9 +543,9 @@ module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) 
 module.factory('autosaver',
     ['$rootScope', '$window', 'user', 'editor', 'doc', 'saveInterval', '$timeout', function ($rootScope, $window, user, editor, doc, saveInterval, $timeout) {
 
-        var scope = $rootScope.$new(true);
-        scope.doc = doc;
-        scope.confirmOnLeave = function(e) {
+        var service = $rootScope.$new(true);
+        service.doc = doc;
+        service.confirmOnLeave = function(e) {
             var msg = "You have unsaved data.";
 
             // For IE and Firefox
@@ -547,23 +555,30 @@ module.factory('autosaver',
             // For Chrome and Safari
             return msg;
         };
-        scope.$watch('doc.dirty', function (newValue, oldValue) {
+        service.$watch('doc.dirty', function (newValue, oldValue) {
             if(newValue !== oldValue) {
-                newValue && user.isAuthenticated() ? $window.addEventListener('beforeunload', scope.confirmOnLeave) : $window.removeEventListener('beforeunload', scope.confirmOnLeave);
+                newValue && user.isAuthenticated() ? $window.addEventListener('beforeunload', service.confirmOnLeave) : $window.removeEventListener('beforeunload', service.confirmOnLeave);
             }
         });
 
-        scope.saveFn = function () {
+        service.saveFn = function () {
             if (editor.state() == EditorState.DIRTY) {
                 editor.save(false);
             }
         };
 
-        var createTimeout = function () {
-            return $timeout(scope.saveFn, saveInterval).then(createTimeout);
+        var initTimeout = function (event, fileInfo) {
+            if (fileInfo.editable) {
+                var createTimeout = function () {
+                    return $timeout(service.saveFn, saveInterval).then(createTimeout);
+                };
+
+                createTimeout();
+            }
         };
 
-        createTimeout();
+        service.$on('firstSaved', initTimeout);
+        service.$on('loaded', initTimeout);
 
-        return scope;
+        return service;
     }]);

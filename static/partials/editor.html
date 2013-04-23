@@ -115,7 +115,7 @@
                                 <a class="icon-large icon-file" target="_blank" href="/#/edit/"></a></li>
                             <li class="menu-open" tooltip="Open notes ({{openShortcut}})" tooltip-placement="bottom"><a
                                     class="icon-large icon-folder-open" ng-click="open()" href ></a></li>
-                            <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom"><a
+                            <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom" ng-hide="!doc.info.editable"><a
                                     class="icon-large icon-save" ng-click="save()" href></a></li>
                             <li class="menu-help" tooltip="Help" tooltip-placement="bottom">
                                 <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
