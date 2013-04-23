@@ -22,16 +22,16 @@ the same directory.
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 __all__ = ['run']
 
+
 import BaseHTTPServer
+import gflags
 import socket
 import sys
 import webbrowser
 
-import gflags
-
-from client import FlowExchangeError
-from client import OOB_CALLBACK_URN
-
+from oauth2client.client import FlowExchangeError
+from oauth2client.client import OOB_CALLBACK_URN
+from oauth2client import util
 
 try:
   from urlparse import parse_qsl
@@ -92,8 +92,37 @@ class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     pass
 
 
+@util.positional(2)
 def run(flow, storage, http=None):
   """Core code for a command-line application.
+
+  The run() function is called from your application and runs through all the
+  steps to obtain credentials. It takes a Flow argument and attempts to open an
+  authorization server page in the user's default web browser. The server asks
+  the user to grant your application access to the user's data. If the user
+  grants access, the run() function returns new credentials. The new credentials
+  are also stored in the Storage argument, which updates the file associated
+  with the Storage object.
+
+  It presumes it is run from a command-line application and supports the
+  following flags:
+
+    --auth_host_name: Host name to use when running a local web server
+      to handle redirects during OAuth authorization.
+      (default: 'localhost')
+
+    --auth_host_port: Port to use when running a local web server to handle
+      redirects during OAuth authorization.;
+      repeat this option to specify a list of values
+      (default: '[8080, 8090]')
+      (an integer)
+
+    --[no]auth_local_webserver: Run a local web server to handle redirects
+      during OAuth authorization.
+      (default: 'true')
+
+  Since it uses flags make sure to initialize the gflags module before calling
+  run().
 
   Args:
     flow: Flow, an OAuth 2.0 Flow to step through.
@@ -131,7 +160,8 @@ def run(flow, storage, http=None):
     oauth_callback = 'http://%s:%s/' % (FLAGS.auth_host_name, port_number)
   else:
     oauth_callback = OOB_CALLBACK_URN
-  authorize_url = flow.step1_get_authorize_url(oauth_callback)
+  flow.redirect_uri = oauth_callback
+  authorize_url = flow.step1_get_authorize_url()
 
   if FLAGS.auth_local_webserver:
     webbrowser.open(authorize_url, new=1, autoraise=True)
@@ -164,7 +194,7 @@ def run(flow, storage, http=None):
     code = raw_input('Enter verification code: ').strip()
 
   try:
-    credential = flow.step2_exchange(code, http)
+    credential = flow.step2_exchange(code, http=http)
   except FlowExchangeError, e:
     sys.exit('Authentication has failed: %s' % e)
 

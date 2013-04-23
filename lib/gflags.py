@@ -389,13 +389,11 @@ This module requires at least python 2.2.1 to run.
 
 import cgi
 import getopt
+import os
+import re
 import string
 import struct
 import sys
-
-import os
-import re
-
 # pylint: disable-msg=C6204
 try:
   import fcntl

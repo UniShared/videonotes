@@ -24,14 +24,12 @@ object representation.
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
+import gflags
 import logging
 import urllib
 
-import gflags
-from oauth2client.anyjson import simplejson
-
 from errors import HttpError
-
+from oauth2client.anyjson import simplejson
 
 FLAGS = gflags.FLAGS
 
@@ -263,7 +261,7 @@ class JsonModel(BaseModel):
 
   def deserialize(self, content):
     body = simplejson.loads(content)
-    if isinstance(body, dict) and 'data' in body:
+    if self._data_wrapper and isinstance(body, dict) and 'data' in body:
       body = body['data']
     return body
 

@@ -1,9 +1,7 @@
 # Early, and incomplete implementation of -04.
 #
-import urllib
-
 import re
-
+import urllib
 
 RESERVED = ":/?#[]@!$&'()*+,;="
 OPERATOR = "+./;?|!@"

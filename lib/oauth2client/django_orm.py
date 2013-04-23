@@ -20,18 +20,21 @@ the Django datastore.
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
+import oauth2client
 import base64
 import pickle
 
-import oauth2client
-from oauth2client.client import Storage as BaseStorage
-
 from django.db import models
-
+from oauth2client.client import Storage as BaseStorage
 
 class CredentialsField(models.Field):
 
   __metaclass__ = models.SubfieldBase
+
+  def __init__(self, *args, **kwargs):
+    if 'null' not in kwargs:
+      kwargs['null'] = True
+    super(CredentialsField, self).__init__(*args, **kwargs)
 
   def get_internal_type(self):
     return "TextField"
@@ -52,6 +55,11 @@ class CredentialsField(models.Field):
 class FlowField(models.Field):
 
   __metaclass__ = models.SubfieldBase
+
+  def __init__(self, *args, **kwargs):
+    if 'null' not in kwargs:
+      kwargs['null'] = True
+    super(FlowField, self).__init__(*args, **kwargs)
 
   def get_internal_type(self):
     return "TextField"

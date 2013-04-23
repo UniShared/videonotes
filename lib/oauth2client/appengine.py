@@ -19,63 +19,150 @@ Utilities for making it easier to use OAuth 2.0 on Google App Engine.
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
-import logging
-import pickle
-
+import base64
+import cgi
 import httplib2
+import logging
+import os
+import pickle
+import time
+
+from google.appengine.api import app_identity
 from google.appengine.api import memcache
 from google.appengine.api import users
-from google.appengine.api import app_identity
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import login_required
 from google.appengine.ext.webapp.util import run_wsgi_app
+from oauth2client import GOOGLE_AUTH_URI
+from oauth2client import GOOGLE_REVOKE_URI
+from oauth2client import GOOGLE_TOKEN_URI
+from oauth2client import clientsecrets
+from oauth2client import util
+from oauth2client import xsrfutil
+from oauth2client.anyjson import simplejson
+from oauth2client.client import AccessTokenRefreshError
+from oauth2client.client import AssertionCredentials
+from oauth2client.client import Credentials
+from oauth2client.client import Flow
+from oauth2client.client import OAuth2WebServerFlow
+from oauth2client.client import Storage
 
-import clientsecrets
-from anyjson import simplejson
-from client import AccessTokenRefreshError
-from client import AssertionCredentials
-from client import Credentials
-from client import Flow
-from client import OAuth2WebServerFlow
-from client import Storage
+# TODO(dhermes): Resolve import issue.
+# This is a temporary fix for a Google internal issue.
+try:
+  from google.appengine.ext import ndb
+except ImportError:
+  ndb = None
 
+
+logger = logging.getLogger(__name__)
 
 OAUTH2CLIENT_NAMESPACE = 'oauth2client#ns'
+
+XSRF_MEMCACHE_ID = 'xsrf_secret_key'
+
+
+def _safe_html(s):
+  """Escape text to make it safe to display.
+
+  Args:
+    s: string, The text to escape.
+
+  Returns:
+    The escaped text as a string.
+  """
+  return cgi.escape(s, quote=1).replace("'", '&#39;')
 
 
 class InvalidClientSecretsError(Exception):
   """The client_secrets.json file is malformed or missing required fields."""
-  pass
+
+
+class InvalidXsrfTokenError(Exception):
+  """The XSRF token is invalid or expired."""
+
+
+class SiteXsrfSecretKey(db.Model):
+  """Storage for the sites XSRF secret key.
+
+  There will only be one instance stored of this model, the one used for the
+  site.
+  """
+  secret = db.StringProperty()
+
+if ndb is not None:
+  class SiteXsrfSecretKeyNDB(ndb.Model):
+    """NDB Model for storage for the sites XSRF secret key.
+
+    Since this model uses the same kind as SiteXsrfSecretKey, it can be used
+    interchangeably. This simply provides an NDB model for interacting with the
+    same data the DB model interacts with.
+
+    There should only be one instance stored of this model, the one used for the
+    site.
+    """
+    secret = ndb.StringProperty()
+
+    @classmethod
+    def _get_kind(cls):
+      """Return the kind name for this class."""
+      return 'SiteXsrfSecretKey'
+
+
+def _generate_new_xsrf_secret_key():
+  """Returns a random XSRF secret key.
+  """
+  return os.urandom(16).encode("hex")
+
+
+def xsrf_secret_key():
+  """Return the secret key for use for XSRF protection.
+
+  If the Site entity does not have a secret key, this method will also create
+  one and persist it.
+
+  Returns:
+    The secret key.
+  """
+  secret = memcache.get(XSRF_MEMCACHE_ID, namespace=OAUTH2CLIENT_NAMESPACE)
+  if not secret:
+    # Load the one and only instance of SiteXsrfSecretKey.
+    model = SiteXsrfSecretKey.get_or_insert(key_name='site')
+    if not model.secret:
+      model.secret = _generate_new_xsrf_secret_key()
+      model.put()
+    secret = model.secret
+    memcache.add(XSRF_MEMCACHE_ID, secret, namespace=OAUTH2CLIENT_NAMESPACE)
+
+  return str(secret)
 
 
 class AppAssertionCredentials(AssertionCredentials):
   """Credentials object for App Engine Assertion Grants
 
   This object will allow an App Engine application to identify itself to Google
-  and other OAuth 2.0 servers that can verify assertions. It can be used for
-  the purpose of accessing data stored under an account assigned to the App
-  Engine application itself.
+  and other OAuth 2.0 servers that can verify assertions. It can be used for the
+  purpose of accessing data stored under an account assigned to the App Engine
+  application itself.
 
   This credential does not require a flow to instantiate because it represents
   a two legged flow, and therefore has all of the required information to
   generate and refresh its own access tokens.
   """
 
+  @util.positional(2)
   def __init__(self, scope, **kwargs):
     """Constructor for AppAssertionCredentials
 
     Args:
-      scope: string or list of strings, scope(s) of the credentials being requested.
+      scope: string or iterable of strings, scope(s) of the credentials being
+        requested.
     """
-    if type(scope) is list:
-      scope = ' '.join(scope)
-    self.scope = scope
+    self.scope = util.scopes_to_string(scope)
 
-    super(AppAssertionCredentials, self).__init__(
-        None,
-        None,
-        None)
+    # Assertion type is no longer used, but still in the parent class signature.
+    super(AppAssertionCredentials, self).__init__(None)
 
   @classmethod
   def from_json(cls, json):
@@ -97,7 +184,8 @@ class AppAssertionCredentials(AssertionCredentials):
       AccessTokenRefreshError: When the refresh fails.
     """
     try:
-      (token, _) = app_identity.get_access_token(self.scope)
+      scopes = self.scope.split()
+      (token, _) = app_identity.get_access_token(scopes)
     except app_identity.Error, e:
       raise AccessTokenRefreshError(str(e))
     self.access_token = token
@@ -106,7 +194,7 @@ class AppAssertionCredentials(AssertionCredentials):
 class FlowProperty(db.Property):
   """App Engine datastore Property for Flow.
 
-  Utility property that allows easy storage and retreival of an
+  Utility property that allows easy storage and retrieval of an
   oauth2client.Flow"""
 
   # Tell what the user type is.
@@ -135,6 +223,33 @@ class FlowProperty(db.Property):
     return not value
 
 
+if ndb is not None:
+  class FlowNDBProperty(ndb.PickleProperty):
+    """App Engine NDB datastore Property for Flow.
+
+    Serves the same purpose as the DB FlowProperty, but for NDB models. Since
+    PickleProperty inherits from BlobProperty, the underlying representation of
+    the data in the datastore will be the same as in the DB case.
+
+    Utility property that allows easy storage and retrieval of an
+    oauth2client.Flow
+    """
+
+    def _validate(self, value):
+      """Validates a value as a proper Flow object.
+
+      Args:
+        value: A value to be set on the property.
+
+      Raises:
+        TypeError if the value is not an instance of Flow.
+      """
+      logger.info('validate: Got type %s', type(value))
+      if value is not None and not isinstance(value, Flow):
+        raise TypeError('Property %s must be convertible to a flow '
+                        'instance; received: %s.' % (self._name, value))
+
+
 class CredentialsProperty(db.Property):
   """App Engine datastore Property for Credentials.
 
@@ -147,7 +262,7 @@ class CredentialsProperty(db.Property):
 
   # For writing to datastore.
   def get_value_for_datastore(self, model_instance):
-    logging.info("get: Got type " + str(type(model_instance)))
+    logger.info("get: Got type " + str(type(model_instance)))
     cred = super(CredentialsProperty,
                  self).get_value_for_datastore(model_instance)
     if cred is None:
@@ -158,7 +273,7 @@ class CredentialsProperty(db.Property):
 
   # For reading from datastore.
   def make_value_from_datastore(self, value):
-    logging.info("make: Got type " + str(type(value)))
+    logger.info("make: Got type " + str(type(value)))
     if value is None:
       return None
     if len(value) == 0:
@@ -171,7 +286,7 @@ class CredentialsProperty(db.Property):
 
   def validate(self, value):
     value = super(CredentialsProperty, self).validate(value)
-    logging.info("validate: Got type " + str(type(value)))
+    logger.info("validate: Got type " + str(type(value)))
     if value is not None and not isinstance(value, Credentials):
       raise db.BadValueError('Property %s must be convertible '
                           'to a Credentials instance (%s)' %
@@ -181,29 +296,135 @@ class CredentialsProperty(db.Property):
     return value
 
 
-class StorageByKeyName(Storage):
-  """Store and retrieve a single credential to and from
-  the App Engine datastore.
+if ndb is not None:
+  # TODO(dhermes): Turn this into a JsonProperty and overhaul the Credentials
+  #                and subclass mechanics to use new_from_dict, to_dict,
+  #                from_dict, etc.
+  class CredentialsNDBProperty(ndb.BlobProperty):
+    """App Engine NDB datastore Property for Credentials.
 
-  This Storage helper presumes the Credentials
-  have been stored as a CredenialsProperty
-  on a datastore model class, and that entities
-  are stored by key_name.
+    Serves the same purpose as the DB CredentialsProperty, but for NDB models.
+    Since CredentialsProperty stores data as a blob and this inherits from
+    BlobProperty, the data in the datastore will be the same as in the DB case.
+
+    Utility property that allows easy storage and retrieval of Credentials and
+    subclasses.
+    """
+    def _validate(self, value):
+      """Validates a value as a proper credentials object.
+
+      Args:
+        value: A value to be set on the property.
+
+      Raises:
+        TypeError if the value is not an instance of Credentials.
+      """
+      logger.info('validate: Got type %s', type(value))
+      if value is not None and not isinstance(value, Credentials):
+        raise TypeError('Property %s must be convertible to a credentials '
+                        'instance; received: %s.' % (self._name, value))
+
+    def _to_base_type(self, value):
+      """Converts our validated value to a JSON serialized string.
+
+      Args:
+        value: A value to be set in the datastore.
+
+      Returns:
+        A JSON serialized version of the credential, else '' if value is None.
+      """
+      if value is None:
+        return ''
+      else:
+        return value.to_json()
+
+    def _from_base_type(self, value):
+      """Converts our stored JSON string back to the desired type.
+
+      Args:
+        value: A value from the datastore to be converted to the desired type.
+
+      Returns:
+        A deserialized Credentials (or subclass) object, else None if the
+            value can't be parsed.
+      """
+      if not value:
+        return None
+      try:
+        # Uses the from_json method of the implied class of value
+        credentials = Credentials.new_from_json(value)
+      except ValueError:
+        credentials = None
+      return credentials
+
+
+class StorageByKeyName(Storage):
+  """Store and retrieve a credential to and from the App Engine datastore.
+
+  This Storage helper presumes the Credentials have been stored as a
+  CredentialsProperty or CredentialsNDBProperty on a datastore model class, and
+  that entities are stored by key_name.
   """
 
+  @util.positional(4)
   def __init__(self, model, key_name, property_name, cache=None):
     """Constructor for Storage.
 
     Args:
-      model: db.Model, model class
+      model: db.Model or ndb.Model, model class
       key_name: string, key name for the entity that has the credentials
       property_name: string, name of the property that is a CredentialsProperty
-      cache: memcache, a write-through cache to put in front of the datastore
+        or CredentialsNDBProperty.
+      cache: memcache, a write-through cache to put in front of the datastore.
+        If the model you are using is an NDB model, using a cache will be
+        redundant since the model uses an instance cache and memcache for you.
     """
     self._model = model
     self._key_name = key_name
     self._property_name = property_name
     self._cache = cache
+
+  def _is_ndb(self):
+    """Determine whether the model of the instance is an NDB model.
+
+    Returns:
+      Boolean indicating whether or not the model is an NDB or DB model.
+    """
+    # issubclass will fail if one of the arguments is not a class, only need
+    # worry about new-style classes since ndb and db models are new-style
+    if isinstance(self._model, type):
+      if ndb is not None and issubclass(self._model, ndb.Model):
+        return True
+      elif issubclass(self._model, db.Model):
+        return False
+
+    raise TypeError('Model class not an NDB or DB model: %s.' % (self._model,))
+
+  def _get_entity(self):
+    """Retrieve entity from datastore.
+
+    Uses a different model method for db or ndb models.
+
+    Returns:
+      Instance of the model corresponding to the current storage object
+          and stored using the key name of the storage object.
+    """
+    if self._is_ndb():
+      return self._model.get_by_id(self._key_name)
+    else:
+      return self._model.get_by_key_name(self._key_name)
+
+  def _delete_entity(self):
+    """Delete entity from datastore.
+
+    Attempts to delete using the key_name stored on the object, whether or not
+    the given key is in the datastore.
+    """
+    if self._is_ndb():
+      ndb.Key(self._model, self._key_name).delete()
+    else:
+      entity_key = db.Key.from_path(self._model.kind(), self._key_name)
+      db.delete(entity_key)
 
   def locked_get(self):
     """Retrieve Credential from datastore.
@@ -216,16 +437,16 @@ class StorageByKeyName(Storage):
       if json:
         return Credentials.new_from_json(json)
 
-    credential = None
-    entity = self._model.get_by_key_name(self._key_name)
+    credentials = None
+    entity = self._get_entity()
     if entity is not None:
-      credential = getattr(entity, self._property_name)
-      if credential and hasattr(credential, 'set_store'):
-        credential.set_store(self)
+      credentials = getattr(entity, self._property_name)
+      if credentials and hasattr(credentials, 'set_store'):
+        credentials.set_store(self)
         if self._cache:
-          self._cache.set(self._key_name, credential.to_json())
+          self._cache.set(self._key_name, credentials.to_json())
 
-    return credential
+    return credentials
 
   def locked_put(self, credentials):
     """Write a Credentials to the datastore.
@@ -245,9 +466,7 @@ class StorageByKeyName(Storage):
     if self._cache:
       self._cache.delete(self._key_name)
 
-    entity = self._model.get_by_key_name(self._key_name)
-    if entity is not None:
-      entity.delete()
+    self._delete_entity()
 
 
 class CredentialsModel(db.Model):
@@ -256,6 +475,68 @@ class CredentialsModel(db.Model):
   Storage of the model is keyed by the user.user_id().
   """
   credentials = CredentialsProperty()
+
+
+if ndb is not None:
+  class CredentialsNDBModel(ndb.Model):
+    """NDB Model for storage of OAuth 2.0 Credentials
+
+    Since this model uses the same kind as CredentialsModel and has a property
+    which can serialize and deserialize Credentials correctly, it can be used
+    interchangeably with a CredentialsModel to access, insert and delete the
+    same entities. This simply provides an NDB model for interacting with the
+    same data the DB model interacts with.
+
+    Storage of the model is keyed by the user.user_id().
+    """
+    credentials = CredentialsNDBProperty()
+
+    @classmethod
+    def _get_kind(cls):
+      """Return the kind name for this class."""
+      return 'CredentialsModel'
+
+
+def _build_state_value(request_handler, user):
+  """Composes the value for the 'state' parameter.
+
+  Packs the current request URI and an XSRF token into an opaque string that
+  can be passed to the authentication server via the 'state' parameter.
+
+  Args:
+    request_handler: webapp.RequestHandler, The request.
+    user: google.appengine.api.users.User, The current user.
+
+  Returns:
+    The state value as a string.
+  """
+  uri = request_handler.request.url
+  token = xsrfutil.generate_token(xsrf_secret_key(), user.user_id(),
+                                  action_id=str(uri))
+  return  uri + ':' + token
+
+
+def _parse_state_value(state, user):
+  """Parse the value of the 'state' parameter.
+
+  Parses the value and validates the XSRF token in the state parameter.
+
+  Args:
+    state: string, The value of the state parameter.
+    user: google.appengine.api.users.User, The current user.
+
+  Raises:
+    InvalidXsrfTokenError: if the XSRF token is invalid.
+
+  Returns:
+    The redirect URI.
+  """
+  uri, token = state.rsplit(':', 1)
+  if not xsrfutil.validate_token(xsrf_secret_key(), token, user.user_id(),
+                                 action_id=uri):
+    raise InvalidXsrfTokenError()
+
+  return uri
 
 
 class OAuth2Decorator(object):
@@ -282,40 +563,62 @@ class OAuth2Decorator(object):
 
   """
 
+  @util.positional(4)
   def __init__(self, client_id, client_secret, scope,
-               auth_uri='https://accounts.google.com/o/oauth2/auth',
-               token_uri='https://accounts.google.com/o/oauth2/token',
+               auth_uri=GOOGLE_AUTH_URI,
+               token_uri=GOOGLE_TOKEN_URI,
+               revoke_uri=GOOGLE_REVOKE_URI,
                user_agent=None,
-               message=None, **kwargs):
+               message=None,
+               callback_path='/oauth2callback',
+               token_response_param=None,
+               **kwargs):
 
     """Constructor for OAuth2Decorator
 
     Args:
       client_id: string, client identifier.
       client_secret: string client secret.
-      scope: string or list of strings, scope(s) of the credentials being
+      scope: string or iterable of strings, scope(s) of the credentials being
         requested.
       auth_uri: string, URI for authorization endpoint. For convenience
         defaults to Google's endpoints but any OAuth 2.0 provider can be used.
       token_uri: string, URI for token endpoint. For convenience
         defaults to Google's endpoints but any OAuth 2.0 provider can be used.
+      revoke_uri: string, URI for revoke endpoint. For convenience
+        defaults to Google's endpoints but any OAuth 2.0 provider can be used.
       user_agent: string, User agent of your application, default to None.
       message: Message to display if there are problems with the OAuth 2.0
         configuration. The message may contain HTML and will be presented on the
         web interface for any method that uses the decorator.
+      callback_path: string, The absolute path to use as the callback URI. Note
+        that this must match up with the URI given when registering the
+        application in the APIs Console.
+      token_response_param: string. If provided, the full JSON response
+        to the access token request will be encoded and included in this query
+        parameter in the callback URI. This is useful with providers (e.g.
+        wordpress.com) that include extra fields that the client may want.
       **kwargs: dict, Keyword arguments are be passed along as kwargs to the
         OAuth2WebServerFlow constructor.
     """
-    self.flow = OAuth2WebServerFlow(client_id, client_secret, scope, user_agent,
-        auth_uri, token_uri, **kwargs)
+    self.flow = None
     self.credentials = None
-    self._request_handler = None
+    self._client_id = client_id
+    self._client_secret = client_secret
+    self._scope = util.scopes_to_string(scope)
+    self._auth_uri = auth_uri
+    self._token_uri = token_uri
+    self._revoke_uri = revoke_uri
+    self._user_agent = user_agent
+    self._kwargs = kwargs
     self._message = message
     self._in_error = False
+    self._callback_path = callback_path
+    self._token_response_param = token_response_param
 
   def _display_error_message(self, request_handler):
     request_handler.response.out.write('<html><body>')
-    request_handler.response.out.write(self._message)
+    request_handler.response.out.write(_safe_html(self._message))
     request_handler.response.out.write('</body></html>')
 
   def oauth_required(self, method):
@@ -340,20 +643,43 @@ class OAuth2Decorator(object):
         request_handler.redirect(users.create_login_url(
             request_handler.request.uri))
         return
+
+      self._create_flow(request_handler)
+
       # Store the request URI in 'state' so we can use it later
-      self.flow.params['state'] = request_handler.request.url
-      self._request_handler = request_handler
+      self.flow.params['state'] = _build_state_value(request_handler, user)
       self.credentials = StorageByKeyName(
           CredentialsModel, user.user_id(), 'credentials').get()
 
       if not self.has_credentials():
         return request_handler.redirect(self.authorize_url())
       try:
-        method(request_handler, *args, **kwargs)
+        return method(request_handler, *args, **kwargs)
       except AccessTokenRefreshError:
         return request_handler.redirect(self.authorize_url())
 
     return check_oauth
+
+  def _create_flow(self, request_handler):
+    """Create the Flow object.
+
+    The Flow is calculated lazily since we don't know where this app is
+    running until it receives a request, at which point redirect_uri can be
+    calculated and then the Flow object can be constructed.
+
+    Args:
+      request_handler: webapp.RequestHandler, the request handler.
+    """
+    if self.flow is None:
+      redirect_uri = request_handler.request.relative_url(
+          self._callback_path) # Usually /oauth2callback
+      self.flow = OAuth2WebServerFlow(self._client_id, self._client_secret,
+                                      self._scope, redirect_uri=redirect_uri,
+                                      user_agent=self._user_agent,
+                                      auth_uri=self._auth_uri,
+                                      token_uri=self._token_uri,
+                                      revoke_uri=self._revoke_uri,
+                                      **self._kwargs)
 
   def oauth_aware(self, method):
     """Decorator that sets up for OAuth 2.0 dance, but doesn't do it.
@@ -381,12 +707,12 @@ class OAuth2Decorator(object):
             request_handler.request.uri))
         return
 
+      self._create_flow(request_handler)
 
-      self.flow.params['state'] = request_handler.request.url
-      self._request_handler = request_handler
+      self.flow.params['state'] = _build_state_value(request_handler, user)
       self.credentials = StorageByKeyName(
           CredentialsModel, user.user_id(), 'credentials').get()
-      method(request_handler, *args, **kwargs)
+      return method(request_handler, *args, **kwargs)
     return setup_oauth
 
   def has_credentials(self):
@@ -403,11 +729,7 @@ class OAuth2Decorator(object):
     Must only be called from with a webapp.RequestHandler subclassed method
     that had been decorated with either @oauth_required or @oauth_aware.
     """
-    callback = self._request_handler.request.relative_url('/oauth2callback')
-    url = self.flow.step1_get_authorize_url(callback)
-    user = users.get_current_user()
-    memcache.set(user.user_id(), pickle.dumps(self.flow),
-                 namespace=OAUTH2CLIENT_NAMESPACE)
+    url = self.flow.step1_get_authorize_url()
     return str(url)
 
   def http(self):
@@ -418,6 +740,78 @@ class OAuth2Decorator(object):
     returns True.
     """
     return self.credentials.authorize(httplib2.Http())
+
+  @property
+  def callback_path(self):
+    """The absolute path where the callback will occur.
+
+    Note this is the absolute path, not the absolute URI, that will be
+    calculated by the decorator at runtime. See callback_handler() for how this
+    should be used.
+
+    Returns:
+      The callback path as a string.
+    """
+    return self._callback_path
+
+
+  def callback_handler(self):
+    """RequestHandler for the OAuth 2.0 redirect callback.
+
+    Usage:
+       app = webapp.WSGIApplication([
+         ('/index', MyIndexHandler),
+         ...,
+         (decorator.callback_path, decorator.callback_handler())
+       ])
+
+    Returns:
+      A webapp.RequestHandler that handles the redirect back from the
+      server during the OAuth 2.0 dance.
+    """
+    decorator = self
+
+    class OAuth2Handler(webapp.RequestHandler):
+      """Handler for the redirect_uri of the OAuth 2.0 dance."""
+
+      @login_required
+      def get(self):
+        error = self.request.get('error')
+        if error:
+          errormsg = self.request.get('error_description', error)
+          self.response.out.write(
+              'The authorization request failed: %s' % _safe_html(errormsg))
+        else:
+          user = users.get_current_user()
+          decorator._create_flow(self)
+          credentials = decorator.flow.step2_exchange(self.request.params)
+          StorageByKeyName(
+              CredentialsModel, user.user_id(), 'credentials').put(credentials)
+          redirect_uri = _parse_state_value(str(self.request.get('state')),
+                                            user)
+
+          if decorator._token_response_param and credentials.token_response:
+            resp_json = simplejson.dumps(credentials.token_response)
+            redirect_uri = util._add_query_parameter(
+                redirect_uri, decorator._token_response_param, resp_json)
+
+          self.redirect(redirect_uri)
+
+    return OAuth2Handler
+
+  def callback_application(self):
+    """WSGI application for handling the OAuth 2.0 redirect callback.
+
+    If you need finer grained control use `callback_handler` which returns just
+    the webapp.RequestHandler.
+
+    Returns:
+      A webapp.WSGIApplication that handles the redirect back from the
+      server during the OAuth 2.0 dance.
+    """
+    return webapp.WSGIApplication([
+        (self.callback_path, self.callback_handler())
+        ])
 
 
 class OAuth2DecoratorFromClientSecrets(OAuth2Decorator):
@@ -442,39 +836,46 @@ class OAuth2DecoratorFromClientSecrets(OAuth2Decorator):
         # in API calls
   """
 
-  def __init__(self, filename, scope, message=None):
+  @util.positional(3)
+  def __init__(self, filename, scope, message=None, cache=None):
     """Constructor
 
     Args:
       filename: string, File name of client secrets.
-      scope: string or list of strings, scope(s) of the credentials being
+      scope: string or iterable of strings, scope(s) of the credentials being
         requested.
       message: string, A friendly string to display to the user if the
-        clientsecrets file is missing or invalid. The message may contain HTML and
-        will be presented on the web interface for any method that uses the
+        clientsecrets file is missing or invalid. The message may contain HTML
+        and will be presented on the web interface for any method that uses the
         decorator.
+      cache: An optional cache service client that implements get() and set()
+        methods. See clientsecrets.loadfile() for details.
     """
-    try:
-      client_type, client_info = clientsecrets.loadfile(filename)
-      if client_type not in [clientsecrets.TYPE_WEB, clientsecrets.TYPE_INSTALLED]:
-        raise InvalidClientSecretsError('OAuth2Decorator doesn\'t support this OAuth 2.0 flow.')
-      super(OAuth2DecoratorFromClientSecrets,
-            self).__init__(
-                client_info['client_id'],
-                client_info['client_secret'],
-                scope,
-                client_info['auth_uri'],
-                client_info['token_uri'],
-                message)
-    except clientsecrets.InvalidClientSecretsError:
-      self._in_error = True
+    client_type, client_info = clientsecrets.loadfile(filename, cache=cache)
+    if client_type not in [
+        clientsecrets.TYPE_WEB, clientsecrets.TYPE_INSTALLED]:
+      raise InvalidClientSecretsError(
+          'OAuth2Decorator doesn\'t support this OAuth 2.0 flow.')
+    constructor_kwargs = {
+      'auth_uri': client_info['auth_uri'],
+      'token_uri': client_info['token_uri'],
+      'message': message,
+    }
+    revoke_uri = client_info.get('revoke_uri')
+    if revoke_uri is not None:
+      constructor_kwargs['revoke_uri'] = revoke_uri
+    super(OAuth2DecoratorFromClientSecrets, self).__init__(
+        client_info['client_id'], client_info['client_secret'],
+        scope, **constructor_kwargs)
     if message is not None:
       self._message = message
     else:
-      self._message = "Please configure your application for OAuth 2.0"
+      self._message = 'Please configure your application for OAuth 2.0.'
 
 
-def oauth2decorator_from_clientsecrets(filename, scope, message=None):
+@util.positional(2)
+def oauth2decorator_from_clientsecrets(filename, scope,
+                                       message=None, cache=None):
   """Creates an OAuth2Decorator populated from a clientsecrets file.
 
   Args:
@@ -485,43 +886,11 @@ def oauth2decorator_from_clientsecrets(filename, scope, message=None):
       clientsecrets file is missing or invalid. The message may contain HTML and
       will be presented on the web interface for any method that uses the
       decorator.
+    cache: An optional cache service client that implements get() and set()
+      methods. See clientsecrets.loadfile() for details.
 
   Returns: An OAuth2Decorator
 
   """
-  return OAuth2DecoratorFromClientSecrets(filename, scope, message)
-
-
-class OAuth2Handler(webapp.RequestHandler):
-  """Handler for the redirect_uri of the OAuth 2.0 dance."""
-
-  @login_required
-  def get(self):
-    error = self.request.get('error')
-    if error:
-      errormsg = self.request.get('error_description', error)
-      self.response.out.write(
-          'The authorization request failed: %s' % errormsg)
-    else:
-      user = users.get_current_user()
-      flow = pickle.loads(memcache.get(user.user_id(),
-                                       namespace=OAUTH2CLIENT_NAMESPACE))
-      # This code should be ammended with application specific error
-      # handling. The following cases should be considered:
-      # 1. What if the flow doesn't exist in memcache? Or is corrupt?
-      # 2. What if the step2_exchange fails?
-      if flow:
-        credentials = flow.step2_exchange(self.request.params)
-        StorageByKeyName(
-            CredentialsModel, user.user_id(), 'credentials').put(credentials)
-        self.redirect(str(self.request.get('state')))
-      else:
-        # TODO Add error handling here.
-        pass
-
-
-application = webapp.WSGIApplication([('/oauth2callback', OAuth2Handler)])
-
-
-def main():
-  run_wsgi_app(application)
+  return OAuth2DecoratorFromClientSecrets(filename, scope,
+                                          message=message, cache=cache)

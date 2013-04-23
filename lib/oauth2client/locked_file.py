@@ -20,18 +20,27 @@ __author__ = 'cache@google.com (David T McWherter)'
 
 import errno
 import logging
+import os
 import time
 
-import os
-
+from oauth2client import util
 
 logger = logging.getLogger(__name__)
+
+
+class CredentialsFileSymbolicLinkError(Exception):
+  """Credentials files must not be symbolic links."""
 
 
 class AlreadyLockedException(Exception):
   """Trying to lock a file that has already been locked by the LockedFile."""
   pass
 
+
+def validate_file(filename):
+  if os.path.islink(filename):
+    raise CredentialsFileSymbolicLinkError(
+        'File: %s is a symbolic link.' % filename)
 
 class _Opener(object):
   """Base class for different locking primitives."""
@@ -55,7 +64,7 @@ class _Opener(object):
     return self._locked
 
   def file_handle(self):
-    """The file handle to the file.  Valid only after opened."""
+    """The file handle to the file. Valid only after opened."""
     return self._fh
 
   def filename(self):
@@ -91,12 +100,14 @@ class _PosixOpener(_Opener):
     Raises:
       AlreadyLockedException: if the lock is already acquired.
       IOError: if the open fails.
+      CredentialsFileSymbolicLinkError if the file is a symbolic link.
     """
     if self._locked:
       raise AlreadyLockedException('File %s is already locked' %
                                    self._filename)
     self._locked = False
 
+    validate_file(self._filename)
     try:
       self._fh = open(self._filename, self._mode)
     except IOError, e:
@@ -131,8 +142,8 @@ class _PosixOpener(_Opener):
     """Unlock a file by removing the .lock file, and close the handle."""
     if self._locked:
       lock_filename = self._posix_lockfile(self._filename)
-      os.unlink(lock_filename)
       os.close(self._lock_fd)
+      os.unlink(lock_filename)
       self._locked = False
       self._lock_fd = None
     if self._fh:
@@ -159,12 +170,14 @@ try:
       Raises:
         AlreadyLockedException: if the lock is already acquired.
         IOError: if the open fails.
+        CredentialsFileSymbolicLinkError if the file is a symbolic link.
       """
       if self._locked:
         raise AlreadyLockedException('File %s is already locked' %
                                      self._filename)
       start_time = time.time()
 
+      validate_file(self._filename)
       try:
         self._fh = open(self._filename, self._mode)
       except IOError, e:
@@ -185,7 +198,7 @@ try:
             raise e
           if e.errno != errno.EACCES:
             raise e
-          # We could not acquire the lock.  Try again.
+          # We could not acquire the lock. Try again.
           if (time.time() - start_time) >= timeout:
             logger.warn('Could not lock %s in %s seconds' % (
                 self._filename, timeout))
@@ -232,12 +245,14 @@ try:
       Raises:
         AlreadyLockedException: if the lock is already acquired.
         IOError: if the open fails.
+        CredentialsFileSymbolicLinkError if the file is a symbolic link.
       """
       if self._locked:
         raise AlreadyLockedException('File %s is already locked' %
                                      self._filename)
       start_time = time.time()
 
+      validate_file(self._filename)
       try:
         self._fh = open(self._filename, self._mode)
       except IOError, e:
@@ -265,7 +280,7 @@ try:
           if e[0] != _Win32Opener.FILE_IN_USE_ERROR:
             raise
 
-          # We could not acquire the lock.  Try again.
+          # We could not acquire the lock. Try again.
           if (time.time() - start_time) >= timeout:
             logger.warn('Could not lock %s in %s seconds' % (
                 self._filename, timeout))
@@ -294,6 +309,7 @@ except ImportError:
 class LockedFile(object):
   """Represent a file that has exclusive access."""
 
+  @util.positional(4)
   def __init__(self, filename, mode, fallback_mode, use_native_locking=True):
     """Construct a LockedFile.
 

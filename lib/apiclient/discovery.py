@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Client for discovery based APIs
+"""Client for discovery based APIs.
 
 A client library for Google's discovery based APIs.
 """
@@ -20,35 +20,41 @@ A client library for Google's discovery based APIs.
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 __all__ = [
     'build',
-    'build_from_document'
+    'build_from_document',
     'fix_method_name',
-    'key2param'
+    'key2param',
     ]
 
-import copy
-import logging
-import urllib
-import urlparse
-import mimetypes
 
-import httplib2
+# Standard library imports
+import copy
+from email.mime.multipart import MIMEMultipart
+from email.mime.nonmultipart import MIMENonMultipart
+import keyword
+import logging
+import mimetypes
 import os
 import re
-import uritemplate
-
-import mimeparse
-
+import urllib
+import urlparse
 
 try:
-    from urlparse import parse_qsl
+  from urlparse import parse_qsl
 except ImportError:
-    from cgi import parse_qsl
+  from cgi import parse_qsl
 
+# Third-party imports
+import httplib2
+import mimeparse
+import uritemplate
+
+# Local imports
 from apiclient.errors import HttpError
 from apiclient.errors import InvalidJsonError
 from apiclient.errors import MediaUploadSizeError
 from apiclient.errors import UnacceptableMimeTypeError
 from apiclient.errors import UnknownApiNameOrVersion
+from apiclient.errors import UnknownFileType
 from apiclient.http import HttpRequest
 from apiclient.http import MediaFileUpload
 from apiclient.http import MediaUpload
@@ -56,26 +62,42 @@ from apiclient.model import JsonModel
 from apiclient.model import MediaModel
 from apiclient.model import RawModel
 from apiclient.schema import Schemas
-from email.mime.multipart import MIMEMultipart
-from email.mime.nonmultipart import MIMENonMultipart
 from oauth2client.anyjson import simplejson
+from oauth2client.util import _add_query_parameter
+from oauth2client.util import positional
+
+
+# The client library requires a version of httplib2 that supports RETRIES.
+httplib2.RETRIES = 1
 
 logger = logging.getLogger(__name__)
 
 URITEMPLATE = re.compile('{[^}]*}')
 VARNAME = re.compile('[a-zA-Z0-9_-]+')
 DISCOVERY_URI = ('https://www.googleapis.com/discovery/v1/apis/'
-  '{api}/{apiVersion}/rest')
+                 '{api}/{apiVersion}/rest')
 DEFAULT_METHOD_DOC = 'A description of how to use this function'
+HTTP_PAYLOAD_METHODS = frozenset(['PUT', 'POST', 'PATCH'])
+_MEDIA_SIZE_BIT_SHIFTS = {'KB': 10, 'MB': 20, 'GB': 30, 'TB': 40}
+BODY_PARAMETER_DEFAULT_VALUE = {
+    'description': 'The request body.',
+    'type': 'object',
+    'required': True,
+}
+MEDIA_BODY_PARAMETER_DEFAULT_VALUE = {
+    'description': ('The filename of the media request body, or an instance '
+                    'of a MediaUpload object.'),
+    'type': 'string',
+    'required': False,
+}
 
 # Parameters accepted by the stack, but not visible via discovery.
-STACK_QUERY_PARAMETERS = ['trace', 'pp', 'userip', 'strict']
+# TODO(dhermes): Remove 'userip' in 'v2'.
+STACK_QUERY_PARAMETERS = frozenset(['trace', 'pp', 'userip', 'strict'])
+STACK_QUERY_PARAMETER_DEFAULT_VALUE = {'type': 'string', 'location': 'query'}
 
-# Python reserved words.
-RESERVED_WORDS = ['and', 'assert', 'break', 'class', 'continue', 'def', 'del',
-                  'elif', 'else', 'except', 'exec', 'finally', 'for', 'from',
-                  'global', 'if', 'import', 'in', 'is', 'lambda', 'not', 'or',
-                  'pass', 'print', 'raise', 'return', 'try', 'while' ]
+# Library-specific reserved words beyond Python keywords.
+RESERVED_WORDS = frozenset(['body'])
 
 
 def fix_method_name(name):
@@ -87,33 +109,10 @@ def fix_method_name(name):
   Returns:
     The name with a '_' prefixed if the name is a reserved word.
   """
-  if name in RESERVED_WORDS:
+  if keyword.iskeyword(name) or name in RESERVED_WORDS:
     return name + '_'
   else:
     return name
-
-
-def _add_query_parameter(url, name, value):
-  """Adds a query parameter to a url.
-
-  Replaces the current value if it already exists in the URL.
-
-  Args:
-    url: string, url to add the query parameter to.
-    name: string, query parameter name.
-    value: string, query parameter value.
-
-  Returns:
-    Updated query parameter. Does not update the url if value is None.
-  """
-  if value is None:
-    return url
-  else:
-    parsed = list(urlparse.urlparse(url))
-    q = dict(parse_qsl(parsed[4]))
-    q[name] = value
-    parsed[4] = urllib.urlencode(q)
-    return urlparse.urlunparse(parsed)
 
 
 def key2param(key):
@@ -140,6 +139,7 @@ def key2param(key):
   return ''.join(result)
 
 
+@positional(2)
 def build(serviceName,
           version,
           http=None,
@@ -195,7 +195,7 @@ def build(serviceName,
     raise UnknownApiNameOrVersion("name: %s  version: %s" % (serviceName,
                                                             version))
   if resp.status >= 400:
-    raise HttpError(resp, content, requested_url)
+    raise HttpError(resp, content, uri=requested_url)
 
   try:
     service = simplejson.loads(content)
@@ -203,13 +203,14 @@ def build(serviceName,
     logger.error('Failed to parse as JSON: ' + content)
     raise InvalidJsonError()
 
-  return build_from_document(content, discoveryServiceUrl, http=http,
+  return build_from_document(content, base=discoveryServiceUrl, http=http,
       developerKey=developerKey, model=model, requestBuilder=requestBuilder)
 
 
+@positional(1)
 def build_from_document(
     service,
-    base,
+    base=None,
     future=None,
     http=None,
     developerKey=None,
@@ -221,8 +222,12 @@ def build_from_document(
   document that is it given, as opposed to retrieving one over HTTP.
 
   Args:
-    service: string, discovery document.
+    service: string or object, the JSON discovery document describing the API.
+      The value passed in may either be the JSON string or the deserialized
+      JSON.
     base: string, base URI for all HTTP requests, usually the discovery URI.
+      This parameter is no longer used as rootUrl and servicePath are included
+      within the discovery document. (deprecated)
     future: string, discovery document with future capabilities (deprecated).
     http: httplib2.Http, An instance of httplib2.Http or something that acts
       like it that HTTP requests will be made through.
@@ -239,17 +244,17 @@ def build_from_document(
   # future is no longer used.
   future = {}
 
-  service = simplejson.loads(service)
-  base = urlparse.urljoin(base, service['basePath'])
+  if isinstance(service, basestring):
+    service = simplejson.loads(service)
+  base = urlparse.urljoin(service['rootUrl'], service['servicePath'])
   schema = Schemas(service)
 
   if model is None:
     features = service.get('features', [])
     model = JsonModel('dataWrapper' in features)
-  resource = _createResource(http, base, model, requestBuilder, developerKey,
-                       service, service, schema)
-
-  return resource
+  return Resource(http=http, baseUrl=base, model=model,
+                  developerKey=developerKey, requestBuilder=requestBuilder,
+                  resourceDesc=service, rootDesc=service, schema=schema)
 
 
 def _cast(value, schema_type):
@@ -283,14 +288,6 @@ def _cast(value, schema_type):
       return str(value)
 
 
-MULTIPLIERS = {
-    "KB": 2 ** 10,
-    "MB": 2 ** 20,
-    "GB": 2 ** 30,
-    "TB": 2 ** 40,
-    }
-
-
 def _media_size_to_long(maxSize):
   """Convert a string media size, such as 10GB or 3TB into an integer.
 
@@ -301,444 +298,662 @@ def _media_size_to_long(maxSize):
     The size as an integer value.
   """
   if len(maxSize) < 2:
-    return 0
+    return 0L
   units = maxSize[-2:].upper()
-  multiplier = MULTIPLIERS.get(units, 0)
-  if multiplier:
-    return int(maxSize[:-2]) * multiplier
+  bit_shift = _MEDIA_SIZE_BIT_SHIFTS.get(units)
+  if bit_shift is not None:
+    return long(maxSize[:-2]) << bit_shift
   else:
-    return int(maxSize)
+    return long(maxSize)
 
 
-def _createResource(http, baseUrl, model, requestBuilder,
-                   developerKey, resourceDesc, rootDesc, schema):
-  """Build a Resource from the API description.
+def _media_path_url_from_info(root_desc, path_url):
+  """Creates an absolute media path URL.
+
+  Constructed using the API root URI and service path from the discovery
+  document and the relative path for the API method.
 
   Args:
-    http: httplib2.Http, Object to make http requests with.
-    baseUrl: string, base URL for the API. All requests are relative to this
-      URI.
-    model: apiclient.Model, converts to and from the wire format.
-    requestBuilder: class or callable that instantiates an
-      apiclient.HttpRequest object.
-    developerKey: string, key obtained from
-      https://code.google.com/apis/console
-    resourceDesc: object, section of deserialized discovery document that
-      describes a resource. Note that the top level discovery document
-      is considered a resource.
-    rootDesc: object, the entire deserialized discovery document.
-    schema: object, mapping of schema names to schema descriptions.
+    root_desc: Dictionary; the entire original deserialized discovery document.
+    path_url: String; the relative URL for the API method. Relative to the API
+        root, which is specified in the discovery document.
 
   Returns:
-    An instance of Resource with all the methods attached for interacting with
-    that resource.
+    String; the absolute URI for media upload for the API method.
+  """
+  return '%(root)supload/%(service_path)s%(path)s' % {
+      'root': root_desc['rootUrl'],
+      'service_path': root_desc['servicePath'],
+      'path': path_url,
+  }
+
+
+def _fix_up_parameters(method_desc, root_desc, http_method):
+  """Updates parameters of an API method with values specific to this library.
+
+  Specifically, adds whatever global parameters are specified by the API to the
+  parameters for the individual method. Also adds parameters which don't
+  appear in the discovery document, but are available to all discovery based
+  APIs (these are listed in STACK_QUERY_PARAMETERS).
+
+  SIDE EFFECTS: This updates the parameters dictionary object in the method
+  description.
+
+  Args:
+    method_desc: Dictionary with metadata describing an API method. Value comes
+        from the dictionary of methods stored in the 'methods' key in the
+        deserialized discovery document.
+    root_desc: Dictionary; the entire original deserialized discovery document.
+    http_method: String; the HTTP method used to call the API method described
+        in method_desc.
+
+  Returns:
+    The updated Dictionary stored in the 'parameters' key of the method
+        description dictionary.
+  """
+  parameters = method_desc.setdefault('parameters', {})
+
+  # Add in the parameters common to all methods.
+  for name, description in root_desc.get('parameters', {}).iteritems():
+    parameters[name] = description
+
+  # Add in undocumented query parameters.
+  for name in STACK_QUERY_PARAMETERS:
+    parameters[name] = STACK_QUERY_PARAMETER_DEFAULT_VALUE.copy()
+
+  # Add 'body' (our own reserved word) to parameters if the method supports
+  # a request payload.
+  if http_method in HTTP_PAYLOAD_METHODS and 'request' in method_desc:
+    body = BODY_PARAMETER_DEFAULT_VALUE.copy()
+    body.update(method_desc['request'])
+    parameters['body'] = body
+
+  return parameters
+
+
+def _fix_up_media_upload(method_desc, root_desc, path_url, parameters):
+  """Updates parameters of API by adding 'media_body' if supported by method.
+
+  SIDE EFFECTS: If the method supports media upload and has a required body,
+  sets body to be optional (required=False) instead. Also, if there is a
+  'mediaUpload' in the method description, adds 'media_upload' key to
+  parameters.
+
+  Args:
+    method_desc: Dictionary with metadata describing an API method. Value comes
+        from the dictionary of methods stored in the 'methods' key in the
+        deserialized discovery document.
+    root_desc: Dictionary; the entire original deserialized discovery document.
+    path_url: String; the relative URL for the API method. Relative to the API
+        root, which is specified in the discovery document.
+    parameters: A dictionary describing method parameters for method described
+        in method_desc.
+
+  Returns:
+    Triple (accept, max_size, media_path_url) where:
+      - accept is a list of strings representing what content types are
+        accepted for media upload. Defaults to empty list if not in the
+        discovery document.
+      - max_size is a long representing the max size in bytes allowed for a
+        media upload. Defaults to 0L if not in the discovery document.
+      - media_path_url is a String; the absolute URI for media upload for the
+        API method. Constructed using the API root URI and service path from
+        the discovery document and the relative path for the API method. If
+        media upload is not supported, this is None.
+  """
+  media_upload = method_desc.get('mediaUpload', {})
+  accept = media_upload.get('accept', [])
+  max_size = _media_size_to_long(media_upload.get('maxSize', ''))
+  media_path_url = None
+
+  if media_upload:
+    media_path_url = _media_path_url_from_info(root_desc, path_url)
+    parameters['media_body'] = MEDIA_BODY_PARAMETER_DEFAULT_VALUE.copy()
+    if 'body' in parameters:
+      parameters['body']['required'] = False
+
+  return accept, max_size, media_path_url
+
+
+def _fix_up_method_description(method_desc, root_desc):
+  """Updates a method description in a discovery document.
+
+  SIDE EFFECTS: Changes the parameters dictionary in the method description with
+  extra parameters which are used locally.
+
+  Args:
+    method_desc: Dictionary with metadata describing an API method. Value comes
+        from the dictionary of methods stored in the 'methods' key in the
+        deserialized discovery document.
+    root_desc: Dictionary; the entire original deserialized discovery document.
+
+  Returns:
+    Tuple (path_url, http_method, method_id, accept, max_size, media_path_url)
+    where:
+      - path_url is a String; the relative URL for the API method. Relative to
+        the API root, which is specified in the discovery document.
+      - http_method is a String; the HTTP method used to call the API method
+        described in the method description.
+      - method_id is a String; the name of the RPC method associated with the
+        API method, and is in the method description in the 'id' key.
+      - accept is a list of strings representing what content types are
+        accepted for media upload. Defaults to empty list if not in the
+        discovery document.
+      - max_size is a long representing the max size in bytes allowed for a
+        media upload. Defaults to 0L if not in the discovery document.
+      - media_path_url is a String; the absolute URI for media upload for the
+        API method. Constructed using the API root URI and service path from
+        the discovery document and the relative path for the API method. If
+        media upload is not supported, this is None.
+  """
+  path_url = method_desc['path']
+  http_method = method_desc['httpMethod']
+  method_id = method_desc['id']
+
+  parameters = _fix_up_parameters(method_desc, root_desc, http_method)
+  # Order is important. `_fix_up_media_upload` needs `method_desc` to have a
+  # 'parameters' key and needs to know if there is a 'body' parameter because it
+  # also sets a 'media_body' parameter.
+  accept, max_size, media_path_url = _fix_up_media_upload(
+      method_desc, root_desc, path_url, parameters)
+
+  return path_url, http_method, method_id, accept, max_size, media_path_url
+
+
+# TODO(dhermes): Convert this class to ResourceMethod and make it callable
+class ResourceMethodParameters(object):
+  """Represents the parameters associated with a method.
+
+  Attributes:
+    argmap: Map from method parameter name (string) to query parameter name
+        (string).
+    required_params: List of required parameters (represented by parameter
+        name as string).
+    repeated_params: List of repeated parameters (represented by parameter
+        name as string).
+    pattern_params: Map from method parameter name (string) to regular
+        expression (as a string). If the pattern is set for a parameter, the
+        value for that parameter must match the regular expression.
+    query_params: List of parameters (represented by parameter name as string)
+        that will be used in the query string.
+    path_params: Set of parameters (represented by parameter name as string)
+        that will be used in the base URL path.
+    param_types: Map from method parameter name (string) to parameter type. Type
+        can be any valid JSON schema type; valid values are 'any', 'array',
+        'boolean', 'integer', 'number', 'object', or 'string'. Reference:
+        http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.1
+    enum_params: Map from method parameter name (string) to list of strings,
+       where each list of strings is the list of acceptable enum values.
   """
 
-  class Resource(object):
-    """A class for interacting with a resource."""
+  def __init__(self, method_desc):
+    """Constructor for ResourceMethodParameters.
 
-    def __init__(self):
-      self._http = http
-      self._baseUrl = baseUrl
-      self._model = model
-      self._developerKey = developerKey
-      self._requestBuilder = requestBuilder
-
-  def createMethod(theclass, methodName, methodDesc, rootDesc):
-    """Creates a method for attaching to a Resource.
+    Sets default values and defers to set_parameters to populate.
 
     Args:
-      theclass: type, the class to attach methods to.
-      methodName: string, name of the method to use.
-      methodDesc: object, fragment of deserialized discovery document that
-        describes the method.
-      rootDesc: object, the entire deserialized discovery document.
+      method_desc: Dictionary with metadata describing an API method. Value
+          comes from the dictionary of methods stored in the 'methods' key in
+          the deserialized discovery document.
     """
-    methodName = fix_method_name(methodName)
-    pathUrl = methodDesc['path']
-    httpMethod = methodDesc['httpMethod']
-    methodId = methodDesc['id']
+    self.argmap = {}
+    self.required_params = []
+    self.repeated_params = []
+    self.pattern_params = {}
+    self.query_params = []
+    # TODO(dhermes): Change path_params to a list if the extra URITEMPLATE
+    #                parsing is gotten rid of.
+    self.path_params = set()
+    self.param_types = {}
+    self.enum_params = {}
 
-    mediaPathUrl = None
-    accept = []
-    maxSize = 0
-    if 'mediaUpload' in methodDesc:
-      mediaUpload = methodDesc['mediaUpload']
-      # TODO(jcgregorio) Use URLs from discovery once it is updated.
-      parsed = list(urlparse.urlparse(baseUrl))
-      basePath = parsed[2]
-      mediaPathUrl = '/upload' + basePath + pathUrl
-      accept = mediaUpload['accept']
-      maxSize = _media_size_to_long(mediaUpload.get('maxSize', ''))
+    self.set_parameters(method_desc)
 
-    if 'parameters' not in methodDesc:
-      methodDesc['parameters'] = {}
+  def set_parameters(self, method_desc):
+    """Populates maps and lists based on method description.
 
-    # Add in the parameters common to all methods.
-    for name, desc in rootDesc.get('parameters', {}).iteritems():
-      methodDesc['parameters'][name] = desc
+    Iterates through each parameter for the method and parses the values from
+    the parameter dictionary.
 
-    # Add in undocumented query parameters.
-    for name in STACK_QUERY_PARAMETERS:
-      methodDesc['parameters'][name] = {
-          'type': 'string',
-          'location': 'query'
-          }
+    Args:
+      method_desc: Dictionary with metadata describing an API method. Value
+          comes from the dictionary of methods stored in the 'methods' key in
+          the deserialized discovery document.
+    """
+    for arg, desc in method_desc.get('parameters', {}).iteritems():
+      param = key2param(arg)
+      self.argmap[param] = arg
 
-    if httpMethod in ['PUT', 'POST', 'PATCH'] and 'request' in methodDesc:
-      methodDesc['parameters']['body'] = {
-          'description': 'The request body.',
-          'type': 'object',
-          'required': True,
-          }
-      if 'request' in methodDesc:
-        methodDesc['parameters']['body'].update(methodDesc['request'])
-      else:
-        methodDesc['parameters']['body']['type'] = 'object'
-    if 'mediaUpload' in methodDesc:
-      methodDesc['parameters']['media_body'] = {
-          'description': 'The filename of the media request body.',
-          'type': 'string',
-          'required': False,
-          }
-      if 'body' in methodDesc['parameters']:
-        methodDesc['parameters']['body']['required'] = False
+      if desc.get('pattern'):
+        self.pattern_params[param] = desc['pattern']
+      if desc.get('enum'):
+        self.enum_params[param] = desc['enum']
+      if desc.get('required'):
+        self.required_params.append(param)
+      if desc.get('repeated'):
+        self.repeated_params.append(param)
+      if desc.get('location') == 'query':
+        self.query_params.append(param)
+      if desc.get('location') == 'path':
+        self.path_params.add(param)
+      self.param_types[param] = desc.get('type', 'string')
 
-    argmap = {} # Map from method parameter name to query parameter name
-    required_params = [] # Required parameters
-    repeated_params = [] # Repeated parameters
-    pattern_params = {}  # Parameters that must match a regex
-    query_params = [] # Parameters that will be used in the query string
-    path_params = {} # Parameters that will be used in the base URL
-    param_type = {} # The type of the parameter
-    enum_params = {} # Allowable enumeration values for each parameter
-
-
-    if 'parameters' in methodDesc:
-      for arg, desc in methodDesc['parameters'].iteritems():
-        param = key2param(arg)
-        argmap[param] = arg
-
-        if desc.get('pattern', ''):
-          pattern_params[param] = desc['pattern']
-        if desc.get('enum', ''):
-          enum_params[param] = desc['enum']
-        if desc.get('required', False):
-          required_params.append(param)
-        if desc.get('repeated', False):
-          repeated_params.append(param)
-        if desc.get('location') == 'query':
-          query_params.append(param)
-        if desc.get('location') == 'path':
-          path_params[param] = param
-        param_type[param] = desc.get('type', 'string')
-
-    for match in URITEMPLATE.finditer(pathUrl):
+    # TODO(dhermes): Determine if this is still necessary. Discovery based APIs
+    #                should have all path parameters already marked with
+    #                'location: path'.
+    for match in URITEMPLATE.finditer(method_desc['path']):
       for namematch in VARNAME.finditer(match.group(0)):
         name = key2param(namematch.group(0))
-        path_params[name] = name
-        if name in query_params:
-          query_params.remove(name)
+        self.path_params.add(name)
+        if name in self.query_params:
+          self.query_params.remove(name)
 
-    def method(self, **kwargs):
-      # Don't bother with doc string, it will be over-written by createMethod.
 
-      for name in kwargs.iterkeys():
-        if name not in argmap:
-          raise TypeError('Got an unexpected keyword argument "%s"' % name)
+def createMethod(methodName, methodDesc, rootDesc, schema):
+  """Creates a method for attaching to a Resource.
 
-      # Remove args that have a value of None.
-      keys = kwargs.keys()
-      for name in keys:
-        if kwargs[name] is None:
-          del kwargs[name]
+  Args:
+    methodName: string, name of the method to use.
+    methodDesc: object, fragment of deserialized discovery document that
+      describes the method.
+    rootDesc: object, the entire deserialized discovery document.
+    schema: object, mapping of schema names to schema descriptions.
+  """
+  methodName = fix_method_name(methodName)
+  (pathUrl, httpMethod, methodId, accept,
+   maxSize, mediaPathUrl) = _fix_up_method_description(methodDesc, rootDesc)
 
-      for name in required_params:
-        if name not in kwargs:
-          raise TypeError('Missing required parameter "%s"' % name)
+  parameters = ResourceMethodParameters(methodDesc)
 
-      for name, regex in pattern_params.iteritems():
-        if name in kwargs:
-          if isinstance(kwargs[name], basestring):
-            pvalues = [kwargs[name]]
-          else:
-            pvalues = kwargs[name]
-          for pvalue in pvalues:
-            if re.match(regex, pvalue) is None:
-              raise TypeError(
-                  'Parameter "%s" value "%s" does not match the pattern "%s"' %
-                  (name, pvalue, regex))
+  def method(self, **kwargs):
+    # Don't bother with doc string, it will be over-written by createMethod.
 
-      for name, enums in enum_params.iteritems():
-        if name in kwargs:
-          # We need to handle the case of a repeated enum
-          # name differently, since we want to handle both
-          # arg='value' and arg=['value1', 'value2']
-          if (name in repeated_params and
-              not isinstance(kwargs[name], basestring)):
-            values = kwargs[name]
-          else:
-            values = [kwargs[name]]
-          for value in values:
-            if value not in enums:
-              raise TypeError(
-                  'Parameter "%s" value "%s" is not an allowed value in "%s"' %
-                  (name, value, str(enums)))
+    for name in kwargs.iterkeys():
+      if name not in parameters.argmap:
+        raise TypeError('Got an unexpected keyword argument "%s"' % name)
 
-      actual_query_params = {}
-      actual_path_params = {}
-      for key, value in kwargs.iteritems():
-        to_type = param_type.get(key, 'string')
-        # For repeated parameters we cast each member of the list.
-        if key in repeated_params and type(value) == type([]):
-          cast_value = [_cast(x, to_type) for x in value]
+    # Remove args that have a value of None.
+    keys = kwargs.keys()
+    for name in keys:
+      if kwargs[name] is None:
+        del kwargs[name]
+
+    for name in parameters.required_params:
+      if name not in kwargs:
+        raise TypeError('Missing required parameter "%s"' % name)
+
+    for name, regex in parameters.pattern_params.iteritems():
+      if name in kwargs:
+        if isinstance(kwargs[name], basestring):
+          pvalues = [kwargs[name]]
         else:
-          cast_value = _cast(value, to_type)
-        if key in query_params:
-          actual_query_params[argmap[key]] = cast_value
-        if key in path_params:
-          actual_path_params[argmap[key]] = cast_value
-      body_value = kwargs.get('body', None)
-      media_filename = kwargs.get('media_body', None)
+          pvalues = kwargs[name]
+        for pvalue in pvalues:
+          if re.match(regex, pvalue) is None:
+            raise TypeError(
+                'Parameter "%s" value "%s" does not match the pattern "%s"' %
+                (name, pvalue, regex))
 
-      if self._developerKey:
-        actual_query_params['key'] = self._developerKey
+    for name, enums in parameters.enum_params.iteritems():
+      if name in kwargs:
+        # We need to handle the case of a repeated enum
+        # name differently, since we want to handle both
+        # arg='value' and arg=['value1', 'value2']
+        if (name in parameters.repeated_params and
+            not isinstance(kwargs[name], basestring)):
+          values = kwargs[name]
+        else:
+          values = [kwargs[name]]
+        for value in values:
+          if value not in enums:
+            raise TypeError(
+                'Parameter "%s" value "%s" is not an allowed value in "%s"' %
+                (name, value, str(enums)))
 
-      model = self._model
-      # If there is no schema for the response then presume a binary blob.
-      if methodName.endswith('_media'):
-        model = MediaModel()
-      elif 'response' not in methodDesc:
-        model = RawModel()
+    actual_query_params = {}
+    actual_path_params = {}
+    for key, value in kwargs.iteritems():
+      to_type = parameters.param_types.get(key, 'string')
+      # For repeated parameters we cast each member of the list.
+      if key in parameters.repeated_params and type(value) == type([]):
+        cast_value = [_cast(x, to_type) for x in value]
+      else:
+        cast_value = _cast(value, to_type)
+      if key in parameters.query_params:
+        actual_query_params[parameters.argmap[key]] = cast_value
+      if key in parameters.path_params:
+        actual_path_params[parameters.argmap[key]] = cast_value
+    body_value = kwargs.get('body', None)
+    media_filename = kwargs.get('media_body', None)
 
-      headers = {}
-      headers, params, query, body = model.request(headers,
-          actual_path_params, actual_query_params, body_value)
+    if self._developerKey:
+      actual_query_params['key'] = self._developerKey
 
-      expanded_url = uritemplate.expand(pathUrl, params)
+    model = self._model
+    if methodName.endswith('_media'):
+      model = MediaModel()
+    elif 'response' not in methodDesc:
+      model = RawModel()
+
+    headers = {}
+    headers, params, query, body = model.request(headers,
+        actual_path_params, actual_query_params, body_value)
+
+    expanded_url = uritemplate.expand(pathUrl, params)
+    url = urlparse.urljoin(self._baseUrl, expanded_url + query)
+
+    resumable = None
+    multipart_boundary = ''
+
+    if media_filename:
+      # Ensure we end up with a valid MediaUpload object.
+      if isinstance(media_filename, basestring):
+        (media_mime_type, encoding) = mimetypes.guess_type(media_filename)
+        if media_mime_type is None:
+          raise UnknownFileType(media_filename)
+        if not mimeparse.best_match([media_mime_type], ','.join(accept)):
+          raise UnacceptableMimeTypeError(media_mime_type)
+        media_upload = MediaFileUpload(media_filename,
+                                       mimetype=media_mime_type)
+      elif isinstance(media_filename, MediaUpload):
+        media_upload = media_filename
+      else:
+        raise TypeError('media_filename must be str or MediaUpload.')
+
+      # Check the maxSize
+      if maxSize > 0 and media_upload.size() > maxSize:
+        raise MediaUploadSizeError("Media larger than: %s" % maxSize)
+
+      # Use the media path uri for media uploads
+      expanded_url = uritemplate.expand(mediaPathUrl, params)
       url = urlparse.urljoin(self._baseUrl, expanded_url + query)
+      if media_upload.resumable():
+        url = _add_query_parameter(url, 'uploadType', 'resumable')
 
-      resumable = None
-      multipart_boundary = ''
-
-      if media_filename:
-        # Ensure we end up with a valid MediaUpload object.
-        if isinstance(media_filename, basestring):
-          (media_mime_type, encoding) = mimetypes.guess_type(media_filename)
-          if media_mime_type is None:
-            raise UnknownFileType(media_filename)
-          if not mimeparse.best_match([media_mime_type], ','.join(accept)):
-            raise UnacceptableMimeTypeError(media_mime_type)
-          media_upload = MediaFileUpload(media_filename, media_mime_type)
-        elif isinstance(media_filename, MediaUpload):
-          media_upload = media_filename
-        else:
-          raise TypeError('media_filename must be str or MediaUpload.')
-
-        # Check the maxSize
-        if maxSize > 0 and media_upload.size() > maxSize:
-          raise MediaUploadSizeError("Media larger than: %s" % maxSize)
-
-        # Use the media path uri for media uploads
-        expanded_url = uritemplate.expand(mediaPathUrl, params)
-        url = urlparse.urljoin(self._baseUrl, expanded_url + query)
-        if media_upload.resumable():
-          url = _add_query_parameter(url, 'uploadType', 'resumable')
-
-        if media_upload.resumable():
-          # This is all we need to do for resumable, if the body exists it gets
-          # sent in the first request, otherwise an empty body is sent.
-          resumable = media_upload
-        else:
-          # A non-resumable upload
-          if body is None:
-            # This is a simple media upload
-            headers['content-type'] = media_upload.mimetype()
-            body = media_upload.getbytes(0, media_upload.size())
-            url = _add_query_parameter(url, 'uploadType', 'media')
-          else:
-            # This is a multipart/related upload.
-            msgRoot = MIMEMultipart('related')
-            # msgRoot should not write out it's own headers
-            setattr(msgRoot, '_write_headers', lambda self: None)
-
-            # attach the body as one part
-            msg = MIMENonMultipart(*headers['content-type'].split('/'))
-            msg.set_payload(body)
-            msgRoot.attach(msg)
-
-            # attach the media as the second part
-            msg = MIMENonMultipart(*media_upload.mimetype().split('/'))
-            msg['Content-Transfer-Encoding'] = 'binary'
-
-            payload = media_upload.getbytes(0, media_upload.size())
-            msg.set_payload(payload)
-            msgRoot.attach(msg)
-            body = msgRoot.as_string()
-
-            multipart_boundary = msgRoot.get_boundary()
-            headers['content-type'] = ('multipart/related; '
-                                       'boundary="%s"') % multipart_boundary
-            url = _add_query_parameter(url, 'uploadType', 'multipart')
-
-      logger.info('URL being requested: %s' % url)
-      return self._requestBuilder(self._http,
-                                  model.response,
-                                  url,
-                                  method=httpMethod,
-                                  body=body,
-                                  headers=headers,
-                                  methodId=methodId,
-                                  resumable=resumable)
-
-    docs = [methodDesc.get('description', DEFAULT_METHOD_DOC), '\n\n']
-    if len(argmap) > 0:
-      docs.append('Args:\n')
-
-    # Skip undocumented params and params common to all methods.
-    skip_parameters = rootDesc.get('parameters', {}).keys()
-    skip_parameters.append(STACK_QUERY_PARAMETERS)
-
-    for arg in argmap.iterkeys():
-      if arg in skip_parameters:
-        continue
-
-      repeated = ''
-      if arg in repeated_params:
-        repeated = ' (repeated)'
-      required = ''
-      if arg in required_params:
-        required = ' (required)'
-      paramdesc = methodDesc['parameters'][argmap[arg]]
-      paramdoc = paramdesc.get('description', 'A parameter')
-      if '$ref' in paramdesc:
-        docs.append(
-            ('  %s: object, %s%s%s\n    The object takes the'
-            ' form of:\n\n%s\n\n') % (arg, paramdoc, required, repeated,
-              schema.prettyPrintByName(paramdesc['$ref'])))
+      if media_upload.resumable():
+        # This is all we need to do for resumable, if the body exists it gets
+        # sent in the first request, otherwise an empty body is sent.
+        resumable = media_upload
       else:
-        paramtype = paramdesc.get('type', 'string')
-        docs.append('  %s: %s, %s%s%s\n' % (arg, paramtype, paramdoc, required,
-                                            repeated))
-      enum = paramdesc.get('enum', [])
-      enumDesc = paramdesc.get('enumDescriptions', [])
-      if enum and enumDesc:
-        docs.append('    Allowed values\n')
-        for (name, desc) in zip(enum, enumDesc):
-          docs.append('      %s - %s\n' % (name, desc))
-    if 'response' in methodDesc:
-      if methodName.endswith('_media'):
-        docs.append('\nReturns:\n  The media object as a string.\n\n    ')
-      else:
-        docs.append('\nReturns:\n  An object of the form:\n\n    ')
-        docs.append(schema.prettyPrintSchema(methodDesc['response']))
+        # A non-resumable upload
+        if body is None:
+          # This is a simple media upload
+          headers['content-type'] = media_upload.mimetype()
+          body = media_upload.getbytes(0, media_upload.size())
+          url = _add_query_parameter(url, 'uploadType', 'media')
+        else:
+          # This is a multipart/related upload.
+          msgRoot = MIMEMultipart('related')
+          # msgRoot should not write out it's own headers
+          setattr(msgRoot, '_write_headers', lambda self: None)
 
-    setattr(method, '__doc__', ''.join(docs))
-    setattr(theclass, methodName, method)
+          # attach the body as one part
+          msg = MIMENonMultipart(*headers['content-type'].split('/'))
+          msg.set_payload(body)
+          msgRoot.attach(msg)
 
-  def createNextMethod(theclass, methodName, methodDesc, rootDesc):
-    """Creates any _next methods for attaching to a Resource.
+          # attach the media as the second part
+          msg = MIMENonMultipart(*media_upload.mimetype().split('/'))
+          msg['Content-Transfer-Encoding'] = 'binary'
 
-    The _next methods allow for easy iteration through list() responses.
+          payload = media_upload.getbytes(0, media_upload.size())
+          msg.set_payload(payload)
+          msgRoot.attach(msg)
+          body = msgRoot.as_string()
+
+          multipart_boundary = msgRoot.get_boundary()
+          headers['content-type'] = ('multipart/related; '
+                                     'boundary="%s"') % multipart_boundary
+          url = _add_query_parameter(url, 'uploadType', 'multipart')
+
+    logger.info('URL being requested: %s' % url)
+    return self._requestBuilder(self._http,
+                                model.response,
+                                url,
+                                method=httpMethod,
+                                body=body,
+                                headers=headers,
+                                methodId=methodId,
+                                resumable=resumable)
+
+  docs = [methodDesc.get('description', DEFAULT_METHOD_DOC), '\n\n']
+  if len(parameters.argmap) > 0:
+    docs.append('Args:\n')
+
+  # Skip undocumented params and params common to all methods.
+  skip_parameters = rootDesc.get('parameters', {}).keys()
+  skip_parameters.extend(STACK_QUERY_PARAMETERS)
+
+  all_args = parameters.argmap.keys()
+  args_ordered = [key2param(s) for s in methodDesc.get('parameterOrder', [])]
+
+  # Move body to the front of the line.
+  if 'body' in all_args:
+    args_ordered.append('body')
+
+  for name in all_args:
+    if name not in args_ordered:
+      args_ordered.append(name)
+
+  for arg in args_ordered:
+    if arg in skip_parameters:
+      continue
+
+    repeated = ''
+    if arg in parameters.repeated_params:
+      repeated = ' (repeated)'
+    required = ''
+    if arg in parameters.required_params:
+      required = ' (required)'
+    paramdesc = methodDesc['parameters'][parameters.argmap[arg]]
+    paramdoc = paramdesc.get('description', 'A parameter')
+    if '$ref' in paramdesc:
+      docs.append(
+          ('  %s: object, %s%s%s\n    The object takes the'
+          ' form of:\n\n%s\n\n') % (arg, paramdoc, required, repeated,
+            schema.prettyPrintByName(paramdesc['$ref'])))
+    else:
+      paramtype = paramdesc.get('type', 'string')
+      docs.append('  %s: %s, %s%s%s\n' % (arg, paramtype, paramdoc, required,
+                                          repeated))
+    enum = paramdesc.get('enum', [])
+    enumDesc = paramdesc.get('enumDescriptions', [])
+    if enum and enumDesc:
+      docs.append('    Allowed values\n')
+      for (name, desc) in zip(enum, enumDesc):
+        docs.append('      %s - %s\n' % (name, desc))
+  if 'response' in methodDesc:
+    if methodName.endswith('_media'):
+      docs.append('\nReturns:\n  The media object as a string.\n\n    ')
+    else:
+      docs.append('\nReturns:\n  An object of the form:\n\n    ')
+      docs.append(schema.prettyPrintSchema(methodDesc['response']))
+
+  setattr(method, '__doc__', ''.join(docs))
+  return (methodName, method)
+
+
+def createNextMethod(methodName):
+  """Creates any _next methods for attaching to a Resource.
+
+  The _next methods allow for easy iteration through list() responses.
+
+  Args:
+    methodName: string, name of the method to use.
+  """
+  methodName = fix_method_name(methodName)
+
+  def methodNext(self, previous_request, previous_response):
+    """Retrieves the next page of results.
+
+Args:
+  previous_request: The request for the previous page. (required)
+  previous_response: The response from the request for the previous page. (required)
+
+Returns:
+  A request object that you can call 'execute()' on to request the next
+  page. Returns None if there are no more items in the collection.
+    """
+    # Retrieve nextPageToken from previous_response
+    # Use as pageToken in previous_request to create new request.
+
+    if 'nextPageToken' not in previous_response:
+      return None
+
+    request = copy.copy(previous_request)
+
+    pageToken = previous_response['nextPageToken']
+    parsed = list(urlparse.urlparse(request.uri))
+    q = parse_qsl(parsed[4])
+
+    # Find and remove old 'pageToken' value from URI
+    newq = [(key, value) for (key, value) in q if key != 'pageToken']
+    newq.append(('pageToken', pageToken))
+    parsed[4] = urllib.urlencode(newq)
+    uri = urlparse.urlunparse(parsed)
+
+    request.uri = uri
+
+    logger.info('URL being requested: %s' % uri)
+
+    return request
+
+  return (methodName, methodNext)
+
+
+class Resource(object):
+  """A class for interacting with a resource."""
+
+  def __init__(self, http, baseUrl, model, requestBuilder, developerKey,
+               resourceDesc, rootDesc, schema):
+    """Build a Resource from the API description.
 
     Args:
-      theclass: type, the class to attach methods to.
-      methodName: string, name of the method to use.
-      methodDesc: object, fragment of deserialized discovery document that
-        describes the method.
+      http: httplib2.Http, Object to make http requests with.
+      baseUrl: string, base URL for the API. All requests are relative to this
+          URI.
+      model: apiclient.Model, converts to and from the wire format.
+      requestBuilder: class or callable that instantiates an
+          apiclient.HttpRequest object.
+      developerKey: string, key obtained from
+          https://code.google.com/apis/console
+      resourceDesc: object, section of deserialized discovery document that
+          describes a resource. Note that the top level discovery document
+          is considered a resource.
       rootDesc: object, the entire deserialized discovery document.
+      schema: object, mapping of schema names to schema descriptions.
     """
-    methodName = fix_method_name(methodName)
-    methodId = methodDesc['id'] + '.next'
+    self._dynamic_attrs = []
 
-    def methodNext(self, previous_request, previous_response):
-      """Retrieves the next page of results.
+    self._http = http
+    self._baseUrl = baseUrl
+    self._model = model
+    self._developerKey = developerKey
+    self._requestBuilder = requestBuilder
+    self._resourceDesc = resourceDesc
+    self._rootDesc = rootDesc
+    self._schema = schema
 
-      Args:
-        previous_request: The request for the previous page.
-        previous_response: The response from the request for the previous page.
+    self._set_service_methods()
 
-      Returns:
-        A request object that you can call 'execute()' on to request the next
-        page. Returns None if there are no more items in the collection.
-      """
-      # Retrieve nextPageToken from previous_response
-      # Use as pageToken in previous_request to create new request.
+  def _set_dynamic_attr(self, attr_name, value):
+    """Sets an instance attribute and tracks it in a list of dynamic attributes.
 
-      if 'nextPageToken' not in previous_response:
-        return None
+    Args:
+      attr_name: string; The name of the attribute to be set
+      value: The value being set on the object and tracked in the dynamic cache.
+    """
+    self._dynamic_attrs.append(attr_name)
+    self.__dict__[attr_name] = value
 
-      request = copy.copy(previous_request)
+  def __getstate__(self):
+    """Trim the state down to something that can be pickled.
 
-      pageToken = previous_response['nextPageToken']
-      parsed = list(urlparse.urlparse(request.uri))
-      q = parse_qsl(parsed[4])
+    Uses the fact that the instance variable _dynamic_attrs holds attrs that
+    will be wiped and restored on pickle serialization.
+    """
+    state_dict = copy.copy(self.__dict__)
+    for dynamic_attr in self._dynamic_attrs:
+      del state_dict[dynamic_attr]
+    del state_dict['_dynamic_attrs']
+    return state_dict
 
-      # Find and remove old 'pageToken' value from URI
-      newq = [(key, value) for (key, value) in q if key != 'pageToken']
-      newq.append(('pageToken', pageToken))
-      parsed[4] = urllib.urlencode(newq)
-      uri = urlparse.urlunparse(parsed)
+  def __setstate__(self, state):
+    """Reconstitute the state of the object from being pickled.
 
-      request.uri = uri
+    Uses the fact that the instance variable _dynamic_attrs holds attrs that
+    will be wiped and restored on pickle serialization.
+    """
+    self.__dict__.update(state)
+    self._dynamic_attrs = []
+    self._set_service_methods()
 
-      logger.info('URL being requested: %s' % uri)
+  def _set_service_methods(self):
+    self._add_basic_methods(self._resourceDesc, self._rootDesc, self._schema)
+    self._add_nested_resources(self._resourceDesc, self._rootDesc, self._schema)
+    self._add_next_methods(self._resourceDesc, self._schema)
 
-      return request
+  def _add_basic_methods(self, resourceDesc, rootDesc, schema):
+    # Add basic methods to Resource
+    if 'methods' in resourceDesc:
+      for methodName, methodDesc in resourceDesc['methods'].iteritems():
+        fixedMethodName, method = createMethod(
+            methodName, methodDesc, rootDesc, schema)
+        self._set_dynamic_attr(fixedMethodName,
+                               method.__get__(self, self.__class__))
+        # Add in _media methods. The functionality of the attached method will
+        # change when it sees that the method name ends in _media.
+        if methodDesc.get('supportsMediaDownload', False):
+          fixedMethodName, method = createMethod(
+              methodName + '_media', methodDesc, rootDesc, schema)
+          self._set_dynamic_attr(fixedMethodName,
+                                 method.__get__(self, self.__class__))
 
-    setattr(theclass, methodName, methodNext)
+  def _add_nested_resources(self, resourceDesc, rootDesc, schema):
+    # Add in nested resources
+    if 'resources' in resourceDesc:
 
-  # Add basic methods to Resource
-  if 'methods' in resourceDesc:
-    for methodName, methodDesc in resourceDesc['methods'].iteritems():
-      createMethod(Resource, methodName, methodDesc, rootDesc)
-      # Add in _media methods. The functionality of the attached method will
-      # change when it sees that the method name ends in _media.
-      if methodDesc.get('supportsMediaDownload', False):
-        createMethod(Resource, methodName + '_media', methodDesc, rootDesc)
+      def createResourceMethod(methodName, methodDesc):
+        """Create a method on the Resource to access a nested Resource.
 
-  # Add in nested resources
-  if 'resources' in resourceDesc:
+        Args:
+          methodName: string, name of the method to use.
+          methodDesc: object, fragment of deserialized discovery document that
+            describes the method.
+        """
+        methodName = fix_method_name(methodName)
 
-    def createResourceMethod(theclass, methodName, methodDesc, rootDesc):
-      """Create a method on the Resource to access a nested Resource.
+        def methodResource(self):
+          return Resource(http=self._http, baseUrl=self._baseUrl,
+                          model=self._model, developerKey=self._developerKey,
+                          requestBuilder=self._requestBuilder,
+                          resourceDesc=methodDesc, rootDesc=rootDesc,
+                          schema=schema)
 
-      Args:
-        theclass: type, the class to attach methods to.
-        methodName: string, name of the method to use.
-        methodDesc: object, fragment of deserialized discovery document that
-          describes the method.
-        rootDesc: object, the entire deserialized discovery document.
-      """
-      methodName = fix_method_name(methodName)
+        setattr(methodResource, '__doc__', 'A collection resource.')
+        setattr(methodResource, '__is_resource__', True)
 
-      def methodResource(self):
-        return _createResource(self._http, self._baseUrl, self._model,
-                              self._requestBuilder, self._developerKey,
-                              methodDesc, rootDesc, schema)
+        return (methodName, methodResource)
 
-      setattr(methodResource, '__doc__', 'A collection resource.')
-      setattr(methodResource, '__is_resource__', True)
-      setattr(theclass, methodName, methodResource)
+      for methodName, methodDesc in resourceDesc['resources'].iteritems():
+        fixedMethodName, method = createResourceMethod(methodName, methodDesc)
+        self._set_dynamic_attr(fixedMethodName,
+                               method.__get__(self, self.__class__))
 
-    for methodName, methodDesc in resourceDesc['resources'].iteritems():
-      createResourceMethod(Resource, methodName, methodDesc, rootDesc)
-
-  # Add _next() methods
-  # Look for response bodies in schema that contain nextPageToken, and methods
-  # that take a pageToken parameter.
-  if 'methods' in resourceDesc:
-    for methodName, methodDesc in resourceDesc['methods'].iteritems():
-      if 'response' in methodDesc:
-        responseSchema = methodDesc['response']
-        if '$ref' in responseSchema:
-          responseSchema = schema.get(responseSchema['$ref'])
-        hasNextPageToken = 'nextPageToken' in responseSchema.get('properties',
-                                                                 {})
-        hasPageToken = 'pageToken' in methodDesc.get('parameters', {})
-        if hasNextPageToken and hasPageToken:
-          createNextMethod(Resource, methodName + '_next',
-                           resourceDesc['methods'][methodName],
-                           methodName)
-
-  return Resource()
+  def _add_next_methods(self, resourceDesc, schema):
+    # Add _next() methods
+    # Look for response bodies in schema that contain nextPageToken, and methods
+    # that take a pageToken parameter.
+    if 'methods' in resourceDesc:
+      for methodName, methodDesc in resourceDesc['methods'].iteritems():
+        if 'response' in methodDesc:
+          responseSchema = methodDesc['response']
+          if '$ref' in responseSchema:
+            responseSchema = schema.get(responseSchema['$ref'])
+          hasNextPageToken = 'nextPageToken' in responseSchema.get('properties',
+                                                                   {})
+          hasPageToken = 'pageToken' in methodDesc.get('parameters', {})
+          if hasNextPageToken and hasPageToken:
+            fixedMethodName, method = createNextMethod(methodName + '_next')
+            self._set_dynamic_attr(fixedMethodName,
+                                   method.__get__(self, self.__class__))

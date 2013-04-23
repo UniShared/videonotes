@@ -23,6 +23,7 @@ should be defined in this file.
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 
+from oauth2client import util
 from oauth2client.anyjson import simplejson
 
 
@@ -34,6 +35,7 @@ class Error(Exception):
 class HttpError(Error):
   """HTTP data was invalid or unexpected."""
 
+  @util.positional(3)
   def __init__(self, resp, content, uri=None):
     self.resp = resp
     self.content = content
@@ -41,20 +43,20 @@ class HttpError(Error):
 
   def _get_reason(self):
     """Calculate the reason for the error from the response content."""
-    if self.resp.get('content-type', '').startswith('application/json'):
-      try:
-        data = simplejson.loads(self.content)
-        reason = data['error']['message']
-      except (ValueError, KeyError):
-        reason = self.content
-    else:
-      reason = self.resp.reason
+    reason = self.resp.reason
+    try:
+      data = simplejson.loads(self.content)
+      reason = data['error']['message']
+    except (ValueError, KeyError):
+      pass
+    if reason is None:
+      reason = ''
     return reason
 
   def __repr__(self):
     if self.uri:
       return '<HttpError %s when requesting %s returned "%s">' % (
-          self.resp.status, self.uri, self._get_reason())
+          self.resp.status, self.uri, self._get_reason().strip())
     else:
       return '<HttpError %s "%s">' % (self.resp.status, self._get_reason())
 
@@ -63,6 +65,11 @@ class HttpError(Error):
 
 class InvalidJsonError(Error):
   """The JSON returned could not be parsed."""
+  pass
+
+
+class UnknownFileType(Error):
+  """File type unknown or unexpected."""
   pass
 
 
@@ -86,14 +93,20 @@ class MediaUploadSizeError(Error):
   pass
 
 
-class ResumableUploadError(Error):
+class ResumableUploadError(HttpError):
   """Error occured during resumable upload."""
+  pass
+
+
+class InvalidChunkSizeError(Error):
+  """The given chunksize is not valid."""
   pass
 
 
 class BatchError(HttpError):
   """Error occured during batch operations."""
 
+  @util.positional(2)
   def __init__(self, reason, resp=None, content=None):
     self.resp = resp
     self.content = content
@@ -108,6 +121,7 @@ class BatchError(HttpError):
 class UnexpectedMethodError(Error):
   """Exception raised by RequestMockBuilder on unexpected calls."""
 
+  @util.positional(1)
   def __init__(self, methodId=None):
     """Constructor for an UnexpectedMethodError."""
     super(UnexpectedMethodError, self).__init__(
