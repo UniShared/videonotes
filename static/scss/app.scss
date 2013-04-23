@@ -255,8 +255,14 @@ h1, h2, h3, h4 {
         }
       }
 
-      #ytplayer {
+      #videoplayer {
         width: 100%;
+        height: 390px;
+
+        iframe, video {
+          width: 100%;
+          height: 100%;
+        }
       }
     }
   }

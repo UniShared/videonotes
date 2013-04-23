@@ -214,31 +214,12 @@ controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, use
 }]);
 
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'youtubePlayerApi', 'video', 'analytics', function ($scope, sampleVideo, doc, youtubePlayerApi, video, analytics) {
-    $scope.youtubeVideo = false;
     $scope.doc = doc;
     $scope.videoUrl = null;
 
     $scope.videoStatus = {
-        playYoutube: false,
-        playHtml5: false,
+        play: false,
         error: false
-    };
-
-    $scope.getYoutubeVideoId = function (url) {
-        var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
-            match = url.match(regex);
-
-        if (match && match[2].length == 11) {
-            return match[2];
-        } else {
-            return null;
-        }
-    };
-
-    $scope.getCourseLectureCoursera = function (url) {
-        var regex = /^https:\/\/class.coursera.org\/([a-z0-9-]+)\/lecture\/(\d+)$/;
-
-        return url.match(regex);
     };
 
     $scope.submitVideo = function () {
@@ -248,21 +229,8 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
             $scope.tour.showStep(1);
         }
 
-        var matchVideoCoursera = $scope.getCourseLectureCoursera($scope.videoUrl);
-        if (matchVideoCoursera && matchVideoCoursera.length == 3) {
-            $scope.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
-        }
-
         doc.info.video = $scope.videoUrl;
-
-        $scope.loadPlayer();
-    };
-
-    $scope.loadVideo = function () {
-        if(!(doc.info && doc.info.video))
-            return
-
-        $scope.videoUrl = doc.info.video;
+        analytics.pushAnalytics('Video', $scope.videoUrl);
 
         $scope.loadPlayer();
     };
@@ -270,24 +238,12 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
     $scope.loadPlayer = function () {
         if (doc && doc.info) {
             if (doc.info.video) {
+                $scope.videoUrl = doc.info.video;
                 $scope.loading = true;
-                $scope.videoStatus.playHtml5 = false;
-                $scope.videoStatus.playYoutube = false;
+                $scope.videoStatus.play = false;
 
-                var videoId = $scope.getYoutubeVideoId($scope.videoUrl);
-                if (videoId != null) {
-                    $scope.youtubeVideo = true;
-                    youtubePlayerApi.videoId = videoId;
-                    youtubePlayerApi.loadPlayer();
-                    $scope.endLoading();
-                }
-                else {
-                    $scope.youtubeVideo = false;
-                    video.videoUrl = doc.info.video;
-                    video.load();
-                }
-
-                analytics.pushAnalytics('Video', $scope.videoUrl);
+                video.videoUrl = doc.info.video;
+                video.load();
             }
         }
     };
@@ -297,33 +253,30 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
             case 32:
                 if (eventData.ctrlKey) {
                     eventData.preventDefault();
-                    $scope.pauseVideo();
+                    $scope.playPauseVideo();
                 }
                 break;
         }
     };
 
-    $scope.pauseVideo = function () {
+    $scope.playPauseVideo = function () {
         if (doc.info && doc.info.video) {
-            $scope.videoStatus.playYoutube = $scope.youtubeVideo && !$scope.videoStatus.playYoutube;
-            $scope.videoStatus.playHtml5 = !$scope.youtubeVideo && !$scope.videoStatus.playHtml5;
-
-            $scope.videoStatus.playYoutube ? youtubePlayerApi.player && youtubePlayerApi.player.playVideo() : youtubePlayerApi.player && youtubePlayerApi.player.pauseVideo();
-            $scope.videoStatus.playHtml5 ? video.player && video.player.play() : video.player && video.player.pause();
-
-            analytics.pushAnalytics('Video', $scope.videoStatus);
+            $scope.videoStatus.play = !$scope.videoStatus.play;
+            $scope.videoStatus.play ? video.play() : video.pause();
+            analytics.pushAnalytics('Video', 'play pause', $scope.videoStatus.play ? 'play' : 'pause');
         }
     };
 
     $scope.endLoading = function () {
         $scope.loading = false;
         $scope.$apply();
+        video.pause();
     };
 
     $scope.loadSampleVideo = function () {
         analytics.pushAnalytics('Video', 'load sample');
         doc.info.video = sampleVideo;
-        $scope.loadVideo();
+        $scope.loadPlayer();
     };
 
     $scope.errorLoadVideo = function () {
@@ -332,7 +285,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
     };
 
     $scope.$on('shortcut', $scope.shortcuts);
-    $scope.$onMany(['loaded','$routeChangeSuccess'], $scope.loadVideo);
+    $scope.$onMany(['loaded','$routeChangeSuccess'], $scope.loadPlayer);
     $scope.$on('videoLoaded', $scope.endLoading);
     $scope.$on('videoError', $scope.errorLoadVideo);
 }]);

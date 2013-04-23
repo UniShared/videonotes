@@ -58,16 +58,7 @@
                 <div class="video row-fluid" ng-show="doc.info.video">
                     <div class="span12">
                         <img class="loading" src="/img/loading.gif" ng-show="loading">
-
-                        <div ng-hide="loading">
-                            <video ng-hide="youtubeVideo" controls
-
-                                   html5-video-player="doc.info.video"></video>
-                            <div ng-show="youtubeVideo">
-                                <div id="ytplayer"
-                                     youtube-player="doc.info.video"></div>
-                            </div>
-                        </div>
+                        <div id="videoplayer" ng-hide="loading" video-player></div>
                     </div>
                 </div>
             </div>
