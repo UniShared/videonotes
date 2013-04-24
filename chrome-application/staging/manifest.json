@@ -14,7 +14,7 @@
             "http://staging.videonot.es/edit/"
         ],
         "launch" : {
-            "web_url" : "http://staging.videonot.es/"
+            "web_url" : "http://staging.videonot.es/edit/"
         }
     },
     "gdrive_mime_types": {

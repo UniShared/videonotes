@@ -1,6 +1,6 @@
 {
     "name" : "VideoNot.es",
-    "version" : "0.2",
+    "version" : "0.3",
     "manifest_version" : 2,
     "description" : "The easiest way to take notes from videos. Everything synchronized!",
     "container" : "GOOGLE_DRIVE",
@@ -14,7 +14,7 @@
             "http://www.videonot.es/edit/"
         ],
         "launch" : {
-            "web_url" : "http://www.videonot.es/"
+            "web_url" : "http://www.videonot.es/edit/"
         }
     },
     "gdrive_mime_types": {

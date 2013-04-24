@@ -14,7 +14,7 @@
             "http://local.videonot.es:8080/edit/"
         ],
         "launch" : {
-            "web_url" : "http://local.videonot.es:8080/"
+            "web_url" : "http://local.videonot.es:8080/edit/"
         }
     },
     "gdrive_mime_types": {
