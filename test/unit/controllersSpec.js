@@ -23,10 +23,8 @@ describe('Controllers', function () {
         beforeEach(angular.mock.inject(function ($rootScope, $controller, doc, video, youtubePlayerApi) {
             doc.info = {};
 
-            video.player = {
-                play: jasmine.createSpy(),
-                pause: jasmine.createSpy()
-            };
+            video.play = jasmine.createSpy();
+            video.pause = jasmine.createSpy();
             video.load = jasmine.createSpy();
 
             youtubePlayerApi.player = {
@@ -37,16 +35,13 @@ describe('Controllers', function () {
             videoCtrl = $controller('VideoCtrl', {$scope: scope});
         }));
 
-        it('should have a VideoCtrl controller', function () {
+        it('should be defined', function () {
             expect(videoCtrl).not.toEqual(null);
             expect(scope).not.toEqual(null);
 
             expect(scope.videoUrl).toEqual(null);
-            expect(scope.videoStatus.playHtml5).toBe(false);
-            expect(scope.videoStatus.playYoutube).toBe(false);
+            expect(scope.videoStatus.play).toBe(false);
             expect(scope.doc).toBeDefined();
-            expect(scope.canReadH264).toBeDefined();
-            expect(scope.youtubeVideo).toBe(false);
         });
 
         it('should listen for shortcuts event', angular.mock.inject(function () {
@@ -54,121 +49,176 @@ describe('Controllers', function () {
         }));
 
         it('should listen for loaded event', angular.mock.inject(function () {
-            expect(scope.$on).toHaveBeenCalledWith('loaded', scope.loadVideo);
+            expect(scope.$on).toHaveBeenCalledWith('loaded', scope.loadPlayer);
         }));
 
         it('should listen for videoLoaded event', angular.mock.inject(function () {
             expect(scope.$on).toHaveBeenCalledWith('videoLoaded', scope.endLoading);
         }));
 
-        it("should be able to detect Youtube's video URL", function () {
-            var videoId = 'GKfHdOrR3lw';
-            var url = 'http://www.youtube.com/watch?v={0}'.format(videoId);
-            var videoIdResult = scope.getYoutubeVideoId(url);
-
-            expect(videoIdResult).not.toEqual(null);
-            expect(videoIdResult).toEqual('GKfHdOrR3lw');
-        });
-
-        it("should be able to detect Coursera's lecture URL", function () {
-            var courseName = 'adhd-001', lectureId = 5;
-            var url = 'https://class.coursera.org/{0}/lecture/{1}'.format(courseName, lectureId);
-            var match = scope.getCourseLectureCoursera(url);
-
-            expect(match.length).toEqual(3);
-            expect(match[0]).toEqual(url);
-            expect(match[1]).toEqual(courseName);
-            expect(parseInt(match[2])).toEqual(lectureId);
-        });
-
-        it('should be able to play/pause video', angular.mock.inject(function (appName, $window, analytics, video, youtubePlayerApi) {
-            expect(scope.pauseVideo).toBeDefined();
+        it('should be able to play/pause video', angular.mock.inject(function (analytics, video) {
+            expect(scope.playPauseVideo).toBeDefined();
             expect(scope.doc).toBeDefined();
-            expect(scope.youtubeVideo).toBe(false);
-            expect(scope.videoStatus.playYoutube).toBe(false);
-            expect(scope.videoStatus.playHtml5).toBe(false);
-
-            $window._gaq.push = jasmine.createSpy('gaq');
+            expect(scope.videoStatus.play).toBe(false);
 
             scope.doc.info = {
                 video: 'http://video.unishared.com/test.mp4'
             };
 
-            scope.pauseVideo();
+            scope.playPauseVideo();
 
-            expect(scope.videoStatus.playYoutube).toBe(false);
-            expect(scope.videoStatus.playHtml5).toBe(true);
-            expect(video.player.play).toHaveBeenCalled();
+            expect(scope.videoStatus.play).toBe(true);
+            expect(video.play).toHaveBeenCalled();
+            expect(video.pause).not.toHaveBeenCalled();
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', 'play pause', 'play')
 
             scope.doc.info = {
                 video: 'http://www.youtube.com/watch?v=GKfHdOrR3lw'
             };
 
-            scope.youtubeVideo = true;
-            scope.pauseVideo();
+            // Reinit the spies
+            video.play = jasmine.createSpy('video.player.play');
+            video.pause = jasmine.createSpy('video.player.pause');
 
-            expect(scope.videoStatus.playYoutube).toBe(true);
-            expect(scope.videoStatus.playHtml5).toBe(false);
-            expect(youtubePlayerApi.player.playVideo).toHaveBeenCalled();
+            scope.playPauseVideo();
 
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.videoStatus);
+            expect(scope.videoStatus.play).toBe(false);
+            expect(video.play).not.toHaveBeenCalled();
+            expect(video.pause).toHaveBeenCalled();
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', 'play pause', 'pause')
         }));
 
-        it('has a loadVideo method which works for Youtube player', angular.mock.inject(function ($window, appName, youtubePlayerApi, analytics) {
+        it('has a loadPlayer method which works for Youtube video', angular.mock.inject(function (video) {
             expect(scope.loading).toBeUndefined();
 
-            spyOn(scope, 'getYoutubeVideoId').andCallThrough();
-            spyOn(scope, 'getCourseLectureCoursera').andCallThrough();
             spyOn(scope, 'endLoading').andCallThrough();
 
-            spyOn(youtubePlayerApi, 'loadPlayer').andCallThrough();
-
             scope.doc.info = {
                 video: 'http://www.youtube.com/watch?v=GKfHdOrR3lw'
             };
 
-            scope.loadVideo();
+            scope.loadPlayer();
 
-            expect(scope.youtubeVideo).toBe(true);
-            expect(scope.loading).toBe(false);
-            expect(scope.getYoutubeVideoId).toHaveBeenCalled();
-            expect(scope.getCourseLectureCoursera).not.toHaveBeenCalled();
-            expect(scope.endLoading).toHaveBeenCalled();
-            expect(youtubePlayerApi.videoId).toEqual('GKfHdOrR3lw');
-            expect(youtubePlayerApi.loadPlayer).toHaveBeenCalled();
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
+            expect(video.videoUrl).toEqual(scope.doc.info.video);
+            expect(scope.videoStatus.play).toBe(false);
+            expect(scope.loading).toBe(true);
+            expect(video.load).toHaveBeenCalled();
         }));
 
-        it('has a loadVideo method which works for HTML5 player', angular.mock.inject(function ($rootScope, $window, appName, youtubePlayerApi, analytics) {
+        it('has a loadPlayer method which works for MP4 video', angular.mock.inject(function (video) {
             expect(scope.loading).toBeUndefined();
 
-            spyOn(scope, 'getYoutubeVideoId').andCallThrough();
-            spyOn(scope, 'getCourseLectureCoursera').andCallThrough();
+            video.load = jasmine.createSpy('load');
             spyOn(scope, 'endLoading').andCallThrough();
 
             scope.doc.info = {
                 video: 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7'
             };
-            scope.loadVideo();
 
-            expect(scope.youtubeVideo).toBe(false);
-            expect(scope.getYoutubeVideoId).toHaveBeenCalled();
-            expect(scope.endLoading).not.toHaveBeenCalled();
-            expect(youtubePlayerApi.videoId).toEqual(null);
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.doc.info.video);
+            scope.loadPlayer();
 
+            expect(video.videoUrl).toEqual(scope.doc.info.video);
+            expect(scope.videoStatus.play).toBe(false);
             expect(scope.loading).toBe(true);
+            expect(video.load).toHaveBeenCalled();
         }));
 
         it('should have a loadSampleVideo method', angular.mock.inject(function (doc, sampleVideo) {
-            scope.loadVideo = jasmine.createSpy();
+            scope.loadPlayer = jasmine.createSpy();
             expect(scope.videoUrl).toBe(null);
             expect(doc.info.video).toBeUndefined();
 
             scope.loadSampleVideo();
 
-            expect(scope.loadVideo).toHaveBeenCalled();
+            expect(scope.loadPlayer).toHaveBeenCalled();
         }));
+
+        it('should have a endLoading method', angular.mock.inject(function (doc, sampleVideo, video) {
+            scope.endLoading();
+            expect(scope.loading).toBeFalsy();
+            expect(video.pause).toHaveBeenCalled();
+        }));
+
+        describe('shortcuts method', function () {
+            it('should react to ctrl space shortcut', function () {
+                var keyEvent = {
+                    which: 32,
+                    ctrlKey: true,
+                    preventDefault: jasmine.createSpy()
+                };
+                scope.playPauseVideo = jasmine.createSpy();
+
+                scope.shortcuts(null, keyEvent);
+                expect(keyEvent.preventDefault).toHaveBeenCalled();
+                expect(scope.playPauseVideo).toHaveBeenCalled();
+            });
+
+            it('should not react to other combinations', function () {
+                var keyEvent = {
+                    which: 90,
+                    ctrlKey: true,
+                    preventDefault: jasmine.createSpy()
+                };
+                scope.playPauseVideo = jasmine.createSpy();
+
+                scope.shortcuts(null, keyEvent);
+                expect(keyEvent.preventDefault).not.toHaveBeenCalled();
+                expect(scope.playPauseVideo).not.toHaveBeenCalled();
+            });
+
+        })
+        it('should have a errorLoadVideo method', angular.mock.inject(function (doc, sampleVideo) {
+            scope.endLoading = jasmine.createSpy('endLoading');
+            scope.errorLoadVideo();
+            expect(scope.videoStatus.error).toBeTruthy();
+            expect(scope.endLoading).toHaveBeenCalled();
+        }));
+
+        describe('submitVideo method', function () {
+            it('should store the video URL typed', inject(function (analytics, doc) {
+                scope.loadPlayer = jasmine.createSpy();
+                scope.tour = {
+                    ended: jasmine.createSpy('tour.ended').andReturn(true)
+                };
+                scope.videoUrl = 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7'
+
+                scope.submitVideo();
+                expect(scope.videoStatus.error).toEqual(false);
+                expect(doc.info.video).toEqual(scope.videoUrl);
+                expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.videoUrl);
+                expect(scope.loadPlayer).toHaveBeenCalled();
+            }));
+
+            it('should call show tour when not ended and submitVideo', function () {
+                scope.tour = {
+                    ended: jasmine.createSpy('tour.ended').andReturn(false),
+                    hideStep: jasmine.createSpy('tour.hideStep'),
+                    showStep: jasmine.createSpy('tour.showStep')
+                };
+
+                scope.submitVideo();
+
+                expect(scope.tour.ended).toHaveBeenCalled();
+                expect(scope.tour.hideStep).toHaveBeenCalledWith(0);
+                expect(scope.tour.showStep).toHaveBeenCalledWith(1);
+            });
+
+            it('should not call show tour when ended and submitVideo', function () {
+                scope.tour = {
+                    ended: jasmine.createSpy('tour.ended').andReturn(true),
+                    hideStep: jasmine.createSpy('tour.hideStep'),
+                    showStep: jasmine.createSpy('tour.showStep')
+                };
+
+                scope.submitVideo();
+
+                expect(scope.tour.ended).toHaveBeenCalled();
+                expect(scope.tour.hideStep).not.toHaveBeenCalled();
+                expect(scope.tour.showStep).not.toHaveBeenCalled();
+            });
+        });
+
+
     });
 
     describe('ShareCtrl', function () {

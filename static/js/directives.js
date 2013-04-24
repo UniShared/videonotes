@@ -22,7 +22,7 @@ module.directive('aceEditor',
         };
     }]);
 
-module.directive('html5VideoPlayer',
+module.directive('videoPlayer',
     ['video', function (video) {
         return {
             restrict: 'A',

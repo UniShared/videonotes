@@ -15,6 +15,7 @@
 # limitations under the License.
 import random
 import time
+from google.appengine.api import urlfetch
 
 __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
@@ -648,6 +649,14 @@ class UserHandler(BaseDriveHandler):
             return self.abort(401)
 
 
+class ProxyHandler(BaseHandler):
+    def get(self):
+        url = self.request.get('q')
+        result = urlfetch.fetch(url)
+        if result.status_code == 200:
+            self.response.out.write(result.content.strip())
+
+
 class CoursesHandler(BaseHandler):
     """Web handler for the service to list courses information."""
 
@@ -773,6 +782,7 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/auth', AuthHandler, 'auth'),
         webapp2.Route(r'/user', UserHandler),
         webapp2.Route(r'/config', ConfigHandler),
+        webapp2.Route(r'/proxy', ProxyHandler)
     ],
     # XXX Set to False in production.
     debug=True, config=config

@@ -82,24 +82,52 @@ module.factory('doc',
         return service;
     }]);
 
-module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope, $log, analytics) {
+module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', function ($rootScope, $log, analytics, youtubePlayerApi) {
     return {
+        videoElement: null,
         player: null,
         videoUrl: null,
+        subtitlesUrl: null,
         load: function () {
             if (this.videoUrl) {
-                this.player.src = this.videoUrl;
-                this.player.load();
+                if(this.player) {
+                    this.player.destroy();
+                    $(this.videoElement).empty();
+                    this.subtitlesUrl = null;
+                }
+
+                var youtubeId = this.getYoutubeVideoId(this.videoUrl);
+                if(youtubeId) {
+                    youtubePlayerApi.bindVideoPlayer(this.videoElement.id);
+                    youtubePlayerApi.videoId = youtubeId;
+                    youtubePlayerApi.loadPlayer();
+                    this.player = youtubePlayerApi.player;
+                    $rootScope.$broadcast('videoLoaded');
+                }
+                else {
+                    var matchVideoCoursera = this.getCourseLectureCoursera(this.videoUrl);
+                    if (matchVideoCoursera && matchVideoCoursera.length == 3) {
+                        this.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
+                        this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
+                    }
+
+                    this.player = Popcorn.smart("#{0}".format(this.videoElement.id), this.videoUrl);
+                    this.bindEvents();
+                    if(this.subtitlesUrl)
+                        this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
+                }
             }
         },
         bindVideoPlayer: function (element) {
             $log.info("Bind video player to element", element.id);
-            this.player = element;
-            this.player.addEventListener("canplay", function () {
+            this.videoElement = element;
+        },
+        bindEvents: function () {
+            this.player.on("canplay", function () {
                 $rootScope.$broadcast('videoLoaded');
             }, false);
 
-            this.player.addEventListener("error", function (e) {
+            this.player.on("error", function (e) {
                 $rootScope.$broadcast('videoError');
 
                 var message;
@@ -129,6 +157,42 @@ module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope
                     message: 'An error occurred while loading the video'
                 });
             }, false);
+        },
+        getYoutubeVideoId: function (url) {
+            var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
+                match = url.match(regex);
+
+            if (match && match[2].length == 11) {
+                return match[2];
+            } else {
+                return null;
+            }
+        },
+        getCourseLectureCoursera: function (url) {
+            var regex = /^https:\/\/class.coursera.org\/([a-z0-9-]+)\/lecture\/(?:download\.mp4\?lecture_id=)?(\d+)$/;
+            return url.match(regex);
+        },
+        play: function () {
+            if(this.player)
+                this.player.playVideo ? this.player.playVideo() : this.player.play();
+        },
+        pause: function () {
+            if(this.player)
+                this.player.pauseVideo ? this.player.pauseVideo() : this.player.pause();
+        },
+        currentTime: function () {
+            if(arguments.length) {
+                this.player.seekTo ? this.player.seekTo(arguments[0]) : this.player.currentTime(arguments[0]);
+            }
+            else {
+               var currentTime;
+               if (this.player.getCurrentTime)
+                currentTime = this.player.getCurrentTime();
+               else
+                currentTime = this.player.currentTime();
+
+                return currentTime || 0.01;
+            }
         }
     };
 }]);
@@ -347,12 +411,7 @@ module.factory('editor',
                         if (timestamp) {
                             $log.info('Timestamp', lineCursorPosition, timestamp);
                             if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
-                                if (youtubePlayerApi.player) {
-                                    youtubePlayerApi.player.seekTo(timestamp);
-                                }
-                                else if (video.player) {
-                                    video.player.currentTime = timestamp;
-                                }
+                                video.currentTime(timestamp);
                             }
                         }
                         else {
@@ -415,12 +474,7 @@ module.factory('editor',
                     else {
                         // No text or only before / after
                         // Using current player time
-                        if (youtubePlayerApi.player) {
-                            doc.info.syncNotesVideo[line] = youtubePlayerApi.player.getCurrentTime() || 0.01;
-                        }
-                        else if (video.player) {
-                            doc.info.syncNotesVideo[line] = video.player.currentTime || 0.01;
-                        }
+                        doc.info.syncNotesVideo[line] = video.currentTime();
                     }
                     $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
                 }
