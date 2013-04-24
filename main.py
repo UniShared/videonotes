@@ -182,7 +182,7 @@ class BaseHandler(webapp2.RequestHandler):
         """Render a named template in a context."""
         self.response.headers['Content-Type'] = 'text/html'
 
-        version = {'production': BaseHandler.is_production()}
+        version = {'minified': not BaseHandler.is_development_server()}
         if context:
             context.update(version)
         else:
@@ -192,7 +192,11 @@ class BaseHandler(webapp2.RequestHandler):
 
     @staticmethod
     def is_production():
-        return 'production' in os.environ['CURRENT_VERSION_ID'] and not 'Development' in os.environ['SERVER_SOFTWARE']
+        return 'production' in os.environ['CURRENT_VERSION_ID'] and not BaseHandler.is_development_server()
+
+    @staticmethod
+    def is_development_server():
+        return 'Development' in os.environ['SERVER_SOFTWARE']
 
 
 class BaseDriveHandler(BaseHandler):

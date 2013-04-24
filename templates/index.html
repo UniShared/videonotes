@@ -16,7 +16,7 @@
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
-    {% if production == True %}
+    {% if minified == True %}
     <link href="/css/build/videonotes.min.css" rel="stylesheet">
     {% else %}
     <link href="/lib/bootstrap-switch/bootstrapSwitch.css" rel="stylesheet">
@@ -135,7 +135,7 @@
 <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
 <script src="http://cdn.popcornjs.org/code/dist/popcorn-complete.min.js"></script>
 
-{% if production == True %}
+{% if minified == True %}
 <script src="/js/build/videonotes.min.js"></script>
 {% else %}
 <script src="/lib/angular-ui-custom/angular-ui.js"></script>
