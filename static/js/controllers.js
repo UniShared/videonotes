@@ -213,7 +213,7 @@ controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, use
     }
 }]);
 
-controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'youtubePlayerApi', 'video', 'analytics', function ($scope, sampleVideo, doc, youtubePlayerApi, video, analytics) {
+controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'analytics', function ($scope, sampleVideo, doc, video, analytics) {
     $scope.doc = doc;
     $scope.videoUrl = null;
 
