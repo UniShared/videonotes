@@ -270,7 +270,6 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
     $scope.endLoading = function () {
         $scope.loading = false;
         $scope.$apply();
-        video.pause();
     };
 
     $scope.loadSampleVideo = function () {

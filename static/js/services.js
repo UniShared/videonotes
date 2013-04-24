@@ -174,11 +174,17 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
         },
         play: function () {
             if(this.player)
-                this.player.playVideo ? this.player.playVideo() : this.player.play();
+                if(this.player.playVideo)
+                    this.player.playVideo();
+                else if(this.player.play)
+                    this.player.play();
         },
         pause: function () {
             if(this.player)
-                this.player.pauseVideo ? this.player.pauseVideo() : this.player.pause();
+                if(this.player.pauseVideo)
+                    this.player.pauseVideo();
+                else if(this.player.pause)
+                    this.player.pause();
         },
         currentTime: function () {
             if(arguments.length) {
