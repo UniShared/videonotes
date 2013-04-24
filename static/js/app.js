@@ -50,4 +50,16 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
                 this.$on(events[i], fn);
             }
         };
+    }])
+    // Error handler
+    .run(['$window', 'analytics', function ($window, analytics) {
+        $window.onerror = function(message, url, line) {
+            analytics.pushAnalytics([
+                "_trackEvent",
+                "JS Exception Error",
+                message,
+                (url + " (" + line + ")"),
+                0, true
+            ]);
+        };
     }]);
