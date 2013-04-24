@@ -108,6 +108,8 @@ class DriveState(object):
             self.action = 'create'
             self.parent = []
 
+        logging.debug('Create Drive state, parent %s, action s', self.parent, self.action)
+
     @classmethod
     def FromRequest(cls, request):
         """Create a Drive State instance from an HTTP request.
@@ -141,7 +143,9 @@ class BaseHandler(webapp2.RequestHandler):
                 self.response.set_status(exception.resp.status)
                 self.response.write(exception.resp.reason)
         else:
-            self.response.write('An error occured')
+            message = 'An error occurred'
+            logging.error(message)
+            self.response.write(message)
             self.response.set_status(500)
 
     def dispatch(self):
@@ -178,13 +182,18 @@ class BaseHandler(webapp2.RequestHandler):
         """Render a named template in a context."""
         self.response.headers['Content-Type'] = 'text/html'
 
-        version = {'production': not 'Development' in os.environ['SERVER_SOFTWARE']}
+        version = {'production': BaseHandler.is_production()}
         if context:
             context.update(version)
         else:
             context = version
 
         self.response.write(self.jinja2.render_template(template_name, **context))
+
+    @staticmethod
+    def is_production():
+        return 'production' in os.environ['CURRENT_VERSION_ID'] and not 'Development' in os.environ['SERVER_SOFTWARE']
+
 
 class BaseDriveHandler(BaseHandler):
     """Base request handler for drive applications.
@@ -214,7 +223,9 @@ class BaseDriveHandler(BaseHandler):
         Returns:
           OAuth2.0 Flow instance suitable for performing OAuth2.0.
         """
-        flow = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0]), scope='')
+        client_secrets = 'client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0])
+        logging.debug('Create OAuth flow with %s', client_secrets)
+        flow = flow_from_clientsecrets(client_secrets, scope='')
         # Dynamically set the redirect_uri based on the request URL. This is extremely
         # convenient for debugging to an alternative host without manually setting the
         # redirect URI.
@@ -240,8 +251,10 @@ class BaseDriveHandler(BaseHandler):
           Authorization could not take place.
         """
         # Other frameworks use different API to get a query parameter.
+        logging.debug('Get credentials from URL')
         code = self.request.get('code')
         if not code:
+            logging.debug('No code in URL')
             # returns None to indicate that no code was passed from Google Drive.
             return None
 
@@ -252,6 +265,7 @@ class BaseDriveHandler(BaseHandler):
         # Perform the exchange of the code. If there is a failure with exchanging
         # the code, return None.
         try:
+            logging.debug('Oauth flow step2 exchange')
             creds = oauth_flow.step2_exchange(code)
         except FlowExchangeError:
             return None
@@ -269,6 +283,7 @@ class BaseDriveHandler(BaseHandler):
         self.session['userid'] = userid
 
         # Store the credentials in the data store using the userid as the key.
+        logging.debug('Saving credentials and email in datastore')
         StorageByKeyName(Credentials, userid, 'credentials').put(creds)
         StorageByKeyName(RegisteredUser, userid, 'email').put(user['email'])
         return creds
@@ -287,6 +302,7 @@ class BaseDriveHandler(BaseHandler):
         # Try to load  the user id from the session
         userid = None
         if 'userid' in self.session:
+            logging.debug('Get credentials for %s from session', userid)
             userid = self.session['userid']
         if not userid:
             # return None to indicate that no credentials could be loaded from the
@@ -294,11 +310,13 @@ class BaseDriveHandler(BaseHandler):
             return None
 
         # Load the credentials from the data store, using the userid as a key.
+        logging.debug('Get credentials for %s from datastore', userid)
         creds = StorageByKeyName(Credentials, userid, 'credentials').get()
 
         # if the credentials are invalid, return None to indicate that the credentials
         # cannot be used.
         if creds and creds.invalid:
+            logging.debug('Invalid credentials')
             return None
 
         return creds
@@ -313,11 +331,13 @@ class BaseDriveHandler(BaseHandler):
         Args:
           handler: webapp.RequestHandler to redirect.
         """
+        logging.debug('Creating Oauth flow')
         flow = self.CreateOAuthFlow()
 
         # Manually add the required scopes. Since this redirect does not originate
         # from the Google Drive UI, which authomatically sets the scopes that are
         # listed in the API Console.
+        logging.debug('Oauth flow scopes %s', " ".join(ALL_SCOPES))
         flow.scope = ALL_SCOPES
 
         # Create the redirect URI by performing step 1 of the OAuth 2.0 web server
@@ -339,6 +359,8 @@ class BaseDriveHandler(BaseHandler):
           Authorized service or redirect to authorization flow if no credentials.
         """
         # For the service, the session holds the credentials
+        logging.debug('Creating %s service instance, version %s', service, version)
+
         creds = self.GetSessionCredentials()
         if creds:
             # If the session contains credentials, use them to create a Drive service
@@ -400,9 +422,11 @@ class EditPage(BaseDriveHandler):
         # the file id(s) that have been sent from the Drive user interface.
         user_agent = self.request.headers.get('User-Agent', None)
         if user_agent == 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)':
+            logging.debug('Returning template for scraper %s', user_agent)
             return self.RenderTemplate(EditPage.TEMPLATE)
 
         drive_state = DriveState.FromRequest(self.request)
+        logging.debug('Drive state %s', drive_state.action)
         if drive_state.action == 'open' and len(drive_state.ids) > 0:
             code = self.request.get('code')
             if code:
@@ -416,11 +440,15 @@ class EditPage(BaseDriveHandler):
 
         creds = self.GetCodeCredentials() or self.GetSessionCredentials()
         if not creds:
+            logging.debug('No credentials')
             resource_id_in_url = self.request.url.split('?', 1)[0].rsplit('/', 1)[1]
             if resource_id_in_url:
+                logging.debug('Saving resource ID from URL %s', resource_id_in_url)
                 self.session['resource_id'] = resource_id_in_url
+            logging.debug('Redirecting to auth handler')
             return self.redirect('/auth')
         elif 'resource_id' in self.session and self.session['resource_id']:
+            logging.debug('Restoring resource ID')
             resource_id = self.session['resource_id']
             del self.session['resource_id']
             return self.redirect('/edit/' + resource_id)
@@ -478,8 +506,7 @@ class ServiceHandler(BaseDriveHandler):
                         resumable=True)
                 ).execute()
 
-                if 'production' in os.environ['CURRENT_VERSION_ID']:
-
+                if BaseHandler.is_production():
                     clement_permission = {
                         'value': 'clement@unishared.com',
                         'type': 'user',
@@ -493,13 +520,13 @@ class ServiceHandler(BaseDriveHandler):
                     }
 
                     try:
-                        logging.debug('Add Clement as a reader')
+                        logging.info('Add Clement as a reader')
                         service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
                     except HttpError:
                         logging.exception('Error when adding Clement as a reader')
 
                     try:
-                        logging.debug('Add anyone as a reader')
+                        logging.info('Add anyone as a reader')
                         service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
                     except HttpError:
                         logging.exception('Error when adding anyone as a reader')
@@ -529,6 +556,7 @@ class ServiceHandler(BaseDriveHandler):
         try:
             # Requests are expected to pass the file_id query parameter.
             file_id = self.request.get('file_id')
+            logging.info('Get file %s', file_id)
             if file_id:
                 # Fetch the file metadata by making the service.files().get method of
                 # the Drive API.
@@ -539,12 +567,14 @@ class ServiceHandler(BaseDriveHandler):
                 # data to return as the 'content' field. If there is no downloadUrl,
                 # just set empty content.
                 if downloadUrl:
+                    logging.debug('Downloading the file from %s', downloadUrl)
                     resp, raw_content = service._http.request(downloadUrl)
                     json_content = json.loads(raw_content)
                     f['content'] = json_content['content']
                     f['video'] = json_content['video']
                     f['syncNotesVideo'] = json_content['syncNotesVideo']
                 else:
+                    logging.debug('No download URL')
                     f['content'] = {'content': ''}
                     f['video'] = {'video': ''}
                     f['syncNotesVideo'] = {'syncNotesVideo': {'enabled': True}}
@@ -557,6 +587,7 @@ class ServiceHandler(BaseDriveHandler):
             # fails to refresh a token. This occurs, for example, when a refresh token
             # is revoked. When this happens the user is redirected to the
             # Authorization URL.
+            logging.info('AccessTokenRefreshError')
             return self.abort(401)
 
     def put(self):
@@ -572,6 +603,7 @@ class ServiceHandler(BaseDriveHandler):
             return
             # Load the data that has been posted as JSON
         data = self.RequestJSON()
+        logging.info('Updating file %s', data['id'])
         try:
             # Create a new file data structure.
             content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
@@ -604,6 +636,7 @@ class ServiceHandler(BaseDriveHandler):
             # In cases where the access token has expired and cannot be refreshed
             # (e.g. manual token revoking) redirect the user to the authorization page
             # to authorize.
+            logging.info('AccessTokenRefreshError')
             return self.abort(401)
 
     def RequestJSON(self):
@@ -621,6 +654,7 @@ class AuthHandler(BaseDriveHandler):
         creds = self.GetCodeCredentials() or self.GetSessionCredentials()
 
         if not creds:
+            logging.debug('No credentials, redirecting to Oauth2 URL')
             redirect_uri = self.RedirectAuth()
             return self.redirect(redirect_uri)
 
@@ -638,6 +672,7 @@ class UserHandler(BaseDriveHandler):
         if service is None:
             return self.abort(401)
         try:
+            logging.debug('Get user informations')
             result = service.userinfo().get().execute()
             # Generate a JSON response with the file data and return to the client.
             self.RespondJSON(result)
@@ -652,6 +687,7 @@ class UserHandler(BaseDriveHandler):
 class ProxyHandler(BaseHandler):
     def get(self):
         url = self.request.get('q')
+        logging.debug('Fetch URL %s', url)
         result = urlfetch.fetch(url)
         if result.status_code == 200:
             self.response.out.write(result.content.strip())
@@ -687,11 +723,13 @@ class AboutHandler(BaseDriveHandler):
 
 class ConfigHandler(BaseHandler):
     def get(self):
-        production = 'production' in os.environ['CURRENT_VERSION_ID'] and not 'Development' in os.environ['SERVER_SOFTWARE']
+        production = BaseHandler.is_production()
 
+        logging.debug('Get configuration, production %s', production)
         google_analytics_account = [os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_STAGING'), os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION')][production]
+        logging.debug('Google Analytics account %s', google_analytics_account)
         app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0]), scope='').client_id.split('.')[0].split('-')[0]
-
+        logging.debug('App id %s', app_id)
         config = {'googleAnalyticsAccount': google_analytics_account, 'appId': app_id}
 
         return self.RespondJSON(config)
@@ -785,5 +823,5 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/proxy', ProxyHandler)
     ],
     # XXX Set to False in production.
-    debug=True, config=config
+    debug=not BaseHandler.is_production(), config=config
 )
