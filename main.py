@@ -108,7 +108,7 @@ class DriveState(object):
             self.action = 'create'
             self.parent = []
 
-        logging.debug('Create Drive state, parent %s, action s', self.parent, self.action)
+        logging.debug('Create Drive state, parent %s, action %s', unicode(self.parent) if hasattr(self, 'parent') else None, self.action)
 
     @classmethod
     def FromRequest(cls, request):
