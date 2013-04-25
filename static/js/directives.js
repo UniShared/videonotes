@@ -64,11 +64,9 @@ module.directive('alert',
             link: function (scope, element) {
                 $rootScope.$on('error',
                     function (event, data) {
-                        scope.$apply(function () {
-                            analytics.pushAnalytics('Error', data.message);
-                            scope.message = data.message;
-                            $(element).show();
-                        });
+                        analytics.pushAnalytics('Error', data.message);
+                        scope.message = data.message;
+                        $(element).show();
                     });
                 scope.close = function () {
                     $(element).hide();
