@@ -202,11 +202,19 @@ module.factory('editor',
         var editor = null;
         var EditSession = require("ace/edit_session").EditSession;
 
-        // Disable all editor shortcuts
+        var scope = $rootScope.$new(true);
+
+        scope.doc = doc;
+        scope.$watch('doc.info.editable', function (newValue, oldValue) {
+            if(editor && newValue !== oldValue) {
+                editor.setReadOnly(!newValue);
+            }
+        });
 
         var service = {
             loading: false,
             saving: false,
+            savingErrors: 0,
             lastRow: -1,
             rebind: function (element) {
                 editor = ace.edit(element);
@@ -317,6 +325,7 @@ module.factory('editor',
                     function (result) {
                         $log.info("Saved file", result);
                         this.saving = false;
+                        this.savingErrors = 0;
 
                         if (!doc.info.id) {
                             doc.info.id = result.data.id;
@@ -329,11 +338,23 @@ module.factory('editor',
                     }), angular.bind(this,
                     function (result) {
                         this.saving = false;
+                        this.savingErrors++;
                         doc.dirty = true;
-                        $rootScope.$broadcast('error', {
-                            action: 'save',
-                            message: "An error occurred while saving the file"
-                        });
+
+                        if(this.savingErrors === 5) {
+                            doc.info.editable = false;
+                            $rootScope.$broadcast('error', {
+                                action: 'save',
+                                message: "Too many errors occurred while saving the file. Please contact us"
+                            });
+                        }
+                        else {
+                            $rootScope.$broadcast('error', {
+                                action: 'save',
+                                message: "An error occurred while saving the file"
+                            });
+                        }
+
                         return result;
                     }));
                 return promise;
@@ -427,7 +448,7 @@ module.factory('editor',
                 this.updateBreakpoints(session);
 
                 editor.setSession(session);
-                editor.setReadOnly(!doc.info.editable);
+//                editor.setReadOnly(!doc.info.editable);
                 session.setUseWrapMode(true);
                 session.setWrapLimitRange(80);
                 editor.focus();
@@ -495,10 +516,11 @@ module.factory('editor',
                     return EditorState.LOAD;
                 } else if (this.saving) {
                     return EditorState.SAVE;
-                } else if (doc.dirty) {
-                    return EditorState.DIRTY;
                 } else if (doc.info && !doc.info.editable) {
                     return EditorState.READONLY;
+                }
+                else if (doc.dirty) {
+                    return EditorState.DIRTY;
                 }
                 return EditorState.CLEAN;
             }

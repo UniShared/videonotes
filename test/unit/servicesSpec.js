@@ -10,6 +10,132 @@ describe('service', function() {
         angular.mock.module('app.services', 'youtube', 'analytics', 'appMock');
     });
 
+    describe('editor', function () {
+        var deffered;
+
+        beforeEach(inject(function (doc) {
+            doc.info = {
+                content: '',
+                video: null,
+                syncNotesVideo: {
+                    enabled: true
+                },
+                labels: {
+                    starred: false
+                },
+                editable: true,
+                title: 'Untitled notes',
+                description: '',
+                mimeType: 'application/vnd.unishared.document',
+                parent: null
+            };
+        }));
+
+        describe('save method', function () {
+            var mockSnapshot = {},
+                resolveResponse = {data:{id:'test'}};
+
+            beforeEach(inject(function ($rootScope, $q, backend, editor) {
+                spyOn($rootScope, '$broadcast').andCallThrough();
+                editor.snapshot = jasmine.createSpy().andReturn(mockSnapshot);
+                backend.save = jasmine.createSpy().andCallFake(function () {
+                    deffered = $q.defer();
+                    return deffered.promise;
+                });
+            }));
+
+            it('should get a snapshot and send it to the backend for a new revision', inject(function (editor, backend) {
+                editor.save();
+                expect(editor.snapshot).toHaveBeenCalled();
+                expect(backend.save).toHaveBeenCalledWith(mockSnapshot, true);
+            }));
+
+            it('should force a new revision only on first save', inject(function ($rootScope, editor, backend) {
+                editor.save();
+                expect(editor.snapshot).toHaveBeenCalled();
+                expect(backend.save).toHaveBeenCalledWith(mockSnapshot, true);
+                deffered.resolve(resolveResponse);
+                $rootScope.$digest();
+
+                editor.save();
+                expect(backend.save).toHaveBeenCalledWith(mockSnapshot, false);
+                deffered.resolve(resolveResponse);
+            }));
+
+            it('should fire firstSaving event if no id', inject(function ($rootScope, editor, doc) {
+                expect(doc.info.id).toEqual(null);
+
+                editor.save();
+
+                expect($rootScope.$broadcast).toHaveBeenCalledWith('firstSaving');
+            }));
+
+            it('should assign document id on success', inject(function ($rootScope, editor, doc) {
+                expect(doc.info.id).toEqual(null);
+
+                editor.save();
+                deffered.resolve(resolveResponse);
+                $rootScope.$digest();
+                expect(doc.info.id).toEqual('test');
+            }));
+
+            it('should fire firstSaved event on success', inject(function ($rootScope, editor, doc) {
+                editor.save();
+                deffered.resolve(resolveResponse);
+                $rootScope.$digest();
+                expect($rootScope.$broadcast).toHaveBeenCalledWith('firstSaved', 'test');
+            }));
+
+            it('should store saving errors', inject(function ($rootScope, editor, doc) {
+                expect(editor.savingErrors).toEqual(0);
+
+                editor.save();
+                deffered.reject();
+                $rootScope.$digest();
+
+                expect(doc.dirty).toEqual(true);
+                expect(editor.savingErrors).toEqual(1);
+            }));
+
+            it('should store restore error counter to zero when success', inject(function ($rootScope, editor) {
+                expect(editor.savingErrors).toEqual(0);
+
+                editor.save();
+                deffered.reject();
+                $rootScope.$digest();
+                expect(editor.savingErrors).toEqual(1);
+
+                editor.save();
+                deffered.resolve({data:{id:'test'}});
+                $rootScope.$digest();
+                expect(editor.savingErrors).toEqual(0);
+            }));
+
+            it('should make document not editable after 5 saving errors', inject(function ($rootScope, editor, doc, backend) {
+                expect(editor.savingErrors).toEqual(0);
+
+                var i;
+                for(i=0;i<5;i++) {
+                    editor.save();
+                    deffered.reject();
+                    $rootScope.$digest();
+                    expect($rootScope.$broadcast).toHaveBeenCalledWith('error', {
+                        action: 'save',
+                        message: "An error occurred while saving the file"
+                    });
+                }
+
+                expect(editor.savingErrors).toEqual(i);
+                expect(backend.save.callCount).toEqual(i);
+                expect(doc.info.editable).toBeFalsy();
+                expect($rootScope.$broadcast).toHaveBeenCalledWith('error', {
+                    action: 'save',
+                    message: "Too many errors occurred while saving the file. Please contact us"
+                });
+            }));
+        });
+    });
+
     describe('video', function () {
         it("should be able to detect Coursera's lecture URL", inject(function (video) {
             var courseName = 'adhd-001', lectureId = 5;
