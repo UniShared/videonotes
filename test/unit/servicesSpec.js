@@ -204,7 +204,7 @@ describe('service', function() {
                 id:"testplayer"
             };
             youtubePlayerApi.bindVideoPlayer = jasmine.createSpy('youtubePlayerApi.bindVideoPlayer');
-            youtubePlayerApi.loadPlayer = jasmine.createSpy('youtubePlayerApi.loadPlayer').andCallFake(function () {youtubePlayerApi.player = {}});
+            youtubePlayerApi.loadPlayer = jasmine.createSpy('youtubePlayerApi.loadPlayer').andCallFake(function () {youtubePlayerApi.player = {addEventListener:jasmine.createSpy('addEventListener')}});
             spyOn(Popcorn, 'smart');
             $rootScope.$broadcast = jasmine.createSpy();
 
@@ -216,6 +216,7 @@ describe('service', function() {
             expect(youtubePlayerApi.bindVideoPlayer).toHaveBeenCalledWith(video.videoElement.id);
             expect(youtubePlayerApi.videoId).toEqual(videoId);
             expect(youtubePlayerApi.loadPlayer).toHaveBeenCalled();
+            expect(youtubePlayerApi.player.addEventListener).toHaveBeenCalledWith("onStateChange", jasmine.any(Function));
             expect(video.player).toEqual(youtubePlayerApi.player);
             expect(video.player).toEqual(youtubePlayerApi.player);
             expect($rootScope.$broadcast).toHaveBeenCalledWith('videoLoaded');

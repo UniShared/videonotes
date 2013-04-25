@@ -13,7 +13,7 @@ describe('Controllers', function () {
             next: function () {}
         };
         analytics.pushAnalytics = jasmine.createSpy('pushAnalytics');
-        spyOn(scope, '$on');
+        spyOn(scope, '$on').andCallThrough();
     }));
 
 
@@ -166,7 +166,8 @@ describe('Controllers', function () {
                 expect(scope.playPauseVideo).not.toHaveBeenCalled();
             });
 
-        })
+        });
+
         it('should have a errorLoadVideo method', angular.mock.inject(function (doc, sampleVideo) {
             scope.endLoading = jasmine.createSpy('endLoading');
             scope.errorLoadVideo();
@@ -218,7 +219,13 @@ describe('Controllers', function () {
             });
         });
 
-
+       it('should react to videoStateChange event', inject(function($rootScope, video) {
+           spyOn(video, "isPlaying").andReturn(true);
+           expect(scope.videoStatus.play).toBeFalsy();
+           $rootScope.$broadcast('videoStateChange');
+           expect(video.isPlaying).toHaveBeenCalled();
+           expect(scope.videoStatus.play).toBeTruthy();
+       }));
     });
 
     describe('ShareCtrl', function () {

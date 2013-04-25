@@ -102,6 +102,7 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
                     youtubePlayerApi.videoId = youtubeId;
                     youtubePlayerApi.loadPlayer();
                     this.player = youtubePlayerApi.player;
+                    this.player.addEventListener("onStateChange", function () {$rootScope.$broadcast("videoStateChange")})
                     $rootScope.$broadcast('videoLoaded');
                 }
                 else {
@@ -125,6 +126,14 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
         bindEvents: function () {
             this.player.on("canplay", function () {
                 $rootScope.$broadcast('videoLoaded');
+            }, false);
+
+            this.player.on("play", function () {
+                $rootScope.$broadcast("videoStateChange");
+            }, false);
+
+            this.player.on("pause", function () {
+                $rootScope.$broadcast("videoStateChange");
             }, false);
 
             this.player.on("error", function (e) {
@@ -175,6 +184,19 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
         play: function () {
             if(this.player)
                 this.player.playVideo ? this.player.playVideo() : this.player.play();
+        },
+        isPlaying: function () {
+            if(this.player) {
+                if(this.player.getPlayerState) {
+                    return this.player.getPlayerState() === YT.PlayerState.PLAYING;
+                }
+                else {
+                    return !this.player.paused;
+                }
+            }
+            else {
+                return false;
+            }
         },
         pause: function () {
             if(this.player)

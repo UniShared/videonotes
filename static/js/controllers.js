@@ -218,9 +218,13 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
     $scope.videoUrl = null;
 
     $scope.videoStatus = {
-        play: false,
+        play: video.isPlaying(),
         error: false
     };
+
+    $scope.$on("videoStateChange", function () {
+        $scope.videoStatus.play = video.isPlaying();
+    });
 
     $scope.submitVideo = function () {
         $scope.videoStatus.error = false;
