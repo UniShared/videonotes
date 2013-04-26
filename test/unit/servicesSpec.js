@@ -178,7 +178,7 @@ describe('service', function() {
             expect(videoIdResult).toEqual('GKfHdOrR3lw');
         }));
 
-        it("should have a load method calling Popcorn JS for MP4/Vimeo videos", inject(function(video) {
+        it("should have a load method calling Popcorn JS", inject(function(video) {
             video.bindEvents = jasmine.createSpy('bindEvents');
             video.videoUrl = 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7';
             video.videoElement = {
@@ -199,23 +199,28 @@ describe('service', function() {
             expect(video.subtitlesUrl).toEqual(null);
         }));
 
-        it("should use Angular Youtube for Youtube videos", inject(function(video, $rootScope) {
-            video.videoUrl = 'http://www.youtube.com/watch?v=zDZFcDGpL4U';
-            video.bindEvents = jasmine.createSpy('bindEvents');
-            video.videoElement = {
-                id:"testplayer"
-            };
+        it('should have a togglePlayPause which play the video when not playing', inject(function (video) {
+            spyOn(video, "play");
+            spyOn(video, "pause");
 
-            $rootScope.$broadcast = jasmine.createSpy();
+            spyOn(video, "isPlaying").andReturn(false);
+            video.togglePlayPause();
 
-            video.load();
+            expect(video.isPlaying).toHaveBeenCalled();
+            expect(video.play).toHaveBeenCalled();
+            expect(video.pause).not.toHaveBeenCalled();
+        }));
 
-            expect(Popcorn.smart).toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl, {controls:true,autoplay:false});
-            expect(video.player).toEqual(mockPopcorn);
-            expect(mockPopcorn.controls).toHaveBeenCalledWith(true);
-            expect(video.bindEvents).toHaveBeenCalled();
-            expect(video.subtitlesUrl).toEqual(null);
-//            expect($rootScope.$broadcast).toHaveBeenCalledWith('videoLoaded');
+        it('should have a togglePlayPause which pause the video when  playing', inject(function (video) {
+            spyOn(video, "play");
+            spyOn(video, "pause");
+
+            spyOn(video, "isPlaying").andReturn(true);
+            video.togglePlayPause();
+
+            expect(video.isPlaying).toHaveBeenCalled();
+            expect(video.pause).toHaveBeenCalled();
+            expect(video.play).not.toHaveBeenCalled();
         }));
     });
 

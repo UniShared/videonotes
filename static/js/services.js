@@ -118,14 +118,6 @@ module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope
                 $rootScope.$broadcast('videoLoaded');
             }));
 
-            this.player.on("play", function () {
-                $rootScope.$broadcast("videoStateChange");
-            }, false);
-
-            this.player.on("pause", function () {
-                $rootScope.$broadcast("videoStateChange");
-            }, false);
-
             this.player.on("error", function (e) {
                 $rootScope.$broadcast('videoError');
 
@@ -175,22 +167,20 @@ module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope
             if(this.player)
                 this.player.play();
         },
+        pause: function () {
+            if(this.player)
+                this.player.pause();
+        },
         isPlaying: function () {
             if(this.player) {
-                if(this.player.getPlayerState) {
-                    return this.player.getPlayerState() === YT.PlayerState.PLAYING;
-                }
-                else {
-                    return !this.player.paused;
-                }
+                return !this.player.paused();
             }
             else {
                 return false;
             }
         },
-        pause: function () {
-            if(this.player)
-                this.player.pause();
+        togglePlayPause: function () {
+            this.isPlaying() ? this.pause() : this.play();
         },
         currentTime: function () {
             if(arguments.length) {

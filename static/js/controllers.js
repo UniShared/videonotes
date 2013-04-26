@@ -218,13 +218,8 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.videoUrl = null;
 
     $scope.videoStatus = {
-        play: video.isPlaying(),
         error: false
     };
-
-    $scope.$on("videoStateChange", function () {
-        $scope.videoStatus.play = video.isPlaying();
-    });
 
     $scope.submitVideo = function () {
         $scope.videoStatus.error = false;
@@ -244,7 +239,6 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
             if (doc.info.video) {
                 $scope.videoUrl = doc.info.video;
                 $scope.loading = true;
-                $scope.videoStatus.play = false;
 
                 video.videoUrl = doc.info.video;
                 video.load();
@@ -265,9 +259,8 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
 
     $scope.playPauseVideo = function () {
         if (doc.info && doc.info.video) {
-            $scope.videoStatus.play = !$scope.videoStatus.play;
-            $scope.videoStatus.play ? video.play() : video.pause();
-            analytics.pushAnalytics('Video', 'play pause', $scope.videoStatus.play ? 'play' : 'pause');
+            video.togglePlayPause();
+            analytics.pushAnalytics('Video', 'play pause', video.isPlaying() ? 'play' : 'pause');
         }
     };
 

@@ -21,9 +21,9 @@
                         <input type="url" id="videoUrl" name="videoUrl" ng-class="{span9:doc.info.editable, span12:!doc.info.editable}" placeholder="Enter the video URL"
                                ng-model="videoUrl" ng-disabled="!doc.info.editable" required>
 
-                        <div ng-class="{span3:doc.info.editable" class="pull-right" style="margin-left: 0px;">
+                        <div ng-class="{span3:doc.info.editable}" class="pull-right" style="margin-left: 0px;">
                             <input type="submit" class="btn btn-primary pull-right" value="Load video"
-                                   ng-hide="loading" ng-show="doc.info.editable">
+                                   ng-hide="loading || !doc.info.editable">
                             <img class="loading pull-right" src="/img/loading.gif" ng-show="loading">
                         </div>
                     </div>
@@ -112,7 +112,7 @@
                                 <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
                             <li class="menu-switch-sync" tooltip="Switch sync ({{switchShortcut}})"
                                 tooltip-placement="bottom">
-                                <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
+       l                    <bootstrap-switch id="sync-switch" property="sync.enabled"></bootstrap-switch>
                             </li>
                         </ul>
                         <div ng-controller="ShareCtrl">
