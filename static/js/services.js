@@ -64,8 +64,8 @@ module.factory('doc',
             return new Date().getTime() - this.lastSave;
         };
 
-        var initWatcher =  function (event, fileInfo) {
-            if(fileInfo.editable) {
+        var initWatcher =  function () {
+            if(service.info && service.info.editable) {
                 service.$watch('info',
                     function (newValue, oldValue) {
                         if (oldValue != null && newValue !== oldValue) {
@@ -634,8 +634,8 @@ module.factory('autosaver',
             }
         };
 
-        var initTimeout = function (event, fileInfo) {
-            if (fileInfo.editable) {
+        var initTimeout = function () {
+            if (doc.info && doc.info.editable) {
                 var createTimeout = function () {
                     return $timeout(service.saveFn, saveInterval).then(createTimeout);
                 };
