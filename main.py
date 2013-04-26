@@ -144,7 +144,7 @@ class BaseHandler(webapp2.RequestHandler):
                 self.response.write(exception.resp.reason)
         else:
             message = 'An error occurred'
-            logging.error(message)
+            logging.error('%s : %s', message, exception, exc_info=True)
             self.response.write(message)
             self.response.set_status(500)
 
