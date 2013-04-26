@@ -82,7 +82,7 @@ module.factory('doc',
         return service;
     }]);
 
-module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', function ($rootScope, $log, analytics, youtubePlayerApi) {
+module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope, $log, analytics) {
     return {
         videoElement: null,
         player: null,
@@ -96,27 +96,17 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
                     this.subtitlesUrl = null;
                 }
 
-                var youtubeId = this.getYoutubeVideoId(this.videoUrl);
-                if(youtubeId) {
-                    youtubePlayerApi.bindVideoPlayer(this.videoElement.id);
-                    youtubePlayerApi.videoId = youtubeId;
-                    youtubePlayerApi.loadPlayer();
-                    this.player = youtubePlayerApi.player;
-                    this.player.addEventListener("onStateChange", function () {$rootScope.$broadcast("videoStateChange")})
-                    $rootScope.$broadcast('videoLoaded');
+                var matchVideoCoursera = this.getCourseLectureCoursera(this.videoUrl);
+                if (matchVideoCoursera && matchVideoCoursera.length == 3) {
+                    this.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
+                    this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
                 }
-                else {
-                    var matchVideoCoursera = this.getCourseLectureCoursera(this.videoUrl);
-                    if (matchVideoCoursera && matchVideoCoursera.length == 3) {
-                        this.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
-                        this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
-                    }
 
-                    this.player = Popcorn.smart("#{0}".format(this.videoElement.id), this.videoUrl);
-                    this.bindEvents();
-                    if(this.subtitlesUrl)
-                        this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
-                }
+                this.player = Popcorn.smart("#{0}".format(this.videoElement.id), this.videoUrl, {controls:true, autoplay:false});
+                this.player.controls(true);
+                this.bindEvents();
+                if(this.subtitlesUrl)
+                    this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
             }
         },
         bindVideoPlayer: function (element) {
@@ -124,9 +114,9 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
             this.videoElement = element;
         },
         bindEvents: function () {
-            this.player.on("canplay", function () {
+            this.player.on("loadeddata", angular.bind(this, function () {
                 $rootScope.$broadcast('videoLoaded');
-            }, false);
+            }));
 
             this.player.on("play", function () {
                 $rootScope.$broadcast("videoStateChange");
@@ -165,7 +155,7 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
                     action: 'load video',
                     message: 'An error occurred while loading the video'
                 });
-            }, false);
+            });
         },
         getYoutubeVideoId: function (url) {
             var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
@@ -183,7 +173,7 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
         },
         play: function () {
             if(this.player)
-                this.player.playVideo ? this.player.playVideo() : this.player.play();
+                this.player.play();
         },
         isPlaying: function () {
             if(this.player) {
@@ -200,27 +190,21 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
         },
         pause: function () {
             if(this.player)
-                this.player.pauseVideo ? this.player.pauseVideo() : this.player.pause();
+                this.player.pause();
         },
         currentTime: function () {
             if(arguments.length) {
-                this.player.seekTo ? this.player.seekTo(arguments[0]) : this.player.currentTime(arguments[0]);
+                this.player.currentTime(arguments[0]);
             }
             else {
-               var currentTime;
-               if (this.player.getCurrentTime)
-                currentTime = this.player.getCurrentTime();
-               else
-                currentTime = this.player.currentTime();
-
-                return currentTime || 0.01;
+                return this.player.currentTime() || 0.01;
             }
         }
     };
 }]);
 
 module.factory('editor',
-    ['doc', 'backend', 'youtubePlayerApi', 'video', '$q', '$rootScope', '$log', function (doc, backend, youtubePlayerApi, video, $q, $rootScope, $log) {
+    ['doc', 'backend', 'video', '$q', '$rootScope', '$log', function (doc, backend, video, $q, $rootScope, $log) {
         var editor = null;
         var EditSession = require("ace/edit_session").EditSession;
 
@@ -247,12 +231,7 @@ module.factory('editor',
                         var lineCursorPosition = e.getDocumentPosition().row,
                             timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                        if (youtubePlayerApi.player) {
-                            youtubePlayerApi.player.seekTo(timestamp);
-                        }
-                        else if (video.player) {
-                            video.player.currentTime = timestamp;
-                        }
+                        video.player.currentTime(timestamp);
                     }
 
                 });

@@ -7,7 +7,7 @@ describe('service', function() {
         angular.module('appMock', [])
             .constant('saveInterval', function () { return 0; })
             .constant('appName', "VideoNotes test");
-        angular.mock.module('app.services', 'youtube', 'analytics', 'appMock');
+        angular.mock.module('app.services', 'analytics', 'appMock');
     });
 
     describe('editor', function () {
@@ -137,6 +137,15 @@ describe('service', function() {
     });
 
     describe('video', function () {
+        var mockPopcorn;
+        beforeEach(function () {
+            mockPopcorn = {
+                controls: jasmine.createSpy('Popcorn.controls'),
+                destroy: jasmine.createSpy('destroy'),
+                parseSRT:jasmine.createSpy('parseSRT')
+            };
+            spyOn(Popcorn, 'smart').andReturn(mockPopcorn);
+        })
         it("should be able to detect Coursera's lecture URL", inject(function (video) {
             var courseName = 'adhd-001', lectureId = 5;
             var url = 'https://class.coursera.org/{0}/lecture/{1}'.format(courseName, lectureId);
@@ -170,12 +179,6 @@ describe('service', function() {
         }));
 
         it("should have a load method calling Popcorn JS for MP4/Vimeo videos", inject(function(video) {
-            var popcornMock = {
-                destroy: jasmine.createSpy('destroy'),
-                parseSRT:jasmine.createSpy('parseSRT')
-            };
-            spyOn(Popcorn, 'smart').andReturn(popcornMock);
-
             video.bindEvents = jasmine.createSpy('bindEvents');
             video.videoUrl = 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7';
             video.videoElement = {
@@ -184,42 +187,35 @@ describe('service', function() {
 
             video.load();
 
-            expect(Popcorn.smart).toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl);
+            expect(Popcorn.smart).toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl, {controls:true,autoplay:false});
             expect(video.bindEvents).toHaveBeenCalled();
             expect(video.subtitlesUrl).not.toEqual(null);
-            expect(popcornMock.parseSRT).toHaveBeenCalledWith('/proxy?q={0}'.format(encodeURIComponent(video.subtitlesUrl)));
+            expect(mockPopcorn.parseSRT).toHaveBeenCalledWith('/proxy?q={0}'.format(encodeURIComponent(video.subtitlesUrl)));
 
             video.videoUrl = 'https://class.videonotes.org/knowthyself-001/lecture/download.mp4?lecture_id=7';
             video.load();
 
-            expect(popcornMock.destroy).toHaveBeenCalled();
+            expect(mockPopcorn.destroy).toHaveBeenCalled();
             expect(video.subtitlesUrl).toEqual(null);
         }));
 
-        it("should use Angular Youtube for Youtube videos", inject(function(video, youtubePlayerApi, $rootScope) {
-            var videoId = "zDZFcDGpL4U";
-            video.videoUrl = 'http://www.youtube.com/watch?v={0}'.format(videoId);
+        it("should use Angular Youtube for Youtube videos", inject(function(video, $rootScope) {
+            video.videoUrl = 'http://www.youtube.com/watch?v=zDZFcDGpL4U';
             video.bindEvents = jasmine.createSpy('bindEvents');
             video.videoElement = {
                 id:"testplayer"
             };
-            youtubePlayerApi.bindVideoPlayer = jasmine.createSpy('youtubePlayerApi.bindVideoPlayer');
-            youtubePlayerApi.loadPlayer = jasmine.createSpy('youtubePlayerApi.loadPlayer').andCallFake(function () {youtubePlayerApi.player = {addEventListener:jasmine.createSpy('addEventListener')}});
-            spyOn(Popcorn, 'smart');
+
             $rootScope.$broadcast = jasmine.createSpy();
 
             video.load();
 
-            expect(Popcorn.smart).not.toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl);
-            expect(video.bindEvents).not.toHaveBeenCalled();
+            expect(Popcorn.smart).toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl, {controls:true,autoplay:false});
+            expect(video.player).toEqual(mockPopcorn);
+            expect(mockPopcorn.controls).toHaveBeenCalledWith(true);
+            expect(video.bindEvents).toHaveBeenCalled();
             expect(video.subtitlesUrl).toEqual(null);
-            expect(youtubePlayerApi.bindVideoPlayer).toHaveBeenCalledWith(video.videoElement.id);
-            expect(youtubePlayerApi.videoId).toEqual(videoId);
-            expect(youtubePlayerApi.loadPlayer).toHaveBeenCalled();
-            expect(youtubePlayerApi.player.addEventListener).toHaveBeenCalledWith("onStateChange", jasmine.any(Function));
-            expect(video.player).toEqual(youtubePlayerApi.player);
-            expect(video.player).toEqual(youtubePlayerApi.player);
-            expect($rootScope.$broadcast).toHaveBeenCalledWith('videoLoaded');
+//            expect($rootScope.$broadcast).toHaveBeenCalledWith('videoLoaded');
         }));
     });
 
@@ -228,7 +224,7 @@ describe('service', function() {
             expect(config.load).toBeDefined();
         }));
 
-        it('should call the config endpoint on load call', inject(function ($httpBackend, config, appName) {
+        it('should call the config endpoint on load call', inject(function ($httpBackend, config) {
             var response = {googleAnalyticsAccount:'test', appId: '1234'};
             $httpBackend.expectGET('/config').respond(200, response);
 

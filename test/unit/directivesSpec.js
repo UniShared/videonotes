@@ -4,7 +4,7 @@
 
 describe('directives', function () {
     var elm, scope;
-    beforeEach(angular.mock.module('app.directives', 'app.services', 'youtube', 'analytics'));
+    beforeEach(angular.mock.module('app.directives', 'app.services', 'analytics'));
 
     describe('aceEditor', function () {
         beforeEach(angular.mock.inject(function ($rootScope, $compile) {
@@ -17,25 +17,25 @@ describe('directives', function () {
             scope.$digest();
         }));
 
-        it('Enabling sync should enable ace gutter', angular.mock.inject(function ($compile, $rootScope, editor) {
+        it('Enabling sync should enable ace gutter', function () {
             var aceGutter = elm.find('.ace_gutter');
 
             scope.sync = true;
             scope.$apply();
 
             expect(aceGutter).not.toHaveClass('inactive');
-        }));
+        });
 
-        it('Disabling sync should disable ace gutter', angular.mock.inject(function ($compile, $rootScope, editor) {
+        it('Disabling sync should disable ace gutter', function () {
             var aceGutter = elm.find('.ace_gutter');
 
             scope.sync = false;
             scope.$apply();
 
             expect(aceGutter).toHaveClass('inactive');
-        }));
+        });
 
-        it('Toggling sync should toggle ace gutter activation', angular.mock.inject(function ($compile, $rootScope, editor) {
+        it('Toggling sync should toggle ace gutter activation',function () {
             var aceGutter = elm.find('.ace_gutter');
 
             scope.sync = false;
@@ -47,7 +47,7 @@ describe('directives', function () {
             scope.$apply();
 
             expect(aceGutter).not.toHaveClass('inactive');
-        }));
+        });
     });
 
     describe('star', function () {

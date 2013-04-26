@@ -20,17 +20,12 @@ describe('Controllers', function () {
     describe('VideoCtrl', function () {
         var videoCtrl;
 
-        beforeEach(angular.mock.inject(function ($rootScope, $controller, doc, video, youtubePlayerApi) {
+        beforeEach(angular.mock.inject(function ($rootScope, $controller, doc, video) {
             doc.info = {};
 
             video.play = jasmine.createSpy();
             video.pause = jasmine.createSpy();
             video.load = jasmine.createSpy();
-
-            youtubePlayerApi.player = {
-                playVideo: jasmine.createSpy(),
-                pauseVideo: jasmine.createSpy()
-            };
 
             videoCtrl = $controller('VideoCtrl', {$scope: scope});
         }));
@@ -123,7 +118,7 @@ describe('Controllers', function () {
             expect(video.load).toHaveBeenCalled();
         }));
 
-        it('should have a loadSampleVideo method', angular.mock.inject(function (doc, sampleVideo) {
+        it('should have a loadSampleVideo method', angular.mock.inject(function (doc) {
             scope.loadPlayer = jasmine.createSpy();
             expect(scope.videoUrl).toBe(null);
             expect(doc.info.video).toBeUndefined();
@@ -136,7 +131,6 @@ describe('Controllers', function () {
         it('should have a endLoading method', angular.mock.inject(function (doc, sampleVideo, video) {
             scope.endLoading();
             expect(scope.loading).toBeFalsy();
-            expect(video.pause).toHaveBeenCalled();
         }));
 
         describe('shortcuts method', function () {
@@ -168,12 +162,12 @@ describe('Controllers', function () {
 
         });
 
-        it('should have a errorLoadVideo method', angular.mock.inject(function (doc, sampleVideo) {
+        it('should have a errorLoadVideo method', function () {
             scope.endLoading = jasmine.createSpy('endLoading');
             scope.errorLoadVideo();
             expect(scope.videoStatus.error).toBeTruthy();
             expect(scope.endLoading).toHaveBeenCalled();
-        }));
+        });
 
         describe('submitVideo method', function () {
             it('should store the video URL typed', inject(function (analytics, doc) {

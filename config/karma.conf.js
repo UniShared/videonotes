@@ -8,7 +8,7 @@ files = [
     'static/lib/angular/angular.js',
     'test/lib/angular/angular-mocks.js',
     'test/lib/google/*.js',
-    'test/lib/popcorn/*.js',
+    'static/lib/popcorn/popcorn-complete.js',
     'static/lib/**/*.js',
     'static/js/app.js',
     'static/js/controllers.js',
