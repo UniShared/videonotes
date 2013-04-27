@@ -50,6 +50,17 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
                 this.$on(events[i], fn);
             }
         };
+
+        $rootScope.safeApply = function(fn) {
+            var phase = this.$root.$$phase;
+            if(phase == '$apply' || phase == '$digest') {
+                if(fn && (typeof(fn) === 'function')) {
+                    fn();
+                }
+            } else {
+                this.$apply(fn);
+            }
+        };
     }])
     // Error handler
     .run(['$window', 'analytics', function ($window, analytics) {
