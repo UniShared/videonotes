@@ -7,13 +7,14 @@ describe('Controllers', function () {
 
     beforeEach(angular.mock.module('app', 'analytics'));
 
-    beforeEach(angular.mock.inject(function($rootScope, analytics) {
+    beforeEach(angular.mock.inject(function($rootScope, $window, analytics) {
         scope = $rootScope.$new();
         scope.tour = {
             next: function () {}
         };
         analytics.pushAnalytics = jasmine.createSpy('pushAnalytics');
         spyOn(scope, '$on').andCallThrough();
+        $window.addEventListener = jasmine.createSpy();
     }));
 
 

@@ -5,10 +5,14 @@
 describe('service', function() {
     beforeEach(function () {
         angular.module('appMock', [])
-            .constant('saveInterval', function () { return 0; })
+            .constant('saveInterval', 5000)
             .constant('appName', "VideoNotes test");
         angular.mock.module('app.services', 'analytics', 'appMock');
     });
+
+    beforeEach(angular.mock.inject(function($window) {
+        $window.addEventListener = jasmine.createSpy();
+    }));
 
     describe('editor', function () {
         var deffered;
@@ -240,27 +244,31 @@ describe('service', function() {
     });
 
     describe('autosaver', function () {
-        it('should check document state each $saveInterval seconds', inject(function ($timeout, autosaver) {
+        it('should check document state each saveInterval seconds', inject(function ($rootScope, $timeout, autosaver, doc) {
             spyOn(autosaver, 'saveFn');
+            doc.info = {editable: true};
+            $rootScope.$broadcast('loaded');
+
             $timeout.flush();
             expect(autosaver.saveFn).toHaveBeenCalled();
         }));
 
         it('should have a confirmOnLeave method which is returning a message', inject(function (doc, autosaver) {
             expect(typeof autosaver.confirmOnLeave).toBe('function');
+            doc.dirty = true;
             var msgExpected = "You have unsaved data.",
                 msgReturned = autosaver.confirmOnLeave();
             expect(msgExpected).toEqual(msgReturned);
         }));
 
-        it('should listen to beforeunload event', inject(function ($window, autosaver, doc) {
-            spyOn($window, 'addEventListener');
-            doc.dirty = true;
-            autosaver.$apply();
+        it('should listen to beforeunload event', inject(function ($window, autosaver, doc, user) {
+            spyOn(user, "isAuthenticated").andReturn(true);
+            autosaver.$apply(function () {
+                doc.dirty = true;
+            });
 
             var msg = $window.addEventListener.mostRecentCall.args[1]({});
-
-            expect(msg).toBeEqual("You have unsaved data.");
+            expect(msg).toEqual("You have unsaved data.");
         }));
     });
 
