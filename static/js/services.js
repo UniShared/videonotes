@@ -624,20 +624,19 @@ module.factory('autosaver',
         var service = $rootScope.$new(true);
         service.doc = doc;
         service.confirmOnLeave = function(e) {
-            var msg = "You have unsaved data.";
+            if(doc.dirty) {
+                var msg = "You have unsaved data.";
 
-            // For IE and Firefox
-            e = e || window.event;
-            if (e) {e.returnValue = msg;}
+                // For IE and Firefox
+                e = e || window.event;
+                if (e) {e.returnValue = msg;}
 
-            // For Chrome and Safari
-            return msg;
-        };
-        service.$watch('doc.dirty', function (newValue, oldValue) {
-            if(newValue !== oldValue) {
-                newValue && user.isAuthenticated() ? $window.addEventListener('beforeunload', service.confirmOnLeave) : $window.removeEventListener('beforeunload', service.confirmOnLeave);
+                // For Chrome and Safari
+                return msg;
             }
-        });
+
+        };
+        $window.addEventListener('beforeunload', service.confirmOnLeave);
 
         service.saveFn = function () {
             if (editor.state() == EditorState.DIRTY) {
