@@ -1,5 +1,5 @@
 /*
- * popcorn.js version e72c167
+ * popcorn.js version 2152fdf
  * http://popcornjs.org
  *
  * Copyright 2011, Mozilla Foundation
@@ -100,7 +100,7 @@
   };
 
   //  Popcorn API version, automatically inserted via build system.
-  Popcorn.version = "e72c167";
+  Popcorn.version = "2152fdf";
 
   //  Boolean flag allowing a client to determine if Popcorn can be supported
   Popcorn.isSupported = true;
@@ -5912,7 +5912,7 @@
         networkState: self.NETWORK_EMPTY,
         readyState: self.HAVE_NOTHING,
         seeking: false,
-        autoplay: false,
+        autoplay: EMPTY_STRING,
         preload: EMPTY_STRING,
         controls: true,
         loop: false,
@@ -6238,11 +6238,11 @@
     function monitorCurrentTime() {
       var playerTime = player.getCurrentTime();
       if ( !impl.seeking ) {
-        impl.currentTime = playerTime;
         if ( ABS( impl.currentTime - playerTime ) > CURRENT_TIME_MONITOR_MS ) {
           onSeeking();
           onSeeked();
         }
+        impl.currentTime = playerTime;
       } else if ( ABS( playerTime - impl.currentTime ) < 1 ) {
         onSeeked();
       }

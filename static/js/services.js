@@ -121,10 +121,16 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
                     $rootScope.$broadcast('video::loadeddata');
                 }
             }, 5000);
+
             this.player.on("loadeddata", function () {
                 $log.info("Player loadeddata");
                 loadeddatafired = true;
                 $rootScope.$broadcast('video::loadeddata');
+            });
+
+            this.player.on("seeked", function () {
+                $log.info("Player seeked");
+                $rootScope.$broadcast('video::seeked');
             });
 
             this.player.on("error", function (e) {
@@ -216,6 +222,9 @@ module.factory('editor',
             if(editor && newValue !== oldValue) {
                 editor.setReadOnly(!newValue);
             }
+        });
+        scope.$on('video::seeked', function () {
+            editor.focus();
         });
 
         var service = {
