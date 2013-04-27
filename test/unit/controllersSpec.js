@@ -47,8 +47,12 @@ describe('Controllers', function () {
             expect(scope.$on).toHaveBeenCalledWith('loaded', scope.loadPlayer);
         }));
 
-        it('should listen for videoLoaded event', angular.mock.inject(function () {
-            expect(scope.$on).toHaveBeenCalledWith('videoLoaded', scope.endLoading);
+        it('should listen for video::loadeddata event', angular.mock.inject(function () {
+            expect(scope.$on).toHaveBeenCalledWith('video::loadeddata', scope.endLoading);
+        }));
+
+        it('should listen for video::error event', angular.mock.inject(function () {
+            expect(scope.$on).toHaveBeenCalledWith('video::error', scope.errorLoadVideo);
         }));
 
         it('should be able to play/pause video', angular.mock.inject(function (analytics, video) {

@@ -27,7 +27,7 @@ module.config(['$httpProvider', function ($httpProvider) {
     $httpProvider.responseInterceptors.push('httpInterceptor401');
 }]);
 
-module.service('config', ['$rootScope', '$http', 'appName', function ($rootScope, $http, appName) {
+module.factory('config', ['$rootScope', '$http', 'appName', function ($rootScope, $http, appName) {
     return {
         appId: null,
         appName: null,
@@ -82,14 +82,14 @@ module.factory('doc',
         return service;
     }]);
 
-module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope, $log, analytics) {
+module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function ($rootScope, $log, $timeout, analytics) {
     return {
         videoElement: null,
         player: null,
         videoUrl: null,
         subtitlesUrl: null,
         load: function () {
-            if (this.videoUrl) {
+            if (this.videoUrl && this.videoElement) {
                 if(this.player) {
                     this.player.destroy();
                     $(this.videoElement).empty();
@@ -102,9 +102,10 @@ module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope
                     this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
                 }
 
-                this.player = Popcorn.smart("#{0}".format(this.videoElement.id), this.videoUrl, {controls:true, autoplay:false});
-                this.player.controls(true);
+                this.player = Popcorn.smart("#" + this.videoElement.id, this.videoUrl, {controls:true});
                 this.bindEvents();
+
+                this.player.controls(true);
                 if(this.subtitlesUrl)
                     this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
             }
@@ -114,13 +115,19 @@ module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope
             this.videoElement = element;
         },
         bindEvents: function () {
-            this.player.on("loadeddata", angular.bind(this, function () {
-                $rootScope.$broadcast('videoLoaded');
-            }));
+            var loadeddatafired = false;
+            $timeout(function () {
+                if(!loadeddatafired) {
+                    $rootScope.$broadcast('video::loadeddata');
+                }
+            }, 5000);
+            this.player.on("loadeddata", function () {
+                $log.info("Player loadeddata");
+                loadeddatafired = true;
+                $rootScope.$broadcast('video::loadeddata');
+            });
 
             this.player.on("error", function (e) {
-                $rootScope.$broadcast('videoError');
-
                 var message;
                 switch (e.target.error.code) {
                     case e.target.error.MEDIA_ERR_ABORTED:
@@ -140,12 +147,16 @@ module.factory('video', ['$rootScope', '$log', 'analytics', function ($rootScope
                         break;
                 }
 
-                analytics.pushAnalytics('Video', 'load', message);
-                $log.info("Error while loading the video", message);
+                $rootScope.safeApply(function () {
+                    $rootScope.$broadcast('video::error');
 
-                $rootScope.$broadcast('error', {
-                    action: 'load video',
-                    message: 'An error occurred while loading the video'
+                    analytics.pushAnalytics('Video', 'load', message);
+                    $log.info("Error while loading the video", message);
+
+                    $rootScope.$broadcast('error', {
+                        action: 'load video',
+                        message: 'An error occurred while loading the video'
+                    });
                 });
             });
         },
@@ -361,9 +372,9 @@ module.factory('editor',
 
                 session.on('change', function () {
                     if (doc && doc.info) {
-                        //doc.dirty = true;
-                        doc.info.content = session.getValue();
-                        $rootScope.$apply();
+                        $rootScope.safeApply(function () {
+                            doc.info.content = session.getValue();
+                        });
                     }
                 });
 

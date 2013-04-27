@@ -187,7 +187,7 @@ describe('service', function() {
 
             video.load();
 
-            expect(Popcorn.smart).toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl, {controls:true,autoplay:false});
+            expect(Popcorn.smart).toHaveBeenCalledWith("#{0}".format(video.videoElement.id), video.videoUrl, {controls:true});
             expect(video.bindEvents).toHaveBeenCalled();
             expect(video.subtitlesUrl).not.toEqual(null);
             expect(mockPopcorn.parseSRT).toHaveBeenCalledWith('/proxy?q={0}'.format(encodeURIComponent(video.subtitlesUrl)));

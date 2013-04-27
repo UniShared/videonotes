@@ -228,18 +228,19 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
             $scope.tour.showStep(1);
         }
 
-        doc.info.video = $scope.videoUrl;
-        analytics.pushAnalytics('Video', $scope.videoUrl);
-
-        $scope.loadPlayer();
+        if(doc.info.video !== $scope.videoUrl) {
+            doc.info.video = $scope.videoUrl;
+            analytics.pushAnalytics('Video', $scope.videoUrl);
+            $scope.loadPlayer();
+        }
     };
 
     $scope.loadPlayer = function () {
-        if (doc && doc.info) {
-            if (doc.info.video) {
-                $scope.videoUrl = doc.info.video;
-                $scope.loading = true;
+        if (doc && doc.info && doc.info.video) {
+            $scope.videoUrl = doc.info.video;
+            $scope.loading = true;
 
+            if(video.videoUrl !== doc.info.video) {
                 video.videoUrl = doc.info.video;
                 video.load();
             }
@@ -250,8 +251,8 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
         switch (eventData.which) {
             case 32:
                 if (eventData.ctrlKey) {
-                    eventData.preventDefault();
                     $scope.playPauseVideo();
+                    eventData.preventDefault();
                 }
                 break;
         }
@@ -266,7 +267,6 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
 
     $scope.endLoading = function () {
         $scope.loading = false;
-        $scope.$apply();
     };
 
     $scope.loadSampleVideo = function () {
@@ -281,9 +281,9 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     };
 
     $scope.$on('shortcut', $scope.shortcuts);
-    $scope.$onMany(['loaded','$routeChangeSuccess'], $scope.loadPlayer);
-    $scope.$on('videoLoaded', $scope.endLoading);
-    $scope.$on('videoError', $scope.errorLoadVideo);
+    $scope.$on('loaded', $scope.loadPlayer);
+    $scope.$on('video::loadeddata', $scope.endLoading);
+    $scope.$on('video::error', $scope.errorLoadVideo);
 }]);
 
 controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'analytics', function ($scope, editor, doc, autosaver, analytics) {
@@ -323,7 +323,7 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'analytics',
 
 controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, config, editor, doc, analytics) {
     var onFilePicked = function (data) {
-        $scope.$apply(function () {
+        $scope.safeApply(function () {
             if (data.action == 'picked') {
                 var id = data.docs[0].id;
                 $rootScope.$broadcast('opened', id);
@@ -388,7 +388,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
 controllersModule.controller('RenameCtrl', ['$scope', '$timeout', 'doc', 'analytics', function ($scope, $timeout, doc, analytics) {
     $('#rename-dialog').on('show',
         function () {
-            $scope.$apply(function () {
+            $scope.safeApply(function () {
                 $scope.newFileName = doc.info.title;
                 if(!$scope.tour.ended()) {
                     $scope.tour.hideStep(2);
