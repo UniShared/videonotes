@@ -29,10 +29,10 @@ if (!String.prototype.format) {
 google.load('picker', '1');
 gapi.load('drive-share');
 
-angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.keypress', 'ui.bootstrap', 'analytics', 'youtube'])
+angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.keypress', 'ui.bootstrap', 'analytics'])
     .constant('appName', 'VideoNot.es')
     .constant('saveInterval', 15000)
-    .constant('sampleVideo', 'http://www.youtube.com/watch?v=zDZFcDGpL4U') // Please replace this with your Application ID.
+    .constant('sampleVideo', 'http://www.youtube.com/watch?v=U6FvJ6jMGHU') // Please replace this with your Application ID.
     .config(['$routeProvider', function ($routeProvider) {
         $routeProvider
             .when('/', {templateUrl: '/partials/home.html', controller: "HomeCtrl"})
@@ -48,6 +48,17 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
         $rootScope.$onMany = function (events, fn) {
             for (var i = 0; i < events.length; i++) {
                 this.$on(events[i], fn);
+            }
+        };
+
+        $rootScope.safeApply = function(fn) {
+            var phase = this.$root.$$phase;
+            if(phase == '$apply' || phase == '$digest') {
+                if(fn && (typeof(fn) === 'function')) {
+                    fn();
+                }
+            } else {
+                this.$apply(fn);
             }
         };
     }])

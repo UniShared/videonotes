@@ -25,7 +25,7 @@ module.exports = function (grunt) {
         karma: {
             options: {
                 configFile: 'config/karma.conf.js',
-                browsers: ['Chrome', 'Firefox']
+                browsers: ['Chrome']
             },
 
             unit: {
@@ -69,7 +69,7 @@ module.exports = function (grunt) {
                 src: ['static/lib/ace/ace.min.js',
                     'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
                     'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
-                    'static/lib/angular-youtube/<%= dist %>/angular-youtube-player-api.min.js',
+                    'static/lib/popcorn/popcorn-complete.min.js',
                     'static/lib/angular-gaq/<%= dist %>/angular-gaq.min.js', 'static/js/<%= dist %>/tmp/external.min.js', 'static/js/<%= dist %>/tmp/app.min.js'],
                 dest: 'static/js/<%= dist %>/<%= pkg.name %>.min.js'
             },

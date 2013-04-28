@@ -27,7 +27,7 @@ module.config(['$httpProvider', function ($httpProvider) {
     $httpProvider.responseInterceptors.push('httpInterceptor401');
 }]);
 
-module.service('config', ['$rootScope', '$http', 'appName', function ($rootScope, $http, appName) {
+module.factory('config', ['$rootScope', '$http', 'appName', function ($rootScope, $http, appName) {
     return {
         appId: null,
         appName: null,
@@ -65,7 +65,7 @@ module.factory('doc',
         };
 
         var initWatcher =  function () {
-            if(service && service.info && service.info.editable) {
+            if(service.info && service.info.editable) {
                 service.$watch('info',
                     function (newValue, oldValue) {
                         if (oldValue != null && newValue !== oldValue) {
@@ -82,40 +82,32 @@ module.factory('doc',
         return service;
     }]);
 
-module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', function ($rootScope, $log, analytics, youtubePlayerApi) {
+module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function ($rootScope, $log, $timeout, analytics) {
     return {
         videoElement: null,
         player: null,
         videoUrl: null,
         subtitlesUrl: null,
         load: function () {
-            if (this.videoUrl) {
+            if (this.videoUrl && this.videoElement) {
                 if(this.player) {
                     this.player.destroy();
                     $(this.videoElement).empty();
                     this.subtitlesUrl = null;
                 }
 
-                var youtubeId = this.getYoutubeVideoId(this.videoUrl);
-                if(youtubeId) {
-                    youtubePlayerApi.bindVideoPlayer(this.videoElement.id);
-                    youtubePlayerApi.videoId = youtubeId;
-                    youtubePlayerApi.loadPlayer();
-                    this.player = youtubePlayerApi.player;
-                    $rootScope.$broadcast('videoLoaded');
+                var matchVideoCoursera = this.getCourseLectureCoursera(this.videoUrl);
+                if (matchVideoCoursera && matchVideoCoursera.length == 3) {
+                    this.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
+                    this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
                 }
-                else {
-                    var matchVideoCoursera = this.getCourseLectureCoursera(this.videoUrl);
-                    if (matchVideoCoursera && matchVideoCoursera.length == 3) {
-                        this.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
-                        this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
-                    }
 
-                    this.player = Popcorn.smart("#{0}".format(this.videoElement.id), this.videoUrl);
-                    this.bindEvents();
-                    if(this.subtitlesUrl)
-                        this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
-                }
+                this.player = Popcorn.smart("#" + this.videoElement.id, this.videoUrl, {controls:true});
+                this.bindEvents();
+
+                this.player.controls(true);
+                if(this.subtitlesUrl)
+                    this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
             }
         },
         bindVideoPlayer: function (element) {
@@ -123,13 +115,25 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
             this.videoElement = element;
         },
         bindEvents: function () {
-            this.player.on("canplay", function () {
-                $rootScope.$broadcast('videoLoaded');
-            }, false);
+            var loadeddatafired = false;
+            $timeout(function () {
+                if(!loadeddatafired) {
+                    $rootScope.$broadcast('video::loadeddata');
+                }
+            }, 5000);
+
+            this.player.on("loadeddata", function () {
+                $log.info("Player loadeddata");
+                loadeddatafired = true;
+                $rootScope.$broadcast('video::loadeddata');
+            });
+
+            this.player.on("seeked", function () {
+                $log.info("Player seeked");
+                $rootScope.$broadcast('video::seeked');
+            });
 
             this.player.on("error", function (e) {
-                $rootScope.$broadcast('videoError');
-
                 var message;
                 switch (e.target.error.code) {
                     case e.target.error.MEDIA_ERR_ABORTED:
@@ -149,14 +153,18 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
                         break;
                 }
 
-                analytics.pushAnalytics('Video', 'load', message);
-                $log.info("Error while loading the video", message);
+                $rootScope.safeApply(function () {
+                    $rootScope.$broadcast('video::error');
 
-                $rootScope.$broadcast('error', {
-                    action: 'load video',
-                    message: 'An error occurred while loading the video'
+                    analytics.pushAnalytics('Video', 'load', message);
+                    $log.info("Error while loading the video", message);
+
+                    $rootScope.$broadcast('error', {
+                        action: 'load video',
+                        message: 'An error occurred while loading the video'
+                    });
                 });
-            }, false);
+            });
         },
         getYoutubeVideoId: function (url) {
             var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
@@ -174,45 +182,55 @@ module.factory('video', ['$rootScope', '$log', 'analytics', 'youtubePlayerApi', 
         },
         play: function () {
             if(this.player)
-                if(this.player.playVideo)
-                    this.player.playVideo();
-                else if(this.player.play)
-                    this.player.play();
+                this.player.play();
         },
         pause: function () {
             if(this.player)
-                if(this.player.pauseVideo)
-                    this.player.pauseVideo();
-                else if(this.player.pause)
-                    this.player.pause();
+                this.player.pause();
+        },
+        isPlaying: function () {
+            if(this.player) {
+                return !this.player.paused();
+            }
+            else {
+                return false;
+            }
+        },
+        togglePlayPause: function () {
+            this.isPlaying() ? this.pause() : this.play();
         },
         currentTime: function () {
             if(arguments.length) {
-                this.player.seekTo ? this.player.seekTo(arguments[0]) : this.player.currentTime(arguments[0]);
+                this.player.currentTime(arguments[0]);
             }
             else {
-               var currentTime;
-               if (this.player.getCurrentTime)
-                currentTime = this.player.getCurrentTime();
-               else
-                currentTime = this.player.currentTime();
-
-                return currentTime || 0.01;
+                return this.player.currentTime() || 0.01;
             }
         }
     };
 }]);
 
 module.factory('editor',
-    ['doc', 'backend', 'youtubePlayerApi', 'video', '$q', '$rootScope', '$log', function (doc, backend, youtubePlayerApi, video, $q, $rootScope, $log) {
+    ['doc', 'backend', 'video', '$q', '$rootScope', '$log', function (doc, backend, video, $q, $rootScope, $log) {
         var editor = null;
         var EditSession = require("ace/edit_session").EditSession;
 
-        // Disable all editor shortcuts
+        var scope = $rootScope.$new(true);
+
+        scope.doc = doc;
+        scope.$watch('doc.info.editable', function (newValue, oldValue) {
+            if(editor && newValue !== oldValue) {
+                editor.setReadOnly(!newValue);
+            }
+        });
+        scope.$on('video::seeked', function () {
+            editor.focus();
+        });
 
         var service = {
             loading: false,
             saving: false,
+            savingErrors: 0,
             lastRow: -1,
             rebind: function (element) {
                 editor = ace.edit(element);
@@ -223,12 +241,7 @@ module.factory('editor',
                         var lineCursorPosition = e.getDocumentPosition().row,
                             timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                        if (youtubePlayerApi.player) {
-                            youtubePlayerApi.player.seekTo(timestamp);
-                        }
-                        else if (video.player) {
-                            video.player.currentTime = timestamp;
-                        }
+                        video.player.currentTime(timestamp);
                     }
 
                 });
@@ -323,6 +336,7 @@ module.factory('editor',
                     function (result) {
                         $log.info("Saved file", result);
                         this.saving = false;
+                        this.savingErrors = 0;
 
                         if (!doc.info.id) {
                             doc.info.id = result.data.id;
@@ -335,11 +349,23 @@ module.factory('editor',
                     }), angular.bind(this,
                     function (result) {
                         this.saving = false;
+                        this.savingErrors++;
                         doc.dirty = true;
-                        $rootScope.$broadcast('error', {
-                            action: 'save',
-                            message: "An error occurred while saving the file"
-                        });
+
+                        if(this.savingErrors === 5) {
+                            doc.info.editable = false;
+                            $rootScope.$broadcast('error', {
+                                action: 'save',
+                                message: "Too many errors occurred while saving the file. Please contact us"
+                            });
+                        }
+                        else {
+                            $rootScope.$broadcast('error', {
+                                action: 'save',
+                                message: "An error occurred while saving the file"
+                            });
+                        }
+
                         return result;
                     }));
                 return promise;
@@ -355,9 +381,9 @@ module.factory('editor',
 
                 session.on('change', function () {
                     if (doc && doc.info) {
-                        //doc.dirty = true;
-                        doc.info.content = session.getValue();
-                        $rootScope.$apply();
+                        $rootScope.safeApply(function () {
+                            doc.info.content = session.getValue();
+                        });
                     }
                 });
 
@@ -433,7 +459,7 @@ module.factory('editor',
                 this.updateBreakpoints(session);
 
                 editor.setSession(session);
-                editor.setReadOnly(!doc.info.editable);
+//                editor.setReadOnly(!doc.info.editable);
                 session.setUseWrapMode(true);
                 session.setWrapLimitRange(80);
                 editor.focus();
@@ -501,10 +527,11 @@ module.factory('editor',
                     return EditorState.LOAD;
                 } else if (this.saving) {
                     return EditorState.SAVE;
-                } else if (doc.dirty) {
-                    return EditorState.DIRTY;
                 } else if (doc.info && !doc.info.editable) {
                     return EditorState.READONLY;
+                }
+                else if (doc.dirty) {
+                    return EditorState.DIRTY;
                 }
                 return EditorState.CLEAN;
             }
@@ -606,20 +633,19 @@ module.factory('autosaver',
         var service = $rootScope.$new(true);
         service.doc = doc;
         service.confirmOnLeave = function(e) {
-            var msg = "You have unsaved data.";
+            if(doc.dirty) {
+                var msg = "You have unsaved data.";
 
-            // For IE and Firefox
-            e = e || window.event;
-            if (e) {e.returnValue = msg;}
+                // For IE and Firefox
+                e = e || window.event;
+                if (e) {e.returnValue = msg;}
 
-            // For Chrome and Safari
-            return msg;
-        };
-        service.$watch('doc.dirty', function (newValue, oldValue) {
-            if(newValue !== oldValue) {
-                newValue && user.isAuthenticated() ? $window.addEventListener('beforeunload', service.confirmOnLeave) : $window.removeEventListener('beforeunload', service.confirmOnLeave);
+                // For Chrome and Safari
+                return msg;
             }
-        });
+
+        };
+        $window.addEventListener('beforeunload', service.confirmOnLeave);
 
         service.saveFn = function () {
             if (editor.state() == EditorState.DIRTY) {
@@ -628,7 +654,7 @@ module.factory('autosaver',
         };
 
         var initTimeout = function () {
-            if (doc && doc.info && doc.info.editable) {
+            if (doc.info && doc.info.editable) {
                 var createTimeout = function () {
                     return $timeout(service.saveFn, saveInterval).then(createTimeout);
                 };

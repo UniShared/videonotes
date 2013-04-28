@@ -213,12 +213,11 @@ controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, use
     }
 }]);
 
-controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'youtubePlayerApi', 'video', 'analytics', function ($scope, sampleVideo, doc, youtubePlayerApi, video, analytics) {
+controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'analytics', function ($scope, sampleVideo, doc, video, analytics) {
     $scope.doc = doc;
     $scope.videoUrl = null;
 
     $scope.videoStatus = {
-        play: false,
         error: false
     };
 
@@ -229,19 +228,19 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
             $scope.tour.showStep(1);
         }
 
-        doc.info.video = $scope.videoUrl;
-        analytics.pushAnalytics('Video', $scope.videoUrl);
-
-        $scope.loadPlayer();
+        if(doc.info.video !== $scope.videoUrl) {
+            doc.info.video = $scope.videoUrl;
+            analytics.pushAnalytics('Video', $scope.videoUrl);
+            $scope.loadPlayer();
+        }
     };
 
     $scope.loadPlayer = function () {
-        if (doc && doc.info) {
-            if (doc.info.video) {
-                $scope.videoUrl = doc.info.video;
-                $scope.loading = true;
-                $scope.videoStatus.play = false;
+        if (doc && doc.info && doc.info.video) {
+            $scope.videoUrl = doc.info.video;
+            $scope.loading = true;
 
+            if(video.videoUrl !== doc.info.video) {
                 video.videoUrl = doc.info.video;
                 video.load();
             }
@@ -252,8 +251,8 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
         switch (eventData.which) {
             case 32:
                 if (eventData.ctrlKey) {
-                    eventData.preventDefault();
                     $scope.playPauseVideo();
+                    eventData.preventDefault();
                 }
                 break;
         }
@@ -261,15 +260,13 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
 
     $scope.playPauseVideo = function () {
         if (doc.info && doc.info.video) {
-            $scope.videoStatus.play = !$scope.videoStatus.play;
-            $scope.videoStatus.play ? video.play() : video.pause();
-            analytics.pushAnalytics('Video', 'play pause', $scope.videoStatus.play ? 'play' : 'pause');
+            video.togglePlayPause();
+            analytics.pushAnalytics('Video', 'play pause', video.isPlaying() ? 'play' : 'pause');
         }
     };
 
     $scope.endLoading = function () {
         $scope.loading = false;
-        $scope.$apply();
     };
 
     $scope.loadSampleVideo = function () {
@@ -284,9 +281,9 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'yout
     };
 
     $scope.$on('shortcut', $scope.shortcuts);
-    $scope.$onMany(['loaded','$routeChangeSuccess'], $scope.loadPlayer);
-    $scope.$on('videoLoaded', $scope.endLoading);
-    $scope.$on('videoError', $scope.errorLoadVideo);
+    $scope.$on('loaded', $scope.loadPlayer);
+    $scope.$on('video::loadeddata', $scope.endLoading);
+    $scope.$on('video::error', $scope.errorLoadVideo);
 }]);
 
 controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'analytics', function ($scope, editor, doc, autosaver, analytics) {
@@ -326,7 +323,7 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'analytics',
 
 controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, config, editor, doc, analytics) {
     var onFilePicked = function (data) {
-        $scope.$apply(function () {
+        $scope.safeApply(function () {
             if (data.action == 'picked') {
                 var id = data.docs[0].id;
                 $rootScope.$broadcast('opened', id);
@@ -391,7 +388,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
 controllersModule.controller('RenameCtrl', ['$scope', '$timeout', 'doc', 'analytics', function ($scope, $timeout, doc, analytics) {
     $('#rename-dialog').on('show',
         function () {
-            $scope.$apply(function () {
+            $scope.safeApply(function () {
                 $scope.newFileName = doc.info.title;
                 if(!$scope.tour.ended()) {
                     $scope.tour.hideStep(2);

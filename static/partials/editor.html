@@ -18,16 +18,16 @@
             <div id="video-body">
                 <form id="video-url-form" ng-submit="submitVideo()">
                     <div class="row-fluid">
-                        <input type="url" id="videoUrl" name="videoUrl" class="span9" placeholder="Enter the video URL"
-                               ng-model="videoUrl" required>
+                        <input type="url" id="videoUrl" name="videoUrl" ng-class="{span9:doc.info.editable, span12:!doc.info.editable}" placeholder="Enter the video URL"
+                               ng-model="videoUrl" ng-disabled="!doc.info.editable" required>
 
-                        <div class="span3 pull-right" style="margin-left: 0px;">
+                        <div ng-class="{span3:doc.info.editable}" class="pull-right" style="margin-left: 0px;">
                             <input type="submit" class="btn btn-primary pull-right" value="Load video"
-                                   ng-hide="loading">
+                                   ng-hide="loading || !doc.info.editable">
                             <img class="loading pull-right" src="/img/loading.gif" ng-show="loading">
                         </div>
                     </div>
-                    <div class="row-fluid" ng-show="videoStatus.error || !doc.info.video">
+                    <div class="row-fluid" ng-show="doc.info.editable && (videoStatus.error || !doc.info.video)">
                         <a id="help-coursera-dialog-link" class="span8" data-toggle="modal" href="#help-coursera-dialog"
                             ng-click="pushAnalytics('Video','help Coursera')"><h4>Help for
                             Coursera</h4></a>
@@ -47,11 +47,11 @@
                     </div>
                 </form>
 
-                <div class="no-video" ng-hide="doc.info.video">
+                <div class="no-video" ng-hide="doc.info.video" ng-disabled="!doc.info.editable">
                     <h1 class="or">OR</h1>
                     <div class="load-sample-video-container">
-                        <a id="load-sample-video" href class="btn btn-primary btn-large" ng-click="loadSampleVideo()">Load a
-                            sample video</a>
+                        <button id="load-sample-video" class="btn btn-primary btn-large" ng-click="loadSampleVideo()" ng-disabled="!doc.info.editable">Load a
+                            sample video</button>
                     </div>
                 </div>
 
