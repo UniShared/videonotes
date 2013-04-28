@@ -1,5 +1,5 @@
 /*
- * popcorn.js version 2152fdf
+ * popcorn.js version 90312da
  * http://popcornjs.org
  *
  * Copyright 2011, Mozilla Foundation
@@ -100,7 +100,7 @@
   };
 
   //  Popcorn API version, automatically inserted via build system.
-  Popcorn.version = "2152fdf";
+  Popcorn.version = "90312da";
 
   //  Boolean flag allowing a client to determine if Popcorn can be supported
   Popcorn.isSupported = true;
@@ -6454,6 +6454,16 @@
         },
         set: function( aValue ) {
           changeCurrentTime( aValue );
+        }
+      },
+
+      playbackRate: {
+        get: function() {
+          return player.getPlaybackRate();
+        },
+        set: function( aValue ) {
+          self.dispatchEvent("ratechange");
+          player.setPlaybackRate(aValue);
         }
       },
 

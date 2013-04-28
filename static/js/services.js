@@ -116,21 +116,30 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
         },
         bindEvents: function () {
             var loadeddatafired = false;
+
+            // Can't rely on player events because Firefox doesn't receive it
+            $rootScope.$broadcast('video::loadstart');
             $timeout(function () {
-                if(!loadeddatafired) {
+                if (!loadeddatafired) {
                     $rootScope.$broadcast('video::loadeddata');
                 }
             }, 5000);
 
             this.player.on("loadeddata", function () {
-                $log.info("Player loadeddata");
-                loadeddatafired = true;
-                $rootScope.$broadcast('video::loadeddata');
+                $timeout(function () {
+                    $rootScope.safeApply(function () {
+                        $log.info("Player loadeddata");
+                        loadeddatafired = true;
+                        $rootScope.$broadcast('video::loadeddata');
+                    });
+                }, 1);
             });
 
             this.player.on("seeked", function () {
-                $log.info("Player seeked");
-                $rootScope.$broadcast('video::seeked');
+                $rootScope.safeApply(function () {
+                    $log.info("Player seeked");
+                    $rootScope.$broadcast('video::seeked');
+                });
             });
 
             this.player.on("error", function (e) {
@@ -205,6 +214,17 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
             }
             else {
                 return this.player.currentTime() || 0.01;
+            }
+        },
+        canRatePlayback: function () {
+            return this.player && this.player.media.playbackRate !== undefined;
+        },
+        playbackRate: function () {
+            if (arguments.length) {
+                this.player.playbackRate(arguments[0]);
+            }
+            else {
+                return this.player.playbackRate();
             }
         }
     };
