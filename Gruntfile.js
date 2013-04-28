@@ -41,7 +41,7 @@ module.exports = function (grunt) {
                 files: [
                     {
                         'static/js/<%= dist %>/tmp/external.min.js': [
-                            'static/lib/angular-ui-custom/angular-ui.js',
+                            'static/lib/angular-ui-custom/ui-utils.js',
                             'static/lib/bootstrap-tour/bootstrap-tour.js',
                             'static/lib/bootstrap-switch/bootstrapSwitch.js',
                             'static/lib/bootstrap-tour/deps/jquery.cookie.js'
