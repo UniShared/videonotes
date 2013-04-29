@@ -6,7 +6,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics, config) {
     $scope.appName = appName;
 
-    Modernizr.Detectizr.detect({detectOs: true});
+    Modernizr.Detectizr.detect({detectOs: true, detectBrowser: true});
 
     var isMac = Modernizr.Detectizr.device.os == "mac" && Modernizr.Detectizr.device.osVersion == "os x";
     $scope.device = {
@@ -345,21 +345,25 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', funct
         $scope.currentSpeed = video.playbackRate();
     });
 
-    var unregisterFunction;
-    $scope.$on('video::loadeddata', function () {
-        $scope.enabled = video.canRatePlayback();
+    // Playback rate is buggy in Firefox
+    if (Modernizr.Detectizr.device.browser !== "firefox") {
+        var unregisterFunction;
+        $scope.$on('video::loadeddata', function () {
+            $scope.enabled = video.canRatePlayback();
 
-        if($scope.enabled) {
-            unregisterFunction = $scope.$watch('currentSpeed', function (newValue, oldValue) {
-                if(newValue !== oldValue) {
-                    video.playbackRate(newValue);
-                }
-            });
-        }
-        else if(unregisterFunction && typeof unregisterFunction == "function") {
-            unregisterFunction();
-        }
-    })
+            if($scope.enabled) {
+                unregisterFunction = $scope.$watch('currentSpeed', function (newValue, oldValue) {
+                    if(newValue !== oldValue) {
+                        video.playbackRate(newValue);
+                    }
+                });
+            }
+            else if(unregisterFunction && typeof unregisterFunction == "function") {
+                unregisterFunction();
+            }
+        });
+    }
+
 }]);
 
 
