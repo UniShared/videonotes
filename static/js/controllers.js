@@ -296,7 +296,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.$on('video::error', $scope.errorLoadVideo);
 }]);
 
-controllersModule.controller('SpeedCtrl', ['$scope', 'video', function ($scope, video, analytics) {
+controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', function ($scope, video, analytics) {
     var speeds = new LinkedList();
     speeds.add(0.25);
     speeds.add(0.5);
@@ -317,37 +317,29 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', function ($scope, 
 
     $scope.increasePlaybackRate = function () {
         var currentSpeed = speeds.findByValue($scope.currentSpeed);
-        if(currentSpeed.hasNext()) {
-            $scope.maxSpeed = false;
-            $scope.minSpeed = false;
-            $scope.currentSpeed = currentSpeed.getNext().getValue();
-        }
-        else {
-            $scope.maxSpeed = true;
-            $scope.minSpeed = false;
-        }
+        if(!$scope.maxSpeed && currentSpeed.hasNext()) {
+            var nextSpeed = currentSpeed.getNext();
+            $scope.currentSpeed = nextSpeed.getValue();
 
-        analytics.pushAnalytics('Video', 'increase speed', $scope.currentSpeed);
+            $scope.minSpeed = false;
+            $scope.maxSpeed = (nextSpeed.getValue() === speeds.getTail().getValue());
+            analytics.pushAnalytics('Video', 'increase speed', $scope.currentSpeed);
+        }
     };
 
     $scope.decreasePlaybackRate = function () {
         var currentSpeed = speeds.findByValue($scope.currentSpeed);
-        if(currentSpeed.hasPrevious()) {
-            $scope.minSpeed = false;
-            $scope.maxSpeed = false;
-            $scope.currentSpeed = currentSpeed.getPrevious().getValue();
-        }
-        else {
-            $scope.minSpeed = true;
-            $scope.maxSpeed = false;
-        }
+        if(!$scope.minSpeed && currentSpeed.hasPrevious()) {
+            var prevSpeed = currentSpeed.getPrevious();
+            $scope.currentSpeed = prevSpeed.getValue();
 
-        analytics.pushAnalytics('Video', 'decrease speed', $scope.currentSpeed);
+            $scope.minSpeed = (prevSpeed.getValue() === speeds.getHead().getValue());
+            $scope.maxSpeed = false;
+            analytics.pushAnalytics('Video', 'decrease speed', $scope.currentSpeed);
+        }
     };
 
-    $scope.$on('video::loadstart', function () {
-        init();
-    });
+    $scope.$on('video::loadstart', init);
 
     $scope.$on('video::ratechange', function () {
         $scope.currentSpeed = video.playbackRate();

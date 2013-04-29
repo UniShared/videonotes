@@ -189,6 +189,97 @@ describe('Controllers', function () {
         });
     });
 
+    describe('SpeedCtrl', function () {
+        var speedCtrl;
+
+        beforeEach(angular.mock.inject(function ($rootScope, $controller) {
+            speedCtrl = $controller('SpeedCtrl', {$scope: scope});
+        }));
+
+        it('should start with default values', function () {
+            expect(scope.enabled).toBeFalsy();
+            expect(scope.minSpeed).toBeFalsy();
+            expect(scope.maxSpeed).toBeFalsy();
+            expect(scope.currentSpeed).toEqual(1);
+        });
+
+        it('should be able to increase playback rate', inject(function (analytics) {
+            expect(scope.currentSpeed).toEqual(1);
+            scope.increasePlaybackRate();
+            expect(scope.currentSpeed).toEqual(1.5);
+            expect(scope.maxSpeed).toBeFalsy();
+            expect(scope.minSpeed).toBeFalsy();
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', 'increase speed', scope.currentSpeed);
+        }));
+
+        it('should have a max speed', inject(function (analytics) {
+            expect(scope.currentSpeed).toEqual(1);
+            scope.increasePlaybackRate();
+            expect(scope.currentSpeed).toEqual(1.5);
+            scope.increasePlaybackRate();
+            expect(scope.currentSpeed).toEqual(scope.speeds[scope.speeds.length-1]);
+            expect(scope.maxSpeed).toBeTruthy();
+            expect(scope.minSpeed).toBeFalsy();
+        }));
+
+        it('should be able to decrease playback rate', inject(function (analytics) {
+            expect(scope.currentSpeed).toEqual(1);
+            scope.decreasePlaybackRate();
+            expect(scope.currentSpeed).toEqual(0.5);
+            expect(scope.maxSpeed).toBeFalsy();
+            expect(scope.minSpeed).toBeFalsy();
+            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', 'decrease speed', scope.currentSpeed);
+        }));
+
+        it('should have a min speed', inject(function (analytics) {
+            expect(scope.currentSpeed).toEqual(1);
+            scope.decreasePlaybackRate();
+            expect(scope.currentSpeed).toEqual(0.5);
+            scope.decreasePlaybackRate();
+            expect(scope.currentSpeed).toEqual(scope.speeds[0]);
+            expect(scope.maxSpeed).toBeFalsy();
+            expect(scope.minSpeed).toBeTruthy();
+        }));
+
+        it('should listen to video::loadstart event', function () {
+            expect(scope.$on).toHaveBeenCalledWith('video::loadstart', jasmine.any(Function));
+        });
+
+        it('should listen to video::ratechange event', inject(function ($rootScope, video) {
+            expect(scope.$on).toHaveBeenCalledWith('video::ratechange', jasmine.any(Function));
+
+            expect(scope.currentSpeed).toEqual(1);
+            spyOn(video, "playbackRate").andReturn(2);
+            $rootScope.$broadcast('video::ratechange');
+            expect(scope.currentSpeed).toEqual(2);
+        }));
+
+        it('should listen to video::loadeddata event', inject(function ($rootScope, video) {
+            spyOn(scope, "$watch");
+            expect(scope.$on).toHaveBeenCalledWith('video::loadeddata', jasmine.any(Function));
+
+            expect(scope.enabled).toBeFalsy();
+            spyOn(video, "canRatePlayback").andReturn(true);
+            $rootScope.$broadcast('video::loadeddata');
+            expect(scope.enabled).toBeTruthy();
+            expect(scope.$watch).toHaveBeenCalledWith('currentSpeed', jasmine.any(Function));
+        }));
+
+        it('should change playback in video service', inject(function ($rootScope, video) {
+            spyOn(video, "playbackRate");
+            spyOn(video, "canRatePlayback").andReturn(true);
+            $rootScope.$broadcast('video::loadeddata');
+
+            expect(scope.enabled).toBeTruthy();
+            scope.currentSpeed = 0;
+            scope.$digest();
+            /*waitsFor(function() {
+                return video.playbackRate.wasCalled;
+            }, "Playback rate have been called", 10000);
+            expect(video.playbackRate).toHaveBeenCalledWith(scope.currentSpeed);*/
+        }));
+    });
+
     describe('ShareCtrl', function () {
         var shareCtrl;
 
