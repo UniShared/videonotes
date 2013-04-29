@@ -226,7 +226,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
             }
         },
         canRatePlayback: function () {
-            return this.player && this.player.media.playbackRate !== undefined;
+            return this.player && this.player.media.canRatePlayback;
         },
         playbackRate: function () {
             if (arguments.length) {

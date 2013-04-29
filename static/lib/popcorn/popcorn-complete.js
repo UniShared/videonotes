@@ -1,5 +1,5 @@
 /*
- * popcorn.js version 90312da
+ * popcorn.js version 7de7401
  * http://popcornjs.org
  *
  * Copyright 2011, Mozilla Foundation
@@ -100,7 +100,7 @@
   };
 
   //  Popcorn API version, automatically inserted via build system.
-  Popcorn.version = "90312da";
+  Popcorn.version = "7de7401";
 
   //  Boolean flag allowing a client to determine if Popcorn can be supported
   Popcorn.isSupported = true;
@@ -172,6 +172,11 @@
 
       //  Get media element by id or object reference
       this.media = matches || entity;
+
+      // This method is also define in the HTMLMediaElement wrapper
+      // This is a hack since this wrapper is never instantiate
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=866750
+      this.media.canRatePlayback = true;
 
       //  inner reference to this media element's nodeName string value
       nodeName = ( this.media.nodeName && this.media.nodeName.toLowerCase() ) || "video";
@@ -4045,6 +4050,12 @@
       get: function() {
         return this.parentNode.id;
       }
+    },
+
+    canRatePlayback: {
+      get: function() {
+        return false;
+      }
     }
 
     // TODO:
@@ -4077,6 +4088,9 @@
 
     // Add the helper function _canPlaySrc so this works like other wrappers.
     media._canPlaySrc = canPlaySrc;
+
+    // Add the helper property canRatePlayback so this works like other wrappers.
+    media.canRatePlayback = true;
 
     return media;
   }
@@ -4461,6 +4475,14 @@
         set: function( aValue ) {
           changeCurrentTime( aValue );
         }
+      },
+
+      // Determine if the player can rate the playback
+      // For NullPlayer, it is always false
+      canRatePlayback: {
+          get: function() {
+              return false;
+          }
       },
 
       duration: {
@@ -5124,6 +5146,14 @@
         }
       },
 
+      // Determine if the player can rate the playback
+      // Soundcloud player can't rate playback, always return false
+      canRatePlayback: {
+          get: function() {
+              return false;
+          }
+      },
+
       duration: {
         get: function() {
           return impl.duration;
@@ -5760,6 +5790,14 @@
         }
       },
 
+      // Determine if the player can rate the playback
+      // Vimeo player can't rate playback, always return false
+      canRatePlayback: {
+          get: function() {
+              return false;
+          }
+      },
+
       duration: {
         get: function() {
           return impl.duration;
@@ -6134,6 +6172,10 @@
       playerState = event.data;
     }
 
+    function onPlaybackRateChange() {
+      self.dispatchEvent('ratechange');
+    }
+
     function destroyPlayer() {
       if( !( playerReady && player ) ) {
         return;
@@ -6222,7 +6264,8 @@
         events: {
           'onReady': onPlayerReady,
           'onError': onPlayerError,
-          'onStateChange': onPlayerStateChange
+          'onStateChange': onPlayerStateChange,
+          'onPlaybackRateChange': onPlaybackRateChange
         }
       });
 
@@ -6457,12 +6500,22 @@
         }
       },
 
+      // Determine if the player can rate the playback
+      // For Youtube, only the HTML5 player is supporting that feature
+      // To determine if the current player is an HTML5 or Flash we use a hack
+      // By looking for the absence of cueVideoByFlashvars property
+      // More information here: http://stackoverflow.com/questions/12486655/detect-if-client-using-html5-youtube-player
+      canRatePlayback: {
+          get: function() {
+              return !player.cueVideoByFlashvars;
+          }
+      },
+
       playbackRate: {
         get: function() {
           return player.getPlaybackRate();
         },
         set: function( aValue ) {
-          self.dispatchEvent("ratechange");
           player.setPlaybackRate(aValue);
         }
       },
