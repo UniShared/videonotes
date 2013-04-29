@@ -349,6 +349,10 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', function ($scope, 
         init();
     });
 
+    $scope.$on('video::ratechange', function () {
+        $scope.currentSpeed = video.playbackRate();
+    });
+
     var unregisterFunction;
     $scope.$on('video::loadeddata', function () {
         $scope.enabled = video.canRatePlayback();

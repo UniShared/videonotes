@@ -135,6 +135,15 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
                 }, 1);
             });
 
+            this.player.on("ratechange", function () {
+                $timeout(function () {
+                    $rootScope.safeApply(function () {
+                        $log.info("Player ratechange");
+                        $rootScope.$broadcast('video::ratechange');
+                    });
+                }, 1);
+            });
+
             this.player.on("seeked", function () {
                 $rootScope.safeApply(function () {
                     $log.info("Player seeked");
