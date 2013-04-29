@@ -126,7 +126,6 @@
         for (var i = 0, len = _nodes.length; i < len; i++) {
             array.push(_nodes[i].getValue());
         }
-        console.log(array);
         return array;
     }
 
