@@ -5,15 +5,18 @@
 describe('Controllers', function () {
     var scope;
 
-    beforeEach(angular.mock.module('app', 'analytics'));
-
-    beforeEach(angular.mock.inject(function($rootScope, $window, analytics) {
+    var createScope = inject(function ($rootScope) {
         scope = $rootScope.$new();
         scope.tour = {
             next: function () {}
         };
-        analytics.pushAnalytics = jasmine.createSpy('pushAnalytics');
         spyOn(scope, '$on').andCallThrough();
+    });
+
+    beforeEach(angular.mock.module('app', 'analytics'));
+
+    beforeEach(angular.mock.inject(function($rootScope, $window, analytics) {
+        analytics.pushAnalytics = jasmine.createSpy('pushAnalytics');
         $window.addEventListener = jasmine.createSpy();
     }));
 
@@ -29,6 +32,7 @@ describe('Controllers', function () {
             video.togglePlayPause = jasmine.createSpy().andCallFake(function () {playing=!playing});
             video.isPlaying = jasmine.createSpy().andCallFake(function () {return playing});
 
+            createScope();
             videoCtrl = $controller('VideoCtrl', {$scope: scope});
         }));
 
@@ -193,6 +197,14 @@ describe('Controllers', function () {
         var speedCtrl;
 
         beforeEach(angular.mock.inject(function ($rootScope, $controller) {
+            Modernizr = {
+                Detectizr: {
+                    device: {
+                        browser: 'chrome'
+                    }
+                }
+            };
+            createScope();
             speedCtrl = $controller('SpeedCtrl', {$scope: scope});
         }));
 
@@ -278,12 +290,28 @@ describe('Controllers', function () {
             }, "Playback rate have been called", 10000);
             expect(video.playbackRate).toHaveBeenCalledWith(scope.currentSpeed);*/
         }));
+
+        it('should change not be disabled in Firefox', inject(function ($rootScope, $controller, video) {
+            Modernizr = {
+                Detectizr: {
+                    device: {
+                        browser: 'firefox'
+                    }
+                }
+            };
+            createScope();
+            speedCtrl = $controller('SpeedCtrl', {$scope: scope});
+
+            expect(scope.$on).not.toHaveBeenCalledWith('video::loadeddata', jasmine.any(Function));
+            expect(scope.enabled).toBeFalsy();
+        }));
     });
 
     describe('ShareCtrl', function () {
         var shareCtrl;
 
         beforeEach(angular.mock.inject(function ($rootScope, $controller, doc) {
+            createScope();
             shareCtrl = $controller('ShareCtrl', {$scope: scope});
 
             doc.info = {
