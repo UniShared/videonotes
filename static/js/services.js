@@ -116,21 +116,53 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
         },
         bindEvents: function () {
             var loadeddatafired = false;
+
+            // Can't rely on player events because Firefox doesn't receive it
+            $rootScope.$broadcast('video::loadstart');
             $timeout(function () {
-                if(!loadeddatafired) {
+                if (!loadeddatafired) {
                     $rootScope.$broadcast('video::loadeddata');
                 }
             }, 5000);
 
             this.player.on("loadeddata", function () {
-                $log.info("Player loadeddata");
-                loadeddatafired = true;
-                $rootScope.$broadcast('video::loadeddata');
+                $timeout(function () {
+                    $rootScope.safeApply(function () {
+                        $log.info("Player loadeddata");
+                        loadeddatafired = true;
+                        $rootScope.$broadcast('video::loadeddata');
+                    });
+                }, 1);
+            });
+
+            this.player.on("ratechange", function () {
+                $timeout(function () {
+                    $rootScope.safeApply(function () {
+                        $log.info("Player ratechange");
+                        $rootScope.$broadcast('video::ratechange');
+                    });
+                }, 1);
             });
 
             this.player.on("seeked", function () {
-                $log.info("Player seeked");
-                $rootScope.$broadcast('video::seeked');
+                $rootScope.safeApply(function () {
+                    $log.info("Player seeked");
+                    $rootScope.$broadcast('video::seeked');
+                });
+            });
+
+            this.player.on("play", function () {
+                $rootScope.safeApply(function () {
+                    $log.info("Player play");
+                    $rootScope.$broadcast('video::play');
+                });
+            });
+
+            this.player.on("pause", function () {
+                $rootScope.safeApply(function () {
+                    $log.info("Player pause");
+                    $rootScope.$broadcast('video::pause');
+                });
             });
 
             this.player.on("error", function (e) {
@@ -206,6 +238,17 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
             else {
                 return this.player.currentTime() || 0.01;
             }
+        },
+        canRatePlayback: function () {
+            return this.player && this.player.media.canRatePlayback;
+        },
+        playbackRate: function () {
+            if (arguments.length) {
+                this.player.playbackRate(arguments[0]);
+            }
+            else {
+                return this.player.playbackRate();
+            }
         }
     };
 }]);
@@ -223,9 +266,18 @@ module.factory('editor',
                 editor.setReadOnly(!newValue);
             }
         });
-        scope.$on('video::seeked', function () {
-            editor.focus();
-        });
+
+        var focusEditor = function () {
+            editor && editor.focus();
+        };
+
+        scope.$on('video::seeked', focusEditor);
+        scope.$on('video::ratechange', focusEditor);
+        scope.$on('video::pause', focusEditor);
+        scope.$on('video::play', focusEditor);
+        scope.$on('loading', focusEditor);
+        scope.$on('saving', focusEditor);
+        scope.$watch('doc.info.syncNotesVideo.enabled', focusEditor);
 
         var service = {
             loading: false,
@@ -327,6 +379,9 @@ module.factory('editor',
 
                 if (!doc.info.id) {
                     $rootScope.$broadcast('firstSaving');
+                }
+                else {
+                    $rootScope.$broadcast('saving');
                 }
 
                 // Force revision if first save of the session

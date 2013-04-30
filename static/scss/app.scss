@@ -220,50 +220,75 @@ h1, h2, h3, h4 {
         }
       }
 
-      #help-coursera-dialog-link {
-        display: inline-block;
-        cursor: help;
-      }
+      .toolbar {
+        margin-bottom: 20px;
 
-      #help-coursera-dialog {
-        width: 670px;
-        left: 45%;
-      }
+        .mode-edit {
+          #help-coursera-dialog-link {
+            display: inline-block;
+            cursor: help;
+          }
 
-      .no-video {
-        .or {
-          width: 60px;
-          margin: 0 auto;
-          margin-bottom: 30px;
+          #help-coursera-dialog {
+            width: 670px;
+            left: 45%;
+          }
         }
 
-        .load-sample-video-container {
-          width: 210px;
-          margin: 0 auto;
-        }
-      }
+        .mode-not-edit {
+          .select-speed {
+            width: auto;
+          }
 
-      .video {
-        height: 50%;
-        .loading {
-          display: block;
-          margin: 0 auto;
-        }
+          .select2-choice {
+            background-color: #f5f5f5;
+            background-image: none;
+          }
 
-        video {
-          width: 100%;
+          .icon-chevron-up, .icon-chevron-down {
+            height: 27px;
+          }
         }
       }
 
-      #videoplayer {
-        width: 100%;
-        height: 390px;
+      .videoplayer {
+        .no-video {
+          .or {
+            width: 30px;
+            margin: 0 auto;
+            margin-bottom: 30px;
+          }
 
-        iframe, video {
-          width: 100%;
-          height: 100%;
+          .load-sample-video-container {
+            width: 210px;
+            margin: 0 auto;
+          }
+        }
+
+        .with-video {
+          height: 50%;
+
+          .loading {
+            display: block;
+            margin: 0 auto;
+          }
+
+          video {
+            width: 100%;
+          }
+
+          #player {
+            width: 100%;
+            height: 390px;
+
+            iframe, video {
+              width: 100%;
+              height: 100%;
+            }
+          }
         }
       }
+
     }
   }
 
@@ -310,7 +335,7 @@ h1, h2, h3, h4 {
           }
 
           .tooltip {
-            font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-weight: normal;
           }
         }
@@ -356,22 +381,22 @@ h1, h2, h3, h4 {
         ul {
           li {
             margin-top: 5px;
-              &.menu-switch-sync {
-                margin: 5px;
+            &.menu-switch-sync {
+              margin: 5px;
 
-                .switch-right {
-                  color: white;
-                  background: #cf0404; /* Old browsers */
-                  background: -moz-linear-gradient(top,  #cf0404 0%, #ff3019 100%); /* FF3.6+ */
-                  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cf0404), color-stop(100%,#ff3019)); /* Chrome,Safari4+ */
-                  background: -webkit-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* Chrome10+,Safari5.1+ */
-                  background: -o-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* Opera 11.10+ */
-                  background: -ms-linear-gradient(top,  #cf0404 0%,#ff3019 100%); /* IE10+ */
-                  background: linear-gradient(to bottom,  #cf0404 0%,#ff3019 100%); /* W3C */
-                  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cf0404', endColorstr='#ff3019',GradientType=0 ); /* IE6-9 */
+              .switch-right {
+                color: white;
+                background: #cf0404; /* Old browsers */
+                background: -moz-linear-gradient(top, #cf0404 0%, #ff3019 100%); /* FF3.6+ */
+                background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #cf0404), color-stop(100%, #ff3019)); /* Chrome,Safari4+ */
+                background: -webkit-linear-gradient(top, #cf0404 0%, #ff3019 100%); /* Chrome10+,Safari5.1+ */
+                background: -o-linear-gradient(top, #cf0404 0%, #ff3019 100%); /* Opera 11.10+ */
+                background: -ms-linear-gradient(top, #cf0404 0%, #ff3019 100%); /* IE10+ */
+                background: linear-gradient(to bottom, #cf0404 0%, #ff3019 100%); /* W3C */
+                filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#cf0404', endColorstr='#ff3019', GradientType=0); /* IE6-9 */
 
-                }
               }
+            }
           }
         }
       }

@@ -41,10 +41,11 @@ module.exports = function (grunt) {
                 files: [
                     {
                         'static/js/<%= dist %>/tmp/external.min.js': [
-                            'static/lib/angular-ui-custom/angular-ui.js',
+                            'static/lib/ui-utils-custom/ui-utils.js',
                             'static/lib/bootstrap-tour/bootstrap-tour.js',
                             'static/lib/bootstrap-switch/bootstrapSwitch.js',
-                            'static/lib/bootstrap-tour/deps/jquery.cookie.js'
+                            'static/lib/bootstrap-tour/deps/jquery.cookie.js',
+                            'static/lib/linkedlist/linkedlist.js'
                         ]
                     },
                     {
@@ -67,6 +68,7 @@ module.exports = function (grunt) {
             },
             js: {
                 src: ['static/lib/ace/ace.min.js',
+                    'static/lib/angular-ui-custom/angular-ui.min.js',
                     'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
                     'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
                     'static/lib/popcorn/popcorn-complete.min.js',

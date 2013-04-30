@@ -12,10 +12,10 @@
     <meta property="og:description" content="The easiest way to take notes from videos. Everything synchronized!"/>
     <meta name="google-site-verification" content="0qf1eWlI4Ee40rpKb4fpwYUUft__GxqwkhGeQKcp4BE" />
 
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+    <link href="http://ivaynberg.github.com/select2/select2-3.3.2/select2.css" rel="stylesheet"/>
     {% if minified == True %}
     <link href="/css/build/videonotes.min.css" rel="stylesheet">
     {% else %}
@@ -129,15 +129,18 @@
     }(document, 'script', 'facebook-jssdk'));
 </script>
 
-<script src="https://www.google.com/jsapi"></script>
-<script src="https://apis.google.com/js/api.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
+<script src="https://www.google.com/jsapi"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="http://ivaynberg.github.com/select2/select2-3.3.2/select2.js"></script>
 
 {% if minified == True %}
 <script src="/js/build/videonotes.min.js"></script>
 {% else %}
 <script src="/lib/angular-ui-custom/angular-ui.js"></script>
+<script src="/lib/ui-utils-custom/ui-utils.js"></script>
 <script src="/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.js"></script>
 <script src="/lib/modernizr-custom/modernizr.min.js"></script>
 <script src="/lib/detectizr/detectizr.js"></script>
@@ -147,6 +150,7 @@
 <script src="/lib/bootstrap-tour/deps/jquery.cookie.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-switch/bootstrapSwitch.js" charset="utf-8"></script>
 <script src="/lib/popcorn/popcorn-complete.js" charset="utf-8"></script>
+<script src="/lib/linkedlist/linkedlist.js" charset="utf-8"></script>
 <script src="/js/app.js"></script>
 <script src="/js/services.js"></script>
 <script src="/js/controllers.js"></script>

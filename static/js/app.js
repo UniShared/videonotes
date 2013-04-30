@@ -29,7 +29,7 @@ if (!String.prototype.format) {
 google.load('picker', '1');
 gapi.load('drive-share');
 
-angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.keypress', 'ui.bootstrap', 'analytics'])
+angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.directives', 'ui.keypress', 'ui.bootstrap', 'analytics'])
     .constant('appName', 'VideoNot.es')
     .constant('saveInterval', 15000)
     .constant('sampleVideo', 'http://www.youtube.com/watch?v=U6FvJ6jMGHU') // Please replace this with your Application ID.

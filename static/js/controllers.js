@@ -6,7 +6,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics, config) {
     $scope.appName = appName;
 
-    Modernizr.Detectizr.detect({detectOs: true});
+    Modernizr.Detectizr.detect({detectOs: true, detectBrowser: true});
 
     var isMac = Modernizr.Detectizr.device.os == "mac" && Modernizr.Detectizr.device.osVersion == "os x";
     $scope.device = {
@@ -216,12 +216,14 @@ controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, use
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'analytics', function ($scope, sampleVideo, doc, video, analytics) {
     $scope.doc = doc;
     $scope.videoUrl = null;
+    $scope.edit = true;
 
     $scope.videoStatus = {
         error: false
     };
 
     $scope.submitVideo = function () {
+        $scope.edit = false;
         $scope.videoStatus.error = false;
         if(!$scope.tour.ended()) {
             $scope.tour.hideStep(0);
@@ -235,10 +237,18 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
         }
     };
 
+    $scope.startEdit = function () {
+        $scope.edit = true;
+    };
+
     $scope.loadPlayer = function () {
         if (doc && doc.info && doc.info.video) {
+            $scope.edit = false;
             $scope.videoUrl = doc.info.video;
             $scope.loading = true;
+
+            $scope.videoStatus.error = false;
+            $scope.videoStatus.speed = 1;
 
             if(video.videoUrl !== doc.info.video) {
                 video.videoUrl = doc.info.video;
@@ -285,6 +295,77 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.$on('video::loadeddata', $scope.endLoading);
     $scope.$on('video::error', $scope.errorLoadVideo);
 }]);
+
+controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', function ($scope, video, analytics) {
+    var speeds = new LinkedList();
+    speeds.add(0.25);
+    speeds.add(0.5);
+    speeds.add(1);
+    speeds.add(1.5);
+    speeds.add(2);
+
+    $scope.speeds = speeds.asArray();
+
+    var init = function () {
+        $scope.enabled = false;
+        $scope.minSpeed = false;
+        $scope.maxSpeed = false;
+        $scope.currentSpeed = 1;
+    };
+
+    init();
+
+    $scope.increasePlaybackRate = function () {
+        var currentSpeed = speeds.findByValue($scope.currentSpeed);
+        if(!$scope.maxSpeed && currentSpeed.hasNext()) {
+            var nextSpeed = currentSpeed.getNext();
+            $scope.currentSpeed = nextSpeed.getValue();
+
+            $scope.minSpeed = false;
+            $scope.maxSpeed = (nextSpeed.getValue() === speeds.getTail().getValue());
+            analytics.pushAnalytics('Video', 'increase speed', $scope.currentSpeed);
+        }
+    };
+
+    $scope.decreasePlaybackRate = function () {
+        var currentSpeed = speeds.findByValue($scope.currentSpeed);
+        if(!$scope.minSpeed && currentSpeed.hasPrevious()) {
+            var prevSpeed = currentSpeed.getPrevious();
+            $scope.currentSpeed = prevSpeed.getValue();
+
+            $scope.minSpeed = (prevSpeed.getValue() === speeds.getHead().getValue());
+            $scope.maxSpeed = false;
+            analytics.pushAnalytics('Video', 'decrease speed', $scope.currentSpeed);
+        }
+    };
+
+    $scope.$on('video::loadstart', init);
+
+    $scope.$on('video::ratechange', function () {
+        $scope.currentSpeed = video.playbackRate();
+    });
+
+    // Playback rate is buggy in Firefox
+    if (Modernizr.Detectizr.device.browser !== "firefox") {
+        var unregisterFunction;
+        $scope.$on('video::loadeddata', function () {
+            $scope.enabled = video.canRatePlayback();
+
+            if($scope.enabled) {
+                unregisterFunction = $scope.$watch('currentSpeed', function (newValue, oldValue) {
+                    if(newValue !== oldValue) {
+                        video.playbackRate(newValue);
+                    }
+                });
+            }
+            else if(unregisterFunction && typeof unregisterFunction == "function") {
+                unregisterFunction();
+            }
+        });
+    }
+
+}]);
+
 
 controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'analytics', function ($scope, editor, doc, autosaver, analytics) {
     $scope.editor = editor;
