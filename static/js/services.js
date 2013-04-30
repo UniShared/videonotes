@@ -252,9 +252,12 @@ module.factory('editor',
                 editor.setReadOnly(!newValue);
             }
         });
-        scope.$on('video::seeked', function () {
+
+        var focusEditor = function () {
             editor.focus();
-        });
+        };
+        scope.$on('video::seeked', focusEditor);
+        scope.$on('video::ratechange', focusEditor);
 
         var service = {
             loading: false,
