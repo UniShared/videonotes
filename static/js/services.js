@@ -151,6 +151,20 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
                 });
             });
 
+            this.player.on("play", function () {
+                $rootScope.safeApply(function () {
+                    $log.info("Player play");
+                    $rootScope.$broadcast('video::play');
+                });
+            });
+
+            this.player.on("pause", function () {
+                $rootScope.safeApply(function () {
+                    $log.info("Player pause");
+                    $rootScope.$broadcast('video::pause');
+                });
+            });
+
             this.player.on("error", function (e) {
                 var message;
                 switch (e.target.error.code) {
@@ -252,9 +266,18 @@ module.factory('editor',
                 editor.setReadOnly(!newValue);
             }
         });
-        scope.$on('video::seeked', function () {
-            editor.focus();
-        });
+
+        var focusEditor = function () {
+            editor && editor.focus();
+        };
+
+        scope.$on('video::seeked', focusEditor);
+        scope.$on('video::ratechange', focusEditor);
+        scope.$on('video::pause', focusEditor);
+        scope.$on('video::play', focusEditor);
+        scope.$on('loading', focusEditor);
+        scope.$on('saving', focusEditor);
+        scope.$watch('doc.info.syncNotesVideo.enabled', focusEditor);
 
         var service = {
             loading: false,
@@ -356,6 +379,9 @@ module.factory('editor',
 
                 if (!doc.info.id) {
                     $rootScope.$broadcast('firstSaving');
+                }
+                else {
+                    $rootScope.$broadcast('saving');
                 }
 
                 // Force revision if first save of the session
