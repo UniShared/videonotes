@@ -573,6 +573,7 @@ class ServiceHandler(BaseDriveHandler):
                 if downloadUrl:
                     logging.debug('Downloading the file from %s', downloadUrl)
                     resp, raw_content = service._http.request(downloadUrl)
+                    logging.debug('Raw content : %s', raw_content)
                     json_content = json.loads(raw_content)
                     f['content'] = json_content['content']
                     f['video'] = json_content['video']
