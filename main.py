@@ -532,13 +532,13 @@ class ServiceHandler(BaseDriveHandler):
                         logging.info('Add Clement as a reader')
                         service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
                     except HttpError:
-                        logging.getLogger("error").exception('Error when adding Clement as a reader')
+                        logging.info('Error when adding Clement as a reader')
 
                     try:
                         logging.info('Add anyone as a reader')
                         service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
                     except HttpError:
-                        logging.getLogger("error").exception('Error when adding anyone as a reader')
+                        logging.info('Error when adding anyone as a reader')
                 # Respond with the new file id as JSON.
             logging.debug('Return ID %s', resource['id'])
             return self.RespondJSON({'id': resource['id']})
