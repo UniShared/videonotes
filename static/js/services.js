@@ -332,8 +332,8 @@ module.factory('editor',
                 $log.info("Copying template", templateId);
                 backend.copy(templateId).then(angular.bind(this,
                     function (result) {
-                        doc.info.id = result.data.id;
-                        $rootScope.$broadcast('copied', result.data.id);
+                        doc.info.id = result.id;
+                        $rootScope.$broadcast('copied', result.id);
                     }),
                     angular.bind(this, function () {
                         $log.warn("Error copying", templateId);
@@ -394,7 +394,7 @@ module.factory('editor',
                         this.savingErrors = 0;
 
                         if (!doc.info.id) {
-                            doc.info.id = result.data.id;
+                            doc.info.id = result.id;
                             $rootScope.$broadcast('firstSaved', doc.info.id);
                         }
 
@@ -596,11 +596,22 @@ module.factory('editor',
     }]);
 
 module.factory('backend',
-    ['$http', '$log', 'doc', function ($http, $log, doc) {
+    ['$rootScope', '$http', '$log', '$q', 'doc', function ($rootScope, $http, $log, $q, doc) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
+
+        var promise,
+            clientId, channel,
+            socket;
+
         var service = {
+            channelToken: function () {
+                return $http({
+                    url: '/get-channel-token',
+                    method: 'GET'
+                });
+            },
             courses: function () {
                 return $http.get('/courses')
             },
@@ -624,19 +635,58 @@ module.factory('backend',
             },
             save: function (fileInfo, newRevision) {
                 $log.info('Saving', fileInfo);
-                return $http({
+
+                var defer = $q.defer();
+
+                socket.onmessage = function (e) {
+                    var data = JSON.parse(e.data);
+
+                    if(data.id)
+                        defer.resolve(data);
+                    else
+                        defer.reject(data);
+                    $rootScope.$apply();
+                };
+
+                socket.onerror = function (e) {
+                    defer.reject(e);
+                    $rootScope.$apply();
+                };
+
+                $http({
                     url: '/svc',
                     method: doc.info.id ? 'PUT' : 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     params: {
+                        'clientId': clientId,
                         'newRevision': newRevision
                     },
                     data: JSON.stringify(fileInfo)
+                })
+                .error(function (response) {
+                    defer.reject(response);
                 });
+
+                return defer.promise;
             }
         };
+
+        function createChannel() {
+            promise = service.channelToken();
+            promise.success(function (response) {
+                clientId = response.clientId;
+                channel = new goog.appengine.Channel(response.channelToken);
+                socket = channel.open();
+                socket.onclose = function () {
+                    createChannel();
+                }
+            });
+        }
+
+        createChannel();
+
         return service;
     }]);
 
