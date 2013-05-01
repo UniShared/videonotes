@@ -548,6 +548,11 @@ class ServiceHandler(BaseDriveHandler):
             # to authorize.
             return self.abort(401)
 
+    def get_empty_file(self, f):
+        f['content'] = {'content': ''}
+        f['video'] = {'video': ''}
+        f['syncNotesVideo'] = {'syncNotesVideo': {'enabled': True}}
+
     def get(self):
         """Called when HTTP GET requests are received by the web application.
 
@@ -578,16 +583,23 @@ class ServiceHandler(BaseDriveHandler):
                 if downloadUrl:
                     logging.debug('Downloading the file from %s', downloadUrl)
                     resp, raw_content = service._http.request(downloadUrl)
+                    logging.debug('Response status : %s', resp.status)
                     logging.debug('Raw content : %s', raw_content)
-                    json_content = json.loads(raw_content)
-                    f['content'] = json_content['content']
-                    f['video'] = json_content['video']
-                    f['syncNotesVideo'] = json_content['syncNotesVideo']
+                    if resp and resp.status == int(200) and raw_content:
+                        try:
+                            json_content = json.loads(raw_content)
+                            f['content'] = json_content['content']
+                            f['video'] = json_content['video']
+                            f['syncNotesVideo'] = json_content['syncNotesVideo']
+                        except ValueError:
+                            logging.info("ValueError when decoding raw content in JSON")
+                            self.get_empty_file(f)
+                    else:
+                        logging.debug("No content or error response")
+                        self.get_empty_file(f)
                 else:
                     logging.debug('No download URL')
-                    f['content'] = {'content': ''}
-                    f['video'] = {'video': ''}
-                    f['syncNotesVideo'] = {'syncNotesVideo': {'enabled': True}}
+                    self.get_empty_file(f)
             else:
                 f = None
                 # Generate a JSON response with the file data and return to the client.
