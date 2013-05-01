@@ -16,6 +16,7 @@
 import random
 import time
 from google.appengine.api import urlfetch
+from BufferedSmtpHandler import BufferingSMTPHandler
 
 __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
@@ -46,6 +47,10 @@ ALL_SCOPES = ('https://www.googleapis.com/auth/drive.install '
               'https://www.googleapis.com/auth/userinfo.email '
               'https://www.googleapis.com/auth/userinfo.profile')
 
+# Configure error logger
+logger = logging.getLogger("error")
+logger.setLevel(logging.ERROR)
+logger.addHandler(BufferingSMTPHandler(5))
 
 def SibPath(name):
     """Generate a path that is a sibling of this file.
@@ -127,7 +132,7 @@ class BaseHandler(webapp2.RequestHandler):
         # Otherwise use a generic 500 error code.
         if isinstance(exception, webapp2.HTTPException):
             # Set a custom message.
-            logging.error('An error occurred %s', exception.code)
+            logging.getLogger("error").error('An error occurred %s', exception.code)
             self.response.write('An error occurred')
             self.response.set_status(exception.code)
         elif isinstance(exception, HttpError):
@@ -139,12 +144,12 @@ class BaseHandler(webapp2.RequestHandler):
                 self.response.write(error_content.get('message', 'An error occurred'))
             except ValueError:
                 # Could not load Json body.
-                logging.error("HTTP error %s %s", exception.resp.status, exception.resp.reason)
+                logging.getLogger("error").error("HTTP error %s %s", exception.resp.status, exception.resp.reason)
                 self.response.set_status(exception.resp.status)
                 self.response.write(exception.resp.reason)
         else:
             message = 'An error occurred'
-            logging.error('%s : %s', message, exception, exc_info=True)
+            logging.getLogger("error").error('%s : %s', message, exception, exc_info=True)
             self.response.write(message)
             self.response.set_status(500)
 
@@ -527,13 +532,13 @@ class ServiceHandler(BaseDriveHandler):
                         logging.info('Add Clement as a reader')
                         service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
                     except HttpError:
-                        logging.exception('Error when adding Clement as a reader')
+                        logging.getLogger("error").exception('Error when adding Clement as a reader')
 
                     try:
                         logging.info('Add anyone as a reader')
                         service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
                     except HttpError:
-                        logging.exception('Error when adding anyone as a reader')
+                        logging.getLogger("error").exception('Error when adding anyone as a reader')
                 # Respond with the new file id as JSON.
             logging.debug('Return ID %s', resource['id'])
             return self.RespondJSON({'id': resource['id']})
@@ -573,6 +578,7 @@ class ServiceHandler(BaseDriveHandler):
                 if downloadUrl:
                     logging.debug('Downloading the file from %s', downloadUrl)
                     resp, raw_content = service._http.request(downloadUrl)
+                    logging.debug('Raw content : %s', raw_content)
                     json_content = json.loads(raw_content)
                     f['content'] = json_content['content']
                     f['video'] = json_content['video']
