@@ -207,8 +207,12 @@ class BaseHandler(webapp2.RequestHandler):
         self.response.write(self.jinja2.render_template(template_name, **context))
 
     @staticmethod
+    def get_version():
+        return os.environ['CURRENT_VERSION_ID'].split('.')[0]
+
+    @staticmethod
     def is_production():
-        return 'production' in os.environ['CURRENT_VERSION_ID'] and not BaseHandler.is_development_server()
+        return BaseHandler.get_version() == "production" and not BaseHandler.is_development_server()
 
     @staticmethod
     def is_development_server():
@@ -552,7 +556,7 @@ class ServiceHandler(BaseDriveHandler):
         try:
             data = self.RequestJSON()
             logging.debug("Creating a new file")
-            taskqueue.add(url='/svc-worker-post', params= {'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data), }, method='POST')
+            taskqueue.add(url='/svc-worker-post', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
         except AccessTokenRefreshError:
             self.abort(401)
 
@@ -560,7 +564,7 @@ class ServiceHandler(BaseDriveHandler):
         try:
             data = self.RequestJSON()
             logging.debug("Updating file %s", data['id'])
-            taskqueue.add(url='/svc-worker-put', params= {'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data), }, method='POST')
+            taskqueue.add(url='/svc-worker-put', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
         except AccessTokenRefreshError:
             self.abort(401)
 
