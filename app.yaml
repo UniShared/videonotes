@@ -40,6 +40,14 @@ handlers:
 - url: /lib
   static_dir: static/lib
 
+- url: /svc-worker-post
+  script: main.app
+  login: admin
+
+- url: /svc-worker-put
+  script: main.app
+  login: admin
+
 - url: /.*
   script: main.app
 
