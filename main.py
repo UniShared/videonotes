@@ -13,9 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import random
-import time
+import uuid
 from google.appengine.api import urlfetch
+from google.appengine.api import taskqueue
+from google.appengine.api import channel
+
 from BufferedSmtpHandler import BufferingSMTPHandler
 
 __author__ = 'afshar@google.com (Ali Afshar)'
@@ -169,6 +171,15 @@ class BaseHandler(webapp2.RequestHandler):
         # Returns a session using the default cookie key.
         return self.session_store.get_session()
 
+    def RequestJSON(self):
+        """Load the request body as JSON.
+
+        Returns:
+          Request body loaded as JSON or None if there is no request body.
+        """
+        if self.request.body:
+            return json.loads(self.request.body)
+
     def RespondJSON(self, data):
         """Generate a JSON response and return it to the client.
 
@@ -196,8 +207,12 @@ class BaseHandler(webapp2.RequestHandler):
         self.response.write(self.jinja2.render_template(template_name, **context))
 
     @staticmethod
+    def get_version():
+        return os.environ['CURRENT_VERSION_ID'].split('.')[0]
+
+    @staticmethod
     def is_production():
-        return 'production' in os.environ['CURRENT_VERSION_ID'] and not BaseHandler.is_development_server()
+        return BaseHandler.get_version() == "production" and not BaseHandler.is_development_server()
 
     @staticmethod
     def is_development_server():
@@ -464,89 +479,14 @@ class EditPage(BaseDriveHandler):
 
         return self.RenderTemplate(EditPage.TEMPLATE)
 
+class GetChannelToken(BaseHandler):
+    def get(self):
+        client_id = str(uuid.uuid4())
+        channel_token = channel.create_channel(client_id)
+        self.RespondJSON({'clientId': client_id, 'channelToken': channel_token})
 
 class ServiceHandler(BaseDriveHandler):
     """Web handler for the service to read and write to Drive."""
-
-    def post(self):
-        """Called when HTTP POST requests are received by the web application.
-
-        The POST body is JSON which is deserialized and used as values to create a
-        new file in Drive. The authorization access token for this action is
-        retreived from the data store.
-        """
-        # Create a Drive service
-        service = self.CreateDrive()
-        if service is None:
-            return
-
-        # Load the data that has been posted as JSON
-        logging.debug('Get JSON data')
-        data = self.RequestJSON()
-        logging.debug('JSON data retrieved %s', json.dumps(data))
-
-        try:
-            if 'templateId' in data:
-                body = {'title': 'Your notes'}
-                resource = service.files().copy(fileId=data['templateId'], body=body).execute()
-            else:
-                # Create a new file data structure.
-                resource = {
-                    'title': data['title'],
-                    'description': data['description'],
-                    'mimeType': data['mimeType'],
-                }
-
-                if 'parent' in data and data['parent']:
-                    logging.debug('Creating from a parent folder %s', data['parent'])
-                    resource['parents'] = [{'id': data['parent']}]
-
-                # Make an insert request to create a new file. A MediaInMemoryUpload
-                # instance is used to upload the file body.
-
-                content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                                      'syncNotesVideo': data.get('syncNotesVideo', '')})
-                logging.debug('Calling Drive API with content %s', str(content))
-                resource = service.files().insert(
-                    body=resource,
-                    media_body=MediaInMemoryUpload(
-                        content,
-                        data['mimeType'],
-                        resumable=True)
-                ).execute()
-
-                if BaseHandler.is_production():
-                    clement_permission = {
-                        'value': 'clement@unishared.com',
-                        'type': 'user',
-                        'role': 'reader'
-                    }
-
-                    anyone_permission = {
-                        'type': 'anyone',
-                        'role': 'reader',
-                        'withLink': True
-                    }
-
-                    try:
-                        logging.info('Add Clement as a reader')
-                        service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
-                    except HttpError:
-                        logging.info('Error when adding Clement as a reader')
-
-                    try:
-                        logging.info('Add anyone as a reader')
-                        service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
-                    except HttpError:
-                        logging.info('Error when adding anyone as a reader')
-                # Respond with the new file id as JSON.
-            logging.debug('Return ID %s', resource['id'])
-            return self.RespondJSON({'id': resource['id']})
-        except AccessTokenRefreshError:
-            # In cases where the access token has expired and cannot be refreshed
-            # (e.g. manual token revoking) redirect the user to the authorization page
-            # to authorize.
-            return self.abort(401)
 
     def get_empty_file(self, f):
         f['content'] = {'content': ''}
@@ -612,21 +552,150 @@ class ServiceHandler(BaseDriveHandler):
             logging.info('AccessTokenRefreshError')
             return self.abort(401)
 
+    def post(self):
+        try:
+            data = self.RequestJSON()
+            logging.debug("Creating a new file")
+            taskqueue.add(url='/svc-worker-post', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
+        except AccessTokenRefreshError:
+            self.abort(401)
+
     def put(self):
+        try:
+            data = self.RequestJSON()
+            logging.debug("Updating file %s", data['id'])
+            taskqueue.add(url='/svc-worker-put', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
+        except AccessTokenRefreshError:
+            self.abort(401)
+
+
+class ServiceWorkerPost(BaseDriveHandler):
+    def post(self):
+        """Called when HTTP POST requests are received by the web application.
+
+        The POST body is JSON which is deserialized and used as values to create a
+        new file in Drive. The authorization access token for this action is
+        retreived from the data store.
+        """
+        user_id = self.request.get('userId')
+        client_id = self.request.get('clientId')
+
+        if not user_id:
+            logging.getLogger("error").error("No client id in request")
+            return
+        else:
+            self.session['userid'] = user_id
+
+        if not client_id:
+            logging.getLogger("error").error("No client id in request")
+            return
+
+        # Create a Drive service
+        service = self.CreateDrive()
+        if service is None:
+            return
+
+        # Load the data that has been posted as JSON
+        logging.debug('Get JSON data')
+        data = json.loads(self.request.get('data'))
+        logging.debug('JSON data retrieved %s', json.dumps(data))
+
+        try:
+            if 'templateId' in data:
+                body = {'title': 'Your notes'}
+                resource = service.files().copy(fileId=data['templateId'], body=body).execute()
+            else:
+                # Create a new file data structure.
+                resource = {
+                    'title': data['title'],
+                    'description': data['description'],
+                    'mimeType': data['mimeType'],
+                    }
+
+                if 'parent' in data and data['parent']:
+                    logging.debug('Creating from a parent folder %s', data['parent'])
+                    resource['parents'] = [{'id': data['parent']}]
+
+                # Make an insert request to create a new file. A MediaInMemoryUpload
+                # instance is used to upload the file body.
+
+                content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
+                                      'syncNotesVideo': data.get('syncNotesVideo', '')})
+                logging.debug('Calling Drive API with content %s', str(content))
+                resource = service.files().insert(
+                    body=resource,
+                    media_body=MediaInMemoryUpload(
+                        content,
+                        data['mimeType'],
+                        resumable=True)
+                ).execute()
+
+                if BaseHandler.is_production():
+                    clement_permission = {
+                        'value': 'clement@unishared.com',
+                        'type': 'user',
+                        'role': 'reader'
+                    }
+
+                    anyone_permission = {
+                        'type': 'anyone',
+                        'role': 'reader',
+                        'withLink': True
+                    }
+
+                    try:
+                        logging.info('Add Clement as a reader')
+                        service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
+                    except HttpError:
+                        logging.info('Error when adding Clement as a reader')
+
+                    try:
+                        logging.info('Add anyone as a reader')
+                        service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
+                    except HttpError:
+                        logging.info('Error when adding anyone as a reader')
+                        # Respond with the new file id as JSON.
+            logging.debug('Return ID %s', resource['id'])
+            channel.send_message(client_id, json.dumps({'id': resource['id']}))
+        except AccessTokenRefreshError:
+            # In cases where the access token has expired and cannot be refreshed
+            # (e.g. manual token revoking) redirect the user to the authorization page
+            # to authorize.
+            return self.abort(401)
+        except (HttpError, ValueError, taskqueue.Error), e:
+            logging.getLogger("error").exception("Exception occurred when updating file")
+            channel.send_message(client_id, json.dumps({'errorDescription': str(e)}))
+
+class ServiceWorkerPut(BaseDriveHandler):
+    def post(self):
         """Called when HTTP PUT requests are received by the web application.
 
         The PUT body is JSON which is deserialized and used as values to update
         a file in Drive. The authorization access token for this action is
         retreived from the data store.
         """
+        user_id = self.request.get('userId')
+        client_id = self.request.get('clientId')
+
+        if not user_id:
+            logging.getLogger("error").error("No client id in request")
+            return
+        else:
+            self.session['userid'] = user_id
+
+        if not client_id:
+            logging.getLogger("error").error("No client id in request")
+            return
+
         # Create a Drive service
         service = self.CreateDrive()
         if service is None:
             return
             # Load the data that has been posted as JSON
-        data = self.RequestJSON()
-        logging.info('Updating file %s', data['id'])
+
         try:
+            data = json.loads(self.request.get('data'))
+            logging.info('Updating file %s', data['id'])
             # Create a new file data structure.
             content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
                                   'syncNotesVideo': data.get('syncNotesVideo', '')})
@@ -653,22 +722,11 @@ class ServiceHandler(BaseDriveHandler):
                     newRevision=self.request.get('newRevision', False),
                     body=data).execute()
                 # Respond with the new file id as JSON.
-            self.RespondJSON({'id': resource['id']})
-        except AccessTokenRefreshError:
-            # In cases where the access token has expired and cannot be refreshed
-            # (e.g. manual token revoking) redirect the user to the authorization page
-            # to authorize.
-            logging.info('AccessTokenRefreshError')
-            return self.abort(401)
+            channel.send_message(client_id, json.dumps({'id': resource['id']}))
+        except (HttpError, ValueError, taskqueue.Error), e:
+            logging.getLogger("error").exception("Exception occurred when updating file")
+            channel.send_message(client_id, json.dumps({'errorDescription': str(e)}))
 
-    def RequestJSON(self):
-        """Load the request body as JSON.
-
-        Returns:
-          Request body loaded as JSON or None if there is no request body.
-        """
-        if self.request.body:
-            return json.loads(self.request.body)
 
 
 class AuthHandler(BaseDriveHandler):
@@ -837,7 +895,10 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/', HomePage, 'home'),
         webapp2.Route(r'/edit/<:[A-Za-z0-9\-_]*>', EditPage, 'edit'),
         webapp2.Route(r'/courses', CoursesHandler),
+        webapp2.Route(r'/get-channel-token', GetChannelToken),
         webapp2.Route(r'/svc', ServiceHandler),
+        webapp2.Route(r'/svc-worker-post', ServiceWorkerPost),
+        webapp2.Route(r'/svc-worker-put', ServiceWorkerPut),
         webapp2.Route(r'/about', AboutHandler),
         webapp2.Route(r'/auth', AuthHandler, 'auth'),
         webapp2.Route(r'/user', UserHandler),
