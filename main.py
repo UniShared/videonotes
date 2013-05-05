@@ -554,17 +554,23 @@ class ServiceHandler(BaseDriveHandler):
 
     def post(self):
         try:
-            data = self.RequestJSON()
-            logging.debug("Creating a new file")
-            taskqueue.add(url='/svc-worker-post', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
+            if self.GetSessionCredentials():
+                data = self.RequestJSON()
+                logging.debug("Creating a new file")
+                taskqueue.add(url='/svc-worker-post', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
+            else:
+                self.abort(401)
         except AccessTokenRefreshError:
             self.abort(401)
 
     def put(self):
         try:
-            data = self.RequestJSON()
-            logging.debug("Updating file %s", data['id'])
-            taskqueue.add(url='/svc-worker-put', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
+            if self.GetSessionCredentials():
+                data = self.RequestJSON()
+                logging.debug("Updating file %s", data['id'])
+                taskqueue.add(url='/svc-worker-put', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
+            else:
+                self.abort(401)
         except AccessTokenRefreshError:
             self.abort(401)
 

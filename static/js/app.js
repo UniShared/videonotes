@@ -65,12 +65,10 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
     // Error handler
     .run(['$window', 'analytics', function ($window, analytics) {
         $window.onerror = function(message, url, line) {
-            analytics.pushAnalytics([
-                "_trackEvent",
+            analytics.pushAnalytics(
                 "JS Exception Error",
                 message,
-                (url + " (" + line + ")"),
-                0, true
-            ]);
+                url + " (" + line + ")"
+            );
         };
     }]);
