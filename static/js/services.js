@@ -320,8 +320,8 @@ module.factory('editor',
             $log.info("Copying template", templateId);
             backend.copy(templateId).then(angular.bind(service,
                 function (result) {
-                    doc.info.id = result.data.id;
-                    $rootScope.$broadcast('copied', result.data.id);
+                    doc.info.id = result.id;
+                    $rootScope.$broadcast('copied', result.id);
                 }),
                 angular.bind(service, function () {
                     $log.warn("Error copying", templateId);
@@ -382,7 +382,7 @@ module.factory('editor',
                     service.savingErrors = 0;
 
                     if (!doc.info.id) {
-                        doc.info.id = result.data.id;
+                        doc.info.id = result.id;
                         $rootScope.$broadcast('firstSaved', doc.info.id);
                     }
 
@@ -611,18 +611,17 @@ module.factory('editor',
     }]);
 
 module.factory('backend',
-    ['$http', '$log', '$q', 'doc', function ($http, $log, $q, doc) {
+    ['$http', '$rootScope', '$log', '$q', 'doc', function ($http, $rootScope, $log, $q, doc) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
 
-        var promise,
-            clientId, channel,
+        var clientId, channel,
             socket;
 
         var service = {
             init: function () {
-                promise = service.channelToken();
+                var promise = service.channelToken();
                 promise.success(function (response) {
                     clientId = response.clientId;
                     channel = new goog.appengine.Channel(response.channelToken);
