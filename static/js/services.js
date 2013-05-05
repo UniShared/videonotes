@@ -44,7 +44,7 @@ module.factory('config', ['$rootScope', '$http', 'appName', function ($rootScope
                 });
             return promise;
         },
-        setConfig: function(response) {
+        setConfig: function (response) {
             this.appName = appName;
             this.googleAnalyticsAccount = response.data.googleAnalyticsAccount;
             this.appId = response.data.appId;
@@ -64,8 +64,8 @@ module.factory('doc',
             return new Date().getTime() - this.lastSave;
         };
 
-        var initWatcher =  function () {
-            if(service.info && service.info.editable) {
+        var initWatcher = function () {
+            if (service.info && service.info.editable) {
                 service.$watch('info',
                     function (newValue, oldValue) {
                         if (oldValue != null && newValue !== oldValue) {
@@ -90,7 +90,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
         subtitlesUrl: null,
         load: function () {
             if (this.videoUrl && this.videoElement) {
-                if(this.player) {
+                if (this.player) {
                     this.player.destroy();
                     $(this.videoElement).empty();
                     this.subtitlesUrl = null;
@@ -102,11 +102,11 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
                     this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
                 }
 
-                this.player = Popcorn.smart("#" + this.videoElement.id, this.videoUrl, {controls:true});
+                this.player = Popcorn.smart("#" + this.videoElement.id, this.videoUrl, {controls: true});
                 this.bindEvents();
 
                 this.player.controls(true);
-                if(this.subtitlesUrl)
+                if (this.subtitlesUrl)
                     this.player.parseSRT('/proxy?q={0}'.format(encodeURIComponent(this.subtitlesUrl)));
             }
         },
@@ -213,15 +213,15 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
             return url.match(regex);
         },
         play: function () {
-            if(this.player)
+            if (this.player)
                 this.player.play();
         },
         pause: function () {
-            if(this.player)
+            if (this.player)
                 this.player.pause();
         },
         isPlaying: function () {
-            if(this.player) {
+            if (this.player) {
                 return !this.player.paused();
             }
             else {
@@ -232,7 +232,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
             this.isPlaying() ? this.pause() : this.play();
         },
         currentTime: function () {
-            if(arguments.length) {
+            if (arguments.length) {
                 this.player.currentTime(arguments[0]);
             }
             else {
@@ -255,348 +255,361 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
 
 module.factory('editor',
     ['doc', 'backend', 'video', '$q', '$rootScope', '$log', function (doc, backend, video, $q, $rootScope, $log) {
-        var editor = null;
-        var EditSession = require("ace/edit_session").EditSession;
+        var editor = null,
+            EditSession = require("ace/edit_session").EditSession,
+            service = $rootScope.$new(true);
 
-        var scope = $rootScope.$new(true);
+        service.doc = doc;
+        service.loading = false;
+        service.loading = false;
+        service.saving = false;
+        service.savingErrors = 0;
+        service.lastRow = -1;
 
-        scope.doc = doc;
-        scope.$watch('doc.info.editable', function (newValue, oldValue) {
-            if(editor && newValue !== oldValue) {
-                editor.setReadOnly(!newValue);
-            }
-        });
-
-        var focusEditor = function () {
+        service.focusEditor = function () {
             editor && editor.focus();
         };
 
-        scope.$on('video::seeked', focusEditor);
-        scope.$on('video::ratechange', focusEditor);
-        scope.$on('video::pause', focusEditor);
-        scope.$on('video::play', focusEditor);
-        scope.$on('loading', focusEditor);
-        scope.$on('saving', focusEditor);
-        scope.$watch('doc.info.syncNotesVideo.enabled', focusEditor);
+        service.rebind = function (element) {
+            editor = ace.edit(element);
+            editor.commands.removeCommand('splitline');
+            editor.commands.removeCommand('golinedown');
+            editor.on("gutterclick", function (e) {
+                if (doc.info.syncNotesVideo.enabled) {
+                    var lineCursorPosition = e.getDocumentPosition().row,
+                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-        var service = {
-            loading: false,
-            saving: false,
-            savingErrors: 0,
-            lastRow: -1,
-            rebind: function (element) {
-                editor = ace.edit(element);
-                editor.commands.removeCommand('splitline');
-                editor.commands.removeCommand('golinedown');
-                editor.on("gutterclick", function (e) {
-                    if (doc.info.syncNotesVideo.enabled) {
-                        var lineCursorPosition = e.getDocumentPosition().row,
-                            timestamp = doc.info.syncNotesVideo[lineCursorPosition];
+                    video.player.currentTime(timestamp);
+                }
 
-                        video.player.currentTime(timestamp);
+            });
+            service.updateEditor(doc.info);
+        };
+
+        service.snapshot = function () {
+            doc.dirty = false;
+            var data = angular.extend({}, doc.info);
+            if (doc.info.editable) {
+                data.content = doc.info.content;
+            }
+            return data;
+        };
+        service.create = function (parentId) {
+            $log.info("Creating new doc");
+            doc.dirty = true;
+
+            service.updateEditor({
+                content: '',
+                video: null,
+                syncNotesVideo: {
+                    enabled: true
+                },
+                labels: {
+                    starred: false
+                },
+                editable: true,
+                title: 'Untitled notes',
+                description: '',
+                mimeType: 'application/vnd.unishared.document',
+                parent: parentId || null
+            });
+        };
+        service.copy = function (templateId) {
+            $log.info("Copying template", templateId);
+            backend.copy(templateId).then(angular.bind(service,
+                function (result) {
+                    doc.info.id = result.data.id;
+                    $rootScope.$broadcast('copied', result.data.id);
+                }),
+                angular.bind(service, function () {
+                    $log.warn("Error copying", templateId);
+                    $rootScope.$broadcast('error', {
+                        action: 'copy',
+                        message: "An error occurred while copying the template"
+                    });
+                }));
+        };
+        service.load = function (id, reload) {
+            $log.info("Loading resource", id, doc && doc.info && doc.info.id);
+            if (!reload && doc.info && doc.info.id === id) {
+                service.updateEditor(doc.info);
+                return $q.when(doc.info);
+            }
+            service.loading = true;
+            $rootScope.$broadcast('loading');
+            return backend.load(id).then(
+                function (result) {
+                    service.loading = false;
+                    service.updateEditor(result.data);
+                    doc.info.id = id;
+                    $rootScope.$broadcast('loaded', doc.info);
+                    return result;
+                },
+                function (result) {
+                    $log.warn("Error loading", result);
+                    service.loading = false;
+                    $rootScope.$broadcast('error', {
+                        action: 'load',
+                        message: "An error occured while loading the file"
+                    });
+                    return result;
+                });
+        };
+        service.save = function (newRevision) {
+            $log.info("Saving file", newRevision);
+            if (service.saving || service.loading) {
+                throw 'Save called from incorrect state';
+            }
+            service.saving = true;
+            var file = service.snapshot();
+
+            if (!doc.info.id) {
+                $rootScope.$broadcast('firstSaving');
+            }
+            else {
+                $rootScope.$broadcast('saving');
+            }
+
+            // Force revision if first save of the session
+            newRevision = newRevision || doc.timeSinceLastSave() > ONE_HOUR_IN_MS;
+            var promise = backend.save(file, newRevision);
+            promise.then(
+                function (result) {
+                    $log.info("Saved file", result);
+                    service.saving = false;
+                    service.savingErrors = 0;
+
+                    if (!doc.info.id) {
+                        doc.info.id = result.data.id;
+                        $rootScope.$broadcast('firstSaved', doc.info.id);
                     }
 
-                });
-                this.updateEditor(doc.info);
-            },
+                    doc.lastSave = new Date().getTime();
+                    $rootScope.$broadcast('saved', doc.info);
+                    return doc.info;
+                },
+                function (result) {
+                    service.saving = false;
+                    service.savingErrors++;
+                    doc.dirty = true;
 
-            snapshot: function () {
-                doc.dirty = false;
-                var data = angular.extend({}, doc.info);
-                if (doc.info.editable) {
-                    data.content = doc.info.content;
-                }
-                return data;
-            },
-            create: function (parentId) {
-                $log.info("Creating new doc");
-                doc.dirty = true;
-
-                this.updateEditor({
-                    content: '',
-                    video: null,
-                    syncNotesVideo: {
-                        enabled: true
-                    },
-                    labels: {
-                        starred: false
-                    },
-                    editable: true,
-                    title: 'Untitled notes',
-                    description: '',
-                    mimeType: 'application/vnd.unishared.document',
-                    parent: parentId || null
-                });
-            },
-            copy: function (templateId) {
-                $log.info("Copying template", templateId);
-                backend.copy(templateId).then(angular.bind(this,
-                    function (result) {
-                        doc.info.id = result.id;
-                        $rootScope.$broadcast('copied', result.id);
-                    }),
-                    angular.bind(this, function () {
-                        $log.warn("Error copying", templateId);
+                    if (service.savingErrors === 5) {
+                        doc.info.editable = false;
                         $rootScope.$broadcast('error', {
-                            action: 'copy',
-                            message: "An error occurred while copying the template"
+                            action: 'save',
+                            message: "Too many errors occurred while saving the file. Please contact us"
                         });
-                    }));
-            },
-            load: function (id, reload) {
-                $log.info("Loading resource", id, doc && doc.info && doc.info.id);
-                if (!reload && doc.info && doc.info.id === id) {
-                    this.updateEditor(doc.info);
-                    return $q.when(doc.info);
-                }
-                this.loading = true;
-                $rootScope.$broadcast('loading');
-                return backend.load(id).then(angular.bind(this,
-                    function (result) {
-                        this.loading = false;
-                        this.updateEditor(result.data);
-                        doc.info.id = id;
-                        $rootScope.$broadcast('loaded', doc.info);
-                        return result;
-                    }), angular.bind(this,
-                    function (result) {
-                        $log.warn("Error loading", result);
-                        this.loading = false;
+                    }
+                    else {
                         $rootScope.$broadcast('error', {
-                            action: 'load',
-                            message: "An error occured while loading the file"
+                            action: 'save',
+                            message: "An error occurred while saving the file"
                         });
-                        return result;
-                    }));
-            },
-            save: function (newRevision) {
-                $log.info("Saving file", newRevision);
-                if (this.saving || this.loading) {
-                    throw 'Save called from incorrect state';
+                    }
+
+                    return result;
+                });
+            return promise;
+        };
+        service.updateEditor = function (fileInfo) {
+            if (!fileInfo) {
+                return;
+            }
+
+            $log.info("Updating editor", fileInfo);
+
+            var session = new EditSession(fileInfo.content);
+
+            session.on('change', function () {
+                if (doc && doc.info) {
+                    $rootScope.safeApply(function () {
+                        doc.info.content = session.getValue();
+                    });
                 }
-                this.saving = true;
-                var file = this.snapshot();
+            });
 
-                if (!doc.info.id) {
-                    $rootScope.$broadcast('firstSaving');
-                }
-                else {
-                    $rootScope.$broadcast('saving');
-                }
+            session.$breakpointListener = function (e) {
+                if (!doc.info && !doc.info.syncNotesVideo)
+                    return;
+                var delta = e.data;
+                var range = delta.range;
+                if (range.end.row == range.start.row) {
+                    // Removing sync mark if line is now empty
+                    if (session.getLine(range.start.row).trim() === '') {
+                        service.unsync(session, range.start.row);
+                    }
+                    else if (!(range.start.row in doc.info.syncNotesVideo)) {
+                        service.syncLine(session, range.start.row);
+                    }
 
-                // Force revision if first save of the session
-                newRevision = newRevision || doc.timeSinceLastSave() > ONE_HOUR_IN_MS;
-                var promise = backend.save(file, newRevision);
-                promise.then(angular.bind(this,
-                    function (result) {
-                        $log.info("Saved file", result);
-                        this.saving = false;
-                        this.savingErrors = 0;
-
-                        if (!doc.info.id) {
-                            doc.info.id = result.id;
-                            $rootScope.$broadcast('firstSaved', doc.info.id);
-                        }
-
-                        doc.lastSave = new Date().getTime();
-                        $rootScope.$broadcast('saved', doc.info);
-                        return doc.info;
-                    }), angular.bind(this,
-                    function (result) {
-                        this.saving = false;
-                        this.savingErrors++;
-                        doc.dirty = true;
-
-                        if(this.savingErrors === 5) {
-                            doc.info.editable = false;
-                            $rootScope.$broadcast('error', {
-                                action: 'save',
-                                message: "Too many errors occurred while saving the file. Please contact us"
-                            });
-                        }
-                        else {
-                            $rootScope.$broadcast('error', {
-                                action: 'save',
-                                message: "An error occurred while saving the file"
-                            });
-                        }
-
-                        return result;
-                    }));
-                return promise;
-            },
-            updateEditor: function (fileInfo) {
-                if (!fileInfo) {
                     return;
                 }
 
-                $log.info("Updating editor", fileInfo);
+                var firstRow, shift;
+                if (delta.action == "insertText") {
+                    firstRow = range.start.column ? range.start.row + 1 : range.start.row;
+                    shift = 1;
+                }
+                else {
+                    firstRow = range.start.row;
+                    shift = -1;
+                }
 
-                var session = new EditSession(fileInfo.content);
-
-                session.on('change', function () {
-                    if (doc && doc.info) {
-                        $rootScope.safeApply(function () {
-                            doc.info.content = session.getValue();
-                        });
-                    }
-                });
-
-                session.$breakpointListener = function (e) {
-                    if (!doc.info && !doc.info.syncNotesVideo)
-                        return;
-                    var delta = e.data;
-                    var range = delta.range;
-                    if (range.end.row == range.start.row) {
-                        // Removing sync mark if line is now empty
-                        if (session.getLine(range.start.row).trim() === '') {
-                            service.unsync(session, range.start.row);
-                        }
-                        else if(!(range.start.row in doc.info.syncNotesVideo)){
-                            service.syncLine(session, range.start.row);
-                        }
-
-                        return;
-                    }
-
-                    var firstRow, shift;
-                    if (delta.action == "insertText") {
-                        firstRow = range.start.column ? range.start.row + 1 : range.start.row;
-                        shift = 1;
-                    }
-                    else {
-                        firstRow = range.start.row;
-                        shift = -1;
-                    }
-
-                    var shiftedSyncNotesVideo = {};
-                    for (var line in doc.info.syncNotesVideo) {
-                        var intLine = parseInt(line);
-                        if (!isNaN(intLine)) {
-                            if (line < firstRow) {
-                                shiftedSyncNotesVideo[line] = doc.info.syncNotesVideo[line];
-                            }
-                            else {
-                                var nextLine = parseInt(line) + shift;
-                                shiftedSyncNotesVideo[nextLine] = doc.info.syncNotesVideo[line];
-                            }
-                        }
-                    }
-                    shiftedSyncNotesVideo.enabled = doc.info.syncNotesVideo.enabled;
-                    doc.info.syncNotesVideo = shiftedSyncNotesVideo;
-
-                    service.updateBreakpoints(session);
-                }.bind(session);
-                session.on("change", session.$breakpointListener);
-
-                session.getSelection().on('changeCursor', function (e) {
-                    var lineCursorPosition = editor.getCursorPosition().row,
-                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
-
-                    if (lineCursorPosition != service.lastRow) {
-                        service.lastRow = lineCursorPosition;
-                        if (timestamp) {
-                            $log.info('Timestamp', lineCursorPosition, timestamp);
-                            if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
-                                video.currentTime(timestamp);
-                            }
+                var shiftedSyncNotesVideo = {};
+                for (var line in doc.info.syncNotesVideo) {
+                    var intLine = parseInt(line);
+                    if (!isNaN(intLine)) {
+                        if (line < firstRow) {
+                            shiftedSyncNotesVideo[line] = doc.info.syncNotesVideo[line];
                         }
                         else {
-                            $log.info('No timestamp');
+                            var nextLine = parseInt(line) + shift;
+                            shiftedSyncNotesVideo[nextLine] = doc.info.syncNotesVideo[line];
                         }
-                    }
-                });
-
-
-                doc.lastSave = 0;
-                doc.info = fileInfo;
-
-                this.updateBreakpoints(session);
-
-                editor.setSession(session);
-//                editor.setReadOnly(!doc.info.editable);
-                session.setUseWrapMode(true);
-                session.setWrapLimitRange(80);
-                editor.focus();
-            },
-            updateBreakpoints: function (session) {
-                if (session && doc.info) {
-                    session.clearBreakpoints();
-                    for (var line in doc.info.syncNotesVideo) {
-                        if (doc.info.syncNotesVideo[line] > -1)
-                            session.setBreakpoint(line);
                     }
                 }
-            },
-            syncLine: function(session, line) {
-                // Is there a video loaded?
-                if (doc.info && doc.info.syncNotesVideo && doc.info.video) {
-                    $log.info('Video loaded');
-                    // Is there some texts before and after?
-                    var timestampBefore, isLineBefore = false,
-                        timestampAfter, isLineAfter = false;
+                shiftedSyncNotesVideo.enabled = doc.info.syncNotesVideo.enabled;
+                doc.info.syncNotesVideo = shiftedSyncNotesVideo;
 
-                    session.setBreakpoint(line);
+                service.updateBreakpoints(session);
+            }.bind(session);
+            session.on("change", session.$breakpointListener);
 
-                    for (var lineSynced in doc.info.syncNotesVideo) {
-                        if (!isLineBefore && lineSynced < line) {
-                            isLineBefore = true;
-                            timestampBefore = doc.info.syncNotesVideo[lineSynced];
-                        }
-                        else if (!isLineAfter && lineSynced > line) {
-                            isLineAfter = true;
-                            timestampAfter = doc.info.syncNotesVideo[lineSynced];
-                        }
+            session.getSelection().on('changeCursor', function (e) {
+                var lineCursorPosition = editor.getCursorPosition().row,
+                    timestamp = doc.info.syncNotesVideo[lineCursorPosition];
 
-                        if (isLineBefore && isLineAfter) {
-                            break;
+                if (lineCursorPosition != service.lastRow) {
+                    service.lastRow = lineCursorPosition;
+                    if (timestamp) {
+                        $log.info('Timestamp', lineCursorPosition, timestamp);
+                        if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
+                            video.currentTime(timestamp);
                         }
+                    }
+                    else {
+                        $log.info('No timestamp');
+                    }
+                }
+            });
+
+
+            doc.lastSave = 0;
+            doc.info = fileInfo;
+
+            service.updateBreakpoints(session);
+
+            editor.setSession(session);
+//                editor.setReadOnly(!doc.info.editable);
+            session.setUseWrapMode(true);
+            session.setWrapLimitRange(80);
+            editor.focus();
+        };
+        service.updateBreakpoints = function (session) {
+            if (session && doc.info) {
+                session.clearBreakpoints();
+                for (var line in doc.info.syncNotesVideo) {
+                    if (doc.info.syncNotesVideo[line] > -1)
+                        session.setBreakpoint(line);
+                }
+            }
+        };
+        service.syncLine = function (session, line) {
+            // Is there a video loaded?
+            if (doc.info && doc.info.syncNotesVideo && doc.info.video) {
+                $log.info('Video loaded');
+                // Is there some texts before and after?
+                var timestampBefore, isLineBefore = false,
+                    timestampAfter, isLineAfter = false;
+
+                session.setBreakpoint(line);
+
+                for (var lineSynced in doc.info.syncNotesVideo) {
+                    if (!isLineBefore && lineSynced < line) {
+                        isLineBefore = true;
+                        timestampBefore = doc.info.syncNotesVideo[lineSynced];
+                    }
+                    else if (!isLineAfter && lineSynced > line) {
+                        isLineAfter = true;
+                        timestampAfter = doc.info.syncNotesVideo[lineSynced];
                     }
 
                     if (isLineBefore && isLineAfter) {
-                        // Text before and after
-                        // Timestamp for this line must be average time between nearest line before/after
-                        doc.info.syncNotesVideo[line] = (timestampBefore + timestampAfter) / 2;
+                        break;
                     }
-                    else {
-                        // No text or only before / after
-                        // Using current player time
-                        doc.info.syncNotesVideo[line] = video.currentTime();
-                    }
-                    $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
                 }
-                // No video => mark it anyway, don't want to sync this line
+
+                if (isLineBefore && isLineAfter) {
+                    // Text before and after
+                    // Timestamp for this line must be average time between nearest line before/after
+                    doc.info.syncNotesVideo[line] = (timestampBefore + timestampAfter) / 2;
+                }
                 else {
-                    $log.info('No video');
-                    doc.info.syncNotesVideo[line] = -1
+                    // No text or only before / after
+                    // Using current player time
+                    doc.info.syncNotesVideo[line] = video.currentTime();
                 }
-            },
-            unsync: function (session, line) {
-                if(doc.info && doc.info.syncNotesVideo && line in doc.info.syncNotesVideo) {
-                    session.clearBreakpoint(line);
-                    delete doc.info.syncNotesVideo[line];
-                }
-            },
-            state: function () {
-                if (this.loading) {
-                    return EditorState.LOAD;
-                } else if (this.saving) {
-                    return EditorState.SAVE;
-                } else if (doc.info && !doc.info.editable) {
-                    return EditorState.READONLY;
-                }
-                else if (doc.dirty) {
-                    return EditorState.DIRTY;
-                }
-                return EditorState.CLEAN;
+                $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
+            }
+            // No video => mark it anyway, don't want to sync this line
+            else {
+                $log.info('No video');
+                doc.info.syncNotesVideo[line] = -1
             }
         };
+        service.unsync = function (session, line) {
+            if (doc.info && doc.info.syncNotesVideo && line in doc.info.syncNotesVideo) {
+                session.clearBreakpoint(line);
+                delete doc.info.syncNotesVideo[line];
+            }
+        };
+        service.state = function () {
+            if (service.loading) {
+                return EditorState.LOAD;
+            } else if (service.saving) {
+                return EditorState.SAVE;
+            } else if (doc.info && !doc.info.editable) {
+                return EditorState.READONLY;
+            }
+            else if (doc.dirty) {
+                return EditorState.DIRTY;
+            }
+            return EditorState.CLEAN;
+        };
+
+        service.$on('video::seeked', function () {
+            service.focusEditor();
+        });
+        service.$on('video::ratechange', function () {
+            service.focusEditor();
+        });
+        service.$on('video::play', function () {
+            service.focusEditor();
+        });
+        service.$on('video::pause', function () {
+            service.focusEditor();
+        });
+        service.$on('saving', function () {
+            service.focusEditor();
+        });
+        service.$on('loading', function () {
+            service.focusEditor();
+        });
+
+        service.$watch('doc.info.syncNotesVideo.enabled', function () {
+            service.focusEditor();
+        });
+        service.$watch('doc.info.editable', function (newValue, oldValue) {
+            if (editor && newValue !== oldValue) {
+                editor.setReadOnly(!newValue);
+            }
+        });
 
         return service;
     }]);
 
 module.factory('backend',
-    ['$rootScope', '$http', '$log', '$q', 'doc', function ($rootScope, $http, $log, $q, doc) {
+    ['$http', '$log', 'doc', function ($http, $log, doc) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
@@ -613,7 +626,7 @@ module.factory('backend',
                 });
             },
             courses: function () {
-                return $http.get('/courses')
+                return $http.get('/courses');
             },
             user: function () {
                 return $http.get('/user');
@@ -687,6 +700,7 @@ module.factory('backend',
 
         createChannel();
 
+
         return service;
     }]);
 
@@ -737,13 +751,15 @@ module.factory('autosaver',
 
         var service = $rootScope.$new(true);
         service.doc = doc;
-        service.confirmOnLeave = function(e) {
-            if(doc.dirty) {
+        service.confirmOnLeave = function (e) {
+            if (doc.dirty) {
                 var msg = "You have unsaved data.";
 
                 // For IE and Firefox
                 e = e || window.event;
-                if (e) {e.returnValue = msg;}
+                if (e) {
+                    e.returnValue = msg;
+                }
 
                 // For Chrome and Safari
                 return msg;

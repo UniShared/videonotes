@@ -35,6 +35,72 @@ describe('service', function() {
             };
         }));
 
+        describe('events', function () {
+            it('should listen to video::seeked', inject(function ($rootScope, editor) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$broadcast('video::seeked');
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+
+            it('should listen to video::ratechange', inject(function ($rootScope,editor) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$broadcast('video::ratechange');
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+
+            it('should listen to video::play', inject(function ($rootScope,editor) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$broadcast('video::play');
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+
+            it('should listen to video::pause', inject(function ($rootScope, editor) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$broadcast('video::pause');
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+
+            it('should listen to saving', inject(function ($rootScope, editor) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$broadcast('saving');
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+
+            it('should listen to loading', inject(function ($rootScope, editor) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$broadcast('loading');
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+
+            it('should watch doc.info.syncNotesVideo.enabled', inject(function ($rootScope, editor, doc) {
+                spyOn(editor, "focusEditor");
+
+                $rootScope.$apply();
+                doc.info.syncNotesVideo.enabled = false;
+                $rootScope.$apply();
+
+                expect(editor.focusEditor).toHaveBeenCalled();
+            }));
+        });
+
         describe('save method', function () {
             var mockSnapshot = {},
                 resolveResponse = {data:{id:'test'}};
