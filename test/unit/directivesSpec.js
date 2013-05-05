@@ -6,6 +6,10 @@ describe('directives', function () {
     var elm, scope;
     beforeEach(angular.mock.module('app.directives', 'app.services', 'analytics'));
 
+    beforeEach(angular.mock.inject(function(backend) {
+        spyOn(backend, "init");
+    }));
+
     describe('aceEditor', function () {
         beforeEach(angular.mock.inject(function ($rootScope, $compile) {
             elm = angular.element('<div id="editor" ace-editor sync="sync"></div>');

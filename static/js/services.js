@@ -259,6 +259,8 @@ module.factory('editor',
             EditSession = require("ace/edit_session").EditSession,
             service = $rootScope.$new(true);
 
+        backend.init();
+
         service.doc = doc;
         service.loading = false;
         service.loading = false;
@@ -609,7 +611,7 @@ module.factory('editor',
     }]);
 
 module.factory('backend',
-    ['$http', '$log', 'doc', function ($http, $log, doc) {
+    ['$http', '$log', '$q', 'doc', function ($http, $log, $q, doc) {
         var jsonTransform = function (data, headers) {
             return angular.fromJson(data);
         };
@@ -619,6 +621,17 @@ module.factory('backend',
             socket;
 
         var service = {
+            init: function () {
+                promise = service.channelToken();
+                promise.success(function (response) {
+                    clientId = response.clientId;
+                    channel = new goog.appengine.Channel(response.channelToken);
+                    socket = channel.open();
+                    socket.onclose = function () {
+                        this.init();
+                    };
+                });
+            },
             channelToken: function () {
                 return $http({
                     url: '/get-channel-token',
@@ -685,21 +698,6 @@ module.factory('backend',
                 return defer.promise;
             }
         };
-
-        function createChannel() {
-            promise = service.channelToken();
-            promise.success(function (response) {
-                clientId = response.clientId;
-                channel = new goog.appengine.Channel(response.channelToken);
-                socket = channel.open();
-                socket.onclose = function () {
-                    createChannel();
-                }
-            });
-        }
-
-        createChannel();
-
 
         return service;
     }]);

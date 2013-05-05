@@ -10,14 +10,16 @@ describe('service', function() {
         angular.mock.module('app.services', 'analytics', 'appMock');
     });
 
-    beforeEach(angular.mock.inject(function($window) {
+    beforeEach(angular.mock.inject(function($window, backend) {
         $window.addEventListener = jasmine.createSpy();
+
+        spyOn(backend, "init");
     }));
 
     describe('editor', function () {
         var deffered;
 
-        beforeEach(inject(function (doc) {
+        beforeEach(inject(function (doc, backend) {
             doc.info = {
                 content: '',
                 video: null,
@@ -33,6 +35,10 @@ describe('service', function() {
                 mimeType: 'application/vnd.unishared.document',
                 parent: null
             };
+        }));
+
+        it("should init the backend", inject(function (editor, backend) {
+            expect(backend.init).toHaveBeenCalled();
         }));
 
         describe('events', function () {
