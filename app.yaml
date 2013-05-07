@@ -1,7 +1,8 @@
 application: unishared-gae
 #version: production
 #version: staging
-version: local
+#version: local
+version: staging-segmentio
 runtime: python27
 threadsafe: true
 api_version: 1
