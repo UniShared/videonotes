@@ -806,11 +806,11 @@ class ConfigHandler(BaseHandler):
         production = BaseHandler.is_production()
 
         logging.debug('Get configuration, production %s', production)
-        google_analytics_account = [os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_STAGING'), os.environ.get('GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION')][production]
-        logging.debug('Google Analytics account %s', google_analytics_account)
+        segment_io_account = [os.environ.get('SEGMENTIO_STAGING'), os.environ.get('SEGMENTIO_PRODUCTION')][production]
+        logging.debug('Segment IO account %s', segment_io_account)
         app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ['CURRENT_VERSION_ID'].split('.')[0]), scope='').client_id.split('.')[0].split('-')[0]
         logging.debug('App id %s', app_id)
-        config = {'googleAnalyticsAccount': google_analytics_account, 'appId': app_id}
+        config = {'segmentio': segment_io_account, 'appId': app_id}
 
         return self.RespondJSON(config)
 
