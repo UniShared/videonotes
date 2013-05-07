@@ -13,10 +13,20 @@ describe('Controllers', function () {
         spyOn(scope, '$on').andCallThrough();
     });
 
-    beforeEach(angular.mock.module('app', 'analytics'));
+    beforeEach(angular.mock.module('app', 'segmentio', function ($provide) {
+        return $provide.decorator('config', function () {
+            return {
+                load: function () {
+                    return {};
+                }
+            };
+        });
+    }));
 
-    beforeEach(angular.mock.inject(function($rootScope, $window, analytics) {
-        analytics.pushAnalytics = jasmine.createSpy('pushAnalytics');
+
+    beforeEach(angular.mock.inject(function($rootScope, $window, segmentio) {
+        segmentio.load('test');
+        spyOn(segmentio, "track");
         $window.addEventListener = jasmine.createSpy();
     }));
 
@@ -60,7 +70,7 @@ describe('Controllers', function () {
             expect(scope.$on).toHaveBeenCalledWith('video::error', scope.errorLoadVideo);
         }));
 
-        it('should be able to play/pause video', angular.mock.inject(function (analytics, video) {
+        it('should be able to play/pause video', angular.mock.inject(function (segmentio, video) {
             expect(scope.playPauseVideo).toBeDefined();
             expect(scope.doc).toBeDefined();
 
@@ -70,12 +80,12 @@ describe('Controllers', function () {
 
             scope.playPauseVideo();
 
-            expect(analytics.pushAnalytics.mostRecentCall.args).toEqual(['Video', 'play pause', 'play']);
+            expect(segmentio.track.mostRecentCall.args).toEqual(['Video play']);
             expect(video.isPlaying).toHaveBeenCalled();
 
             scope.playPauseVideo();
 
-            expect(analytics.pushAnalytics.mostRecentCall.args).toEqual(['Video', 'play pause', 'pause']);
+            expect(segmentio.track.mostRecentCall.args).toEqual(['Video pause']);
             expect(video.togglePlayPause.callCount).toEqual(2);
         }));
 
@@ -149,7 +159,7 @@ describe('Controllers', function () {
         });
 
         describe('submitVideo method', function () {
-            it('should store the video URL typed', inject(function (analytics, doc) {
+            it('should store the video URL typed', inject(function (segmentio, doc) {
                 scope.loadPlayer = jasmine.createSpy();
                 scope.tour = {
                     ended: jasmine.createSpy('tour.ended').andReturn(true)
@@ -159,7 +169,7 @@ describe('Controllers', function () {
                 scope.submitVideo();
                 expect(scope.videoStatus.error).toEqual(false);
                 expect(doc.info.video).toEqual(scope.videoUrl);
-                expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', scope.videoUrl);
+                expect(segmentio.track).toHaveBeenCalledWith('Video', {url:scope.videoUrl});
                 expect(scope.loadPlayer).toHaveBeenCalled();
             }));
 
@@ -215,16 +225,16 @@ describe('Controllers', function () {
             expect(scope.currentSpeed).toEqual(1);
         });
 
-        it('should be able to increase playback rate', inject(function (analytics) {
+        it('should be able to increase playback rate', inject(function (segmentio) {
             expect(scope.currentSpeed).toEqual(1);
             scope.increasePlaybackRate();
             expect(scope.currentSpeed).toEqual(1.5);
             expect(scope.maxSpeed).toBeFalsy();
             expect(scope.minSpeed).toBeFalsy();
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', 'increase speed', scope.currentSpeed);
+            expect(segmentio.track).toHaveBeenCalledWith('Video increase speed', {speed:scope.currentSpeed});
         }));
 
-        it('should have a max speed', inject(function (analytics) {
+        it('should have a max speed', inject(function (segmentio) {
             expect(scope.currentSpeed).toEqual(1);
             scope.increasePlaybackRate();
             expect(scope.currentSpeed).toEqual(1.5);
@@ -234,16 +244,16 @@ describe('Controllers', function () {
             expect(scope.minSpeed).toBeFalsy();
         }));
 
-        it('should be able to decrease playback rate', inject(function (analytics) {
+        it('should be able to decrease playback rate', inject(function (segmentio) {
             expect(scope.currentSpeed).toEqual(1);
             scope.decreasePlaybackRate();
             expect(scope.currentSpeed).toEqual(0.5);
             expect(scope.maxSpeed).toBeFalsy();
             expect(scope.minSpeed).toBeFalsy();
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Video', 'decrease speed', scope.currentSpeed);
+            expect(segmentio.track).toHaveBeenCalledWith('Video decrease speed', {speed:scope.currentSpeed});
         }));
 
-        it('should have a min speed', inject(function (analytics) {
+        it('should have a min speed', inject(function (segmentio) {
             expect(scope.currentSpeed).toEqual(1);
             scope.decreasePlaybackRate();
             expect(scope.currentSpeed).toEqual(0.5);
@@ -328,10 +338,10 @@ describe('Controllers', function () {
         });
 
 
-        it('should call analytics on share', inject(function (analytics) {
+        it('should call segmentio on share', inject(function (segmentio) {
             scope.share();
 
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Document', 'Share');
+            expect(segmentio.track).toHaveBeenCalledWith('Document share');
         }));
 
         it('should call gapi on share', inject(function (config, doc) {

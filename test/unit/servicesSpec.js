@@ -7,7 +7,7 @@ describe('service', function() {
         angular.module('appMock', [])
             .constant('saveInterval', 5000)
             .constant('appName', "VideoNotes test");
-        angular.mock.module('app.services', 'analytics', 'appMock');
+        angular.mock.module('app.services', 'segmentio', 'appMock');
     });
 
     beforeEach(angular.mock.inject(function($window, backend) {
@@ -221,7 +221,7 @@ describe('service', function() {
                 parseSRT:jasmine.createSpy('parseSRT')
             };
             spyOn(Popcorn, 'smart').andReturn(mockPopcorn);
-        })
+        });
         it("should be able to detect Coursera's lecture URL", inject(function (video) {
             var courseName = 'adhd-001', lectureId = 5;
             var url = 'https://class.coursera.org/{0}/lecture/{1}'.format(courseName, lectureId);

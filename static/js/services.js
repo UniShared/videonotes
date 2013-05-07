@@ -82,7 +82,7 @@ module.factory('doc',
         return service;
     }]);
 
-module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function ($rootScope, $log, $timeout, analytics) {
+module.factory('video', ['$rootScope', '$log', '$timeout', 'segmentio', function ($rootScope, $log, $timeout, segmentio) {
     return {
         videoElement: null,
         player: null,
@@ -188,7 +188,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
                 $rootScope.safeApply(function () {
                     $rootScope.$broadcast('video::error');
 
-                    analytics.pushAnalytics('Video', 'load', message);
+                    segmentio.track('Video load', {message:message});
                     $log.info("Error while loading the video", message);
 
                     $rootScope.$broadcast('error', {
@@ -233,6 +233,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'analytics', function
         },
         currentTime: function () {
             if (arguments.length) {
+                segmentio.track('Jump', {time: arguments[0]});
                 this.player.currentTime(arguments[0]);
             }
             else {
@@ -718,7 +719,7 @@ module.factory('course', ['backend', function (backend) {
     }
 }]);
 
-module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) {
+module.factory('user', ['$rootScope', 'backend', 'segmentio', function ($rootScope, backend, segmentio) {
     var _this = this;
     this.authenticated = false;
     this.info = null;
@@ -735,6 +736,7 @@ module.factory('user', ['$rootScope', 'backend', function ($rootScope, backend) 
             promise.then(function (response) {
                 _this.authenticated = true;
                 _this.info = response.data;
+                segmentio.identify(_this.info.email);
                 $rootScope.$broadcast('authentified', _this);
             });
 

@@ -4,7 +4,7 @@
 
 describe('directives', function () {
     var elm, scope;
-    beforeEach(angular.mock.module('app.directives', 'app.services', 'analytics'));
+    beforeEach(angular.mock.module('app.directives', 'app.services', 'segmentio'));
 
     beforeEach(angular.mock.inject(function(backend) {
         spyOn(backend, "init");
@@ -76,7 +76,7 @@ describe('directives', function () {
     });
 
     describe('alert', function () {
-        beforeEach(angular.mock.inject(function ($rootScope, $compile, analytics) {
+        beforeEach(angular.mock.inject(function ($rootScope, $compile, segmentio) {
             elm = angular.element('<alert></alert>');
 
             scope = $rootScope;
@@ -85,14 +85,14 @@ describe('directives', function () {
 
             scope.$digest();
 
-            analytics.pushAnalytics = jasmine.createSpy();
+            segmentio.track = jasmine.createSpy();
         }));
 
-        it('should react to error event', angular.mock.inject(function (analytics) {
+        it('should react to error event', angular.mock.inject(function (segmentio) {
             var data = {message: 'test'};
             scope.$broadcast('error', data);
 
-            expect(analytics.pushAnalytics).toHaveBeenCalledWith('Error', data.message);
+            expect(segmentio.track).toHaveBeenCalledWith('Error', {message:data.message});
             expect(scope.message).toEqual(data.message);
             expect(elm).toHaveAttr('style','display: block;');
         }));

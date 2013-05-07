@@ -2,8 +2,8 @@
 
 var controllersModule = angular.module('app.controllers', []);
 
-controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'analytics', 'config',
-    function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, analytics, config) {
+controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'segmentio', 'config',
+    function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, segmentio, config) {
     $scope.appName = appName;
 
     Modernizr.Detectizr.detect({detectOs: true, detectBrowser: true});
@@ -40,7 +40,6 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
                 1);
         }
 
-        config.load();
         initTour();
     };
 
@@ -56,13 +55,13 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
             useLocalStorage: false,
             debug: false,
             onStart: function () {
-                analytics.pushAnalytics('Tour', 'started');
+                segmentio.track('Tour started');
             },
             onShow: function (tour) {
-                analytics.pushAnalytics('Tour', 'show step {0}'.format(tour._current));
+                segmentio.track('Tour show step', {id:tour._current});
             },
             onEnd: function () {
-                analytics.pushAnalytics('Tour', 'ended');
+                segmentio.track('Tour ended');
             }
         });
 
@@ -144,10 +143,9 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     $scope.$on('$routeChangeSuccess', $scope.init);
     $scope.$onMany(['firstSaved', 'copied', 'opened'], redirectToDocument);
     $scope.$on('firstSaved', function () {
-        analytics.pushAnalytics('Document', 'created');
+        segmentio.track('Document created');
     });
     $scope.$onMany(['firstSaved', 'loaded'], $scope.startTour);
-    $scope.$on('configLoaded', $scope.setConfig)
 }]);
 
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
@@ -164,8 +162,9 @@ controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', functio
     });
 }]);
 
-controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', '$location', 'user', function($scope, $rootScope, $location, user) {
+controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', '$location', 'user', 'segmentio', function($scope, $rootScope, $location, user, segmentio) {
     $scope.auth = function () {
+        segmentio.track('Sign in');
         if (!user.isAuthenticated()) {
             $rootScope.$broadcast('loading');
             user.login().then(function () {
@@ -213,7 +212,7 @@ controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, use
     }
 }]);
 
-controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'analytics', function ($scope, sampleVideo, doc, video, analytics) {
+controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'segmentio', function ($scope, sampleVideo, doc, video, segmentio) {
     $scope.doc = doc;
     $scope.videoUrl = null;
     $scope.edit = true;
@@ -232,12 +231,13 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
 
         if(doc.info.video !== $scope.videoUrl) {
             doc.info.video = $scope.videoUrl;
-            analytics.pushAnalytics('Video', $scope.videoUrl);
+            segmentio.track('Load video', {url: $scope.videoUrl});
             $scope.loadPlayer();
         }
     };
 
     $scope.startEdit = function () {
+        segmentio.track('Change video');
         $scope.edit = true;
     };
 
@@ -271,7 +271,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.playPauseVideo = function () {
         if (doc.info && doc.info.video) {
             video.togglePlayPause();
-            analytics.pushAnalytics('Video', 'play pause', video.isPlaying() ? 'play' : 'pause');
+            segmentio.track('Video {0}'.format(video.isPlaying() ? 'play' : 'pause'));
         }
     };
 
@@ -280,7 +280,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     };
 
     $scope.loadSampleVideo = function () {
-        analytics.pushAnalytics('Video', 'load sample');
+        segmentio.track('Video load sample');
         doc.info.video = sampleVideo;
         $scope.loadPlayer();
     };
@@ -296,7 +296,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.$on('video::error', $scope.errorLoadVideo);
 }]);
 
-controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', function ($scope, video, analytics) {
+controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'segmentio', function ($scope, video, segmentio) {
     var speeds = new LinkedList();
     speeds.add(0.25);
     speeds.add(0.5);
@@ -323,7 +323,7 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', funct
 
             $scope.minSpeed = false;
             $scope.maxSpeed = (nextSpeed.getValue() === speeds.getTail().getValue());
-            analytics.pushAnalytics('Video', 'increase speed', $scope.currentSpeed);
+            segmentio.track('Video increase speed', {speed:$scope.currentSpeed});
         }
     };
 
@@ -335,7 +335,7 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', funct
 
             $scope.minSpeed = (prevSpeed.getValue() === speeds.getHead().getValue());
             $scope.maxSpeed = false;
-            analytics.pushAnalytics('Video', 'decrease speed', $scope.currentSpeed);
+            segmentio.track('Video decrease speed', {speed:$scope.currentSpeed});
         }
     };
 
@@ -367,7 +367,7 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'analytics', funct
 }]);
 
 
-controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'analytics', function ($scope, editor, doc, autosaver, analytics) {
+controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'segmentio', function ($scope, editor, doc, autosaver, segmentio) {
     $scope.editor = editor;
     $scope.doc = doc;
 
@@ -390,7 +390,7 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init();
 }]);
 
-controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'analytics', function($scope, config, doc, analytics) {
+controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'segmentio', function($scope, config, doc, segmentio) {
     $scope.enabled = function () {
         return doc && doc.info && doc.info.id != null;
     };
@@ -398,11 +398,11 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'analytics',
         var client = new gapi.drive.share.ShareClient(config.appId);
         client.setItemIds([doc.info.id]);
         client.showSettingsDialog();
-        analytics.pushAnalytics('Document', 'Share');
+        segmentio.track('Document share');
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'analytics', function ($scope, $rootScope, $window, config, editor, doc, analytics) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'segmentio', function ($scope, $rootScope, $window, config, editor, doc, segmentio) {
     var onFilePicked = function (data) {
         $scope.safeApply(function () {
             if (data.action == 'picked') {
@@ -420,21 +420,21 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
             .setCallback(angular.bind(this, onFilePicked))
             .build();
         picker.setVisible(true);
-        analytics.pushAnalytics('Document', 'Open');
+        segmentio.track('Document open');
     };
     $scope.create = function () {
         editor.create();
-        analytics.pushAnalytics('Document', 'Create new');
+        segmentio.track('Document create new');
     };
     $scope.save = function () {
         editor.save(true);
-        analytics.pushAnalytics('Document', 'Save');
+        segmentio.track('Document save');
     };
 
     $scope.$watch('sync.enabled', function () {
         if (doc && doc.info) {
             doc.info.syncNotesVideo.enabled = $scope.sync.enabled;
-            analytics.pushAnalytics('Editor', 'sync', $scope.sync.enabled ? "enable" : "disable");
+            segmentio.track('Editor sync {0}'.format($scope.sync.enabled ? "enable" : "disable"));
         }
     }, true);
 
@@ -466,7 +466,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
     $scope.$on('shortcut', $scope.shortcuts);
 }]);
 
-controllersModule.controller('RenameCtrl', ['$scope', '$timeout', 'doc', 'analytics', function ($scope, $timeout, doc, analytics) {
+controllersModule.controller('RenameCtrl', ['$scope', '$timeout', 'doc', 'segmentio', function ($scope, $timeout, doc, segmentio) {
     $('#rename-dialog').on('show',
         function () {
             $scope.safeApply(function () {
@@ -475,7 +475,7 @@ controllersModule.controller('RenameCtrl', ['$scope', '$timeout', 'doc', 'analyt
                     $scope.tour.hideStep(2);
                     $scope.tour.showStep(3);
                 }
-                analytics.pushAnalytics('Document', 'Rename');
+                segmentio.track('Document rename');
             });
         });
     $scope.save = function () {
