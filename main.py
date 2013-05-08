@@ -54,6 +54,9 @@ logger = logging.getLogger("error")
 logger.setLevel(logging.ERROR)
 logger.addHandler(BufferingSMTPHandler(5))
 
+# Configure URLFetch deadline
+urlfetch.set_default_fetch_deadline(45)
+
 def SibPath(name):
     """Generate a path that is a sibling of this file.
 
