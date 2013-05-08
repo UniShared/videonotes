@@ -109,7 +109,7 @@ describe('service', function() {
 
         describe('save method', function () {
             var mockSnapshot = {},
-                resolveResponse = {data:{id:'test'}};
+                resolveResponse = {id:'test'};
 
             beforeEach(inject(function ($rootScope, $q, backend, editor) {
                 spyOn($rootScope, '$broadcast').andCallThrough();
