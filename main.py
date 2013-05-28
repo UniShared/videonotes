@@ -56,6 +56,7 @@ logger.addHandler(BufferingSMTPHandler(5))
 
 # Configure URLFetch deadline
 urlfetch.set_default_fetch_deadline(45)
+httplib2.Http(timeout=45)
 
 def SibPath(name):
     """Generate a path that is a sibling of this file.
