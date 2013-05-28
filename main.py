@@ -250,7 +250,7 @@ class BaseDriveHandler(BaseHandler):
         Returns:
           OAuth2.0 Flow instance suitable for performing OAuth2.0.
         """
-        client_secrets = 'client_secrets_{0}.json'.format('staging')
+        client_secrets = 'client_secrets_{0}.json'.format(os.environ.get('CURRENT_VERSION_ID').split('.')[0])
         logging.debug('Create OAuth flow with %s', client_secrets)
         flow = flow_from_clientsecrets(client_secrets, scope='')
         # Dynamically set the redirect_uri based on the request URL. This is extremely
@@ -811,7 +811,7 @@ class ConfigHandler(BaseHandler):
         logging.debug('Get configuration, production %s', production)
         segment_io_account = [os.environ.get('SEGMENTIO_STAGING'), os.environ.get('SEGMENTIO_PRODUCTION')][production]
         logging.debug('Segment IO account %s', segment_io_account)
-        app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format('staging'), scope='').client_id.split('.')[0].split('-')[0]
+        app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format(os.environ.get('CURRENT_VERSION_ID').split('.')[0]), scope='').client_id.split('.')[0].split('-')[0]
         logging.debug('App id %s', app_id)
         config = {'segmentio': segment_io_account, 'appId': app_id}
 
