@@ -82,23 +82,6 @@
 <div id="container" ng-view></div>
 
 <script>
-    <!-- UserVoice JavaScript SDK (only needed once on a page) -->
-    (function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/YfqwlCzSlsX9nNNFc6lpCA.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()
-
-    <!-- A tab to launch the Classic Widget -->
-        UserVoice = window.UserVoice || [];
-        UserVoice.push(['showTab', 'classic_widget', {
-            mode: 'full',
-            primary_color: '#cc6d00',
-            link_color: '#007dbf',
-            default_mode: 'support',
-            forum_id: 202540,
-            tab_label: 'Feedback & Support',
-            tab_color: '#ffbf00',
-            tab_position: 'bottom-right',
-            tab_inverted: false
-        }]);
-
     // Twitter button
     !function (d, s, id) {
         var js, fjs = d.getElementsByTagName(s)[0];
@@ -145,7 +128,7 @@
 <script src="/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.js"></script>
 <script src="/lib/modernizr-custom/modernizr.min.js"></script>
 <script src="/lib/detectizr/detectizr.js"></script>
-<script src="/lib/angular-gaq/angular-gaq.js"></script>
+<script src="/lib/angular-segmentio/angular-segmentio.js"></script>
 <script src="/lib/ace/ace.min.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-tour/bootstrap-tour.js" charset="utf-8"></script>
 <script src="/lib/bootstrap-tour/deps/jquery.cookie.js" charset="utf-8"></script>

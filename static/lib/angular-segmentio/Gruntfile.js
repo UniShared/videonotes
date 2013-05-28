@@ -4,14 +4,14 @@ module.exports = function (grunt) {
         pkg: '<json:package.json>',
         watch: {
             karma: {
-                files: ['angular-gaq.js', 'test/unit/*.js'],
+                files: ['angular-segmentio.js', 'test/unit/*.js'],
                 tasks: ['karma:unitBackground:run'] //NOTE the :run flag
             }
         },
         karma: {
             options: {
                 configFile: 'config/karma.conf.js',
-                browsers: ['Chrome', 'Firefox']
+                browsers: ['Chrome']
             },
 
             unit: {
@@ -25,8 +25,8 @@ module.exports = function (grunt) {
         uglify: {
             build: {
                 files: {
-                    'build/angular-gaq.min.js': [
-                        'angular-gaq.js'
+                    'build/angular-segmentio.min.js': [
+                        'angular-segmentio.js'
                     ]
                 }
             }

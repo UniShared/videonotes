@@ -29,7 +29,7 @@ if (!String.prototype.format) {
 google.load('picker', '1');
 gapi.load('drive-share');
 
-angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.directives', 'ui.keypress', 'ui.bootstrap', 'analytics'])
+angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.directives', 'ui.directives', 'ui.keypress', 'ui.bootstrap', 'segmentio'])
     .constant('appName', 'VideoNot.es')
     .constant('saveInterval', 15000)
     .constant('sampleVideo', 'http://www.youtube.com/watch?v=U6FvJ6jMGHU') // Please replace this with your Application ID.
@@ -42,6 +42,12 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
     }])
     .config(['$tooltipProvider', function ($tooltipProvider) {
         $tooltipProvider.options( { appendToBody: true } );
+    }])
+    .run(['$rootScope', 'config', 'segmentio', function ($rootScope, config, segmentio) {
+        $rootScope.$on('configLoaded', function (event, configData) {
+            segmentio.load(configData.segmentio)
+        });
+        config.load();
     }])
     .run(['$rootScope', function ($rootScope) {
         // Many events binding
@@ -60,15 +66,5 @@ angular.module('app', ['app.controllers', 'app.filters', 'app.services', 'app.di
             } else {
                 this.$apply(fn);
             }
-        };
-    }])
-    // Error handler
-    .run(['$window', 'analytics', function ($window, analytics) {
-        $window.onerror = function(message, url, line) {
-            analytics.pushAnalytics(
-                "JS Exception Error",
-                message,
-                url + " (" + line + ")"
-            );
         };
     }]);

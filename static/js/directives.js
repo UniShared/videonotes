@@ -57,14 +57,14 @@ module.directive('star',
     });
 
 module.directive('alert',
-    ['$rootScope', 'analytics', function ($rootScope, analytics) {
+    ['$rootScope', 'segmentio', function ($rootScope, segmentio) {
         return {
             restrict: 'E',
             replace: true,
             link: function (scope, element) {
                 $rootScope.$on('error',
                     function (event, data) {
-                        analytics.pushAnalytics('Error', data.message);
+                        segmentio.track('Error', {message:data.message});
                         scope.message = data.message;
                         $(element).show();
                     });

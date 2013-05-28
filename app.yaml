@@ -1,7 +1,8 @@
 application: unishared-gae
 #version: production
 #version: staging
-version: local
+#version: local
+version: staging-segmentio
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -59,5 +60,5 @@ libraries:
   version: latest
 
 env_variables:
-  GOOGLE_ANALYTICS_ACCOUNT_PRODUCTION: 'UA-40259566-1'
-  GOOGLE_ANALYTICS_ACCOUNT_STAGING: 'UA-40259566-2'
+  SEGMENTIO_PRODUCTION: '7i4twht1o5'
+  SEGMENTIO_STAGING: 'p1iuc2hebz'
