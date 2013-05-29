@@ -260,8 +260,6 @@ module.factory('editor',
             EditSession = require("ace/edit_session").EditSession,
             service = $rootScope.$new(true);
 
-        backend.init();
-
         service.doc = doc;
         service.loading = false;
         service.loading = false;
@@ -383,7 +381,7 @@ module.factory('editor',
                     service.savingErrors = 0;
 
                     if (!doc.info.id) {
-                        doc.info.id = result.id;
+                        doc.info.id = result.data.id;
                         $rootScope.$broadcast('firstSaved', doc.info.id);
                     }
 
@@ -401,6 +399,13 @@ module.factory('editor',
                         $rootScope.$broadcast('error', {
                             action: 'save',
                             message: "Too many errors occurred while saving the file. Please contact us"
+                        });
+                    }
+                    else if(result.status === 403) {
+                        doc.info.editable = false;
+                        $rootScope.$broadcast('error', {
+                            action: 'save',
+                            message: "You are not authorized to save or update this file. Please contact us"
                         });
                     }
                     else {
@@ -621,23 +626,6 @@ module.factory('backend',
             socket;
 
         var service = {
-            init: function () {
-                var promise = service.channelToken();
-                promise.success(function (response) {
-                    clientId = response.clientId;
-                    channel = new goog.appengine.Channel(response.channelToken);
-                    socket = channel.open();
-                    socket.onclose = function () {
-                        this.init();
-                    };
-                });
-            },
-            channelToken: function () {
-                return $http({
-                    url: '/get-channel-token',
-                    method: 'GET'
-                });
-            },
             courses: function () {
                 return $http.get('/courses');
             },
@@ -662,40 +650,17 @@ module.factory('backend',
             save: function (fileInfo, newRevision) {
                 $log.info('Saving', fileInfo);
 
-                var defer = $q.defer();
-
-                socket.onmessage = function (e) {
-                    var data = JSON.parse(e.data);
-
-                    if(data.id)
-                        defer.resolve(data);
-                    else
-                        defer.reject(data);
-                    $rootScope.$apply();
-                };
-
-                socket.onerror = function (e) {
-                    defer.reject(e);
-                    $rootScope.$apply();
-                };
-
-                $http({
+                return $http({
                     url: '/svc',
                     method: doc.info.id ? 'PUT' : 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     params: {
-                        'clientId': clientId,
                         'newRevision': newRevision
                     },
                     data: JSON.stringify(fileInfo)
-                })
-                .error(function (response) {
-                    defer.reject(response);
                 });
-
-                return defer.promise;
             }
         };
 

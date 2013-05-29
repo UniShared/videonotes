@@ -12,8 +12,6 @@ describe('service', function() {
 
     beforeEach(angular.mock.inject(function($window, backend) {
         $window.addEventListener = jasmine.createSpy();
-
-        spyOn(backend, "init");
     }));
 
     describe('editor', function () {
@@ -35,10 +33,6 @@ describe('service', function() {
                 mimeType: 'application/vnd.unishared.document',
                 parent: null
             };
-        }));
-
-        it("should init the backend", inject(function (editor, backend) {
-            expect(backend.init).toHaveBeenCalled();
         }));
 
         describe('events', function () {
@@ -109,7 +103,13 @@ describe('service', function() {
 
         describe('save method', function () {
             var mockSnapshot = {},
-                resolveResponse = {id:'test'};
+                resolveResponse = {
+                    status: 200,
+                    data:
+                    {
+                        id: 'test'
+                    }
+                };
 
             beforeEach(inject(function ($rootScope, $q, backend, editor) {
                 spyOn($rootScope, '$broadcast').andCallThrough();
@@ -166,7 +166,7 @@ describe('service', function() {
                 expect(editor.savingErrors).toEqual(0);
 
                 editor.save();
-                deffered.reject();
+                deffered.reject({status:500});
                 $rootScope.$digest();
 
                 expect(doc.dirty).toEqual(true);
@@ -177,12 +177,12 @@ describe('service', function() {
                 expect(editor.savingErrors).toEqual(0);
 
                 editor.save();
-                deffered.reject();
+                deffered.reject({status:500});
                 $rootScope.$digest();
                 expect(editor.savingErrors).toEqual(1);
 
                 editor.save();
-                deffered.resolve({data:{id:'test'}});
+                deffered.resolve(resolveResponse);
                 $rootScope.$digest();
                 expect(editor.savingErrors).toEqual(0);
             }));
@@ -193,7 +193,7 @@ describe('service', function() {
                 var i;
                 for(i=0;i<5;i++) {
                     editor.save();
-                    deffered.reject();
+                    deffered.reject({status:500});
                     $rootScope.$digest();
                     expect($rootScope.$broadcast).toHaveBeenCalledWith('error', {
                         action: 'save',
@@ -306,7 +306,7 @@ describe('service', function() {
         }));
 
         it('should call the config endpoint on load call', inject(function ($httpBackend, config) {
-            var response = {googleAnalyticsAccount:'test', appId: '1234'};
+            var response = {segmentio:'test', appId: '1234'};
             $httpBackend.expectGET('/config').respond(200, response);
 
             config.load();

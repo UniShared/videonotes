@@ -169,7 +169,7 @@ describe('Controllers', function () {
                 scope.submitVideo();
                 expect(scope.videoStatus.error).toEqual(false);
                 expect(doc.info.video).toEqual(scope.videoUrl);
-                expect(segmentio.track).toHaveBeenCalledWith('Video', {url:scope.videoUrl});
+                expect(segmentio.track).toHaveBeenCalledWith('Load video', {url:scope.videoUrl});
                 expect(scope.loadPlayer).toHaveBeenCalled();
             }));
 

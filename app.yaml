@@ -1,7 +1,7 @@
 application: unishared-gae
-version: production
+#version: production
 #version: staging
-#version: local
+version: local
 runtime: python27
 threadsafe: true
 api_version: 1
@@ -39,14 +39,6 @@ handlers:
 
 - url: /lib
   static_dir: static/lib
-
-- url: /svc-worker-post
-  script: main.app
-  login: admin
-
-- url: /svc-worker-put
-  script: main.app
-  login: admin
 
 - url: /.*
   script: main.app

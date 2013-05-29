@@ -13,13 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import uuid
-from google.appengine.api import urlfetch
-from google.appengine.api import taskqueue
-from google.appengine.api import channel
-
-from BufferedSmtpHandler import BufferingSMTPHandler
-
 __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
 
@@ -30,6 +23,11 @@ sys.path.insert(0, 'lib')
 
 import os
 import httplib2
+import random
+from google.appengine.api import urlfetch
+import time
+from BufferedSmtpHandler import BufferingSMTPHandler
+from httplib import HTTPException
 from webapp2_extras import sessions
 from apiclient.discovery import build
 from apiclient.errors import HttpError
@@ -139,7 +137,11 @@ class BaseHandler(webapp2.RequestHandler):
         if isinstance(exception, webapp2.HTTPException):
             # Set a custom message.
             logging.getLogger("error").error('An error occurred %s', exception.code)
-            self.response.write('An error occurred')
+            try:
+                json.loads(exception.args)
+                self.RespondJSON(exception.args)
+            except ValueError:
+                self.response.write('An error occurred')
             self.response.set_status(exception.code)
         elif isinstance(exception, HttpError):
             try:
@@ -229,12 +231,14 @@ class BaseDriveHandler(BaseHandler):
     Adds Authorization support for Drive.
     """
     def handle_exception(self, exception, debug):
-        # If the exception is a HTTPException, use its error code.
-        # Otherwise use a generic 500 error code.
+        # If the exception is a HTTPException with 401/403 status code use its error code.
+        # Otherwise let the generic handler manage it.
         if isinstance(exception, webapp2.HTTPException):
             if exception.code == 401:
                 self.response.set_status(exception.code)
                 self.RespondJSON({'redirectUri': self.RedirectAuth()})
+            elif exception.code == 403:
+                self.response.set_status(exception.code)
             else:
                 super(BaseDriveHandler, self).handle_exception(exception, debug)
         else:
@@ -370,7 +374,7 @@ class BaseDriveHandler(BaseHandler):
 
         # Create the redirect URI by performing step 1 of the OAuth 2.0 web server
         # flow.
-        uri = str(flow.step1_get_authorize_url(flow.redirect_uri))
+        uri = str(flow.step1_get_authorize_url())
 
         # Perform the redirect.
         return str(uri)
@@ -483,12 +487,6 @@ class EditPage(BaseDriveHandler):
 
         return self.RenderTemplate(EditPage.TEMPLATE)
 
-class GetChannelToken(BaseHandler):
-    def get(self):
-        client_id = str(uuid.uuid4())
-        channel_token = channel.create_channel(client_id)
-        self.RespondJSON({'clientId': client_id, 'channelToken': channel_token})
-
 class ServiceHandler(BaseDriveHandler):
     """Web handler for the service to read and write to Drive."""
 
@@ -557,42 +555,13 @@ class ServiceHandler(BaseDriveHandler):
             return self.abort(401)
 
     def post(self):
-        if self.GetSessionCredentials():
-            data = self.RequestJSON()
-            logging.debug("Creating a new file")
-            taskqueue.add(url='/svc-worker-post', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
-        else:
-            self.abort(401)
-
-    def put(self):
-        if self.GetSessionCredentials():
-            data = self.RequestJSON()
-            logging.debug("Updating file %s", data['id'])
-            taskqueue.add(url='/svc-worker-put', params={'userId': self.session['userid'], 'clientId': self.request.get('clientId'), 'newRevision': self.request.get('newRevision'), 'data': json.dumps(data)}, method='POST', target=BaseHandler.get_version())
-        else:
-            self.abort(401)
-
-
-class ServiceWorkerPost(BaseDriveHandler):
-    def post(self):
-        """Called when HTTP POST requests are received by the web application.
+        """
+        Called when HTTP POST requests are received by the web application.
 
         The POST body is JSON which is deserialized and used as values to create a
         new file in Drive. The authorization access token for this action is
-        retreived from the data store.
+        retrieved from the data store.
         """
-        user_id = self.request.get('userId')
-        client_id = self.request.get('clientId')
-
-        if not user_id:
-            logging.getLogger("error").error("No client id in request")
-            return
-        else:
-            self.session['userid'] = user_id
-
-        if not client_id:
-            logging.getLogger("error").error("No client id in request")
-            return
 
         # Create a Drive service
         service = self.CreateDrive()
@@ -601,137 +570,159 @@ class ServiceWorkerPost(BaseDriveHandler):
 
         # Load the data that has been posted as JSON
         logging.debug('Get JSON data')
-        data = json.loads(self.request.get('data'))
+        data = self.RequestJSON()
         logging.debug('JSON data retrieved %s', json.dumps(data))
 
-        try:
-            if 'templateId' in data:
-                body = {'title': 'Your notes'}
-                resource = service.files().copy(fileId=data['templateId'], body=body).execute()
-            else:
-                # Create a new file data structure.
-                resource = {
-                    'title': data['title'],
-                    'description': data['description'],
-                    'mimeType': data['mimeType'],
-                    }
+        max_try = 5
+        for n in range(0, max_try):
+            try:
+                if 'templateId' in data:
+                    body = {'title': 'Your notes'}
+                    resource = service.files().copy(fileId=data['templateId'], body=body).execute()
+                else:
+                    # Create a new file data structure.
+                    resource = {
+                        'title': data['title'],
+                        'description': data['description'],
+                        'mimeType': data['mimeType'],
+                        }
 
-                if 'parent' in data and data['parent']:
-                    logging.debug('Creating from a parent folder %s', data['parent'])
-                    resource['parents'] = [{'id': data['parent']}]
+                    if 'parent' in data and data['parent']:
+                        logging.debug('Creating from a parent folder %s', data['parent'])
+                        resource['parents'] = [{'id': data['parent']}]
 
-                # Make an insert request to create a new file. A MediaInMemoryUpload
-                # instance is used to upload the file body.
+                    # Make an insert request to create a new file. A MediaInMemoryUpload
+                    # instance is used to upload the file body.
 
-                content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                                      'syncNotesVideo': data.get('syncNotesVideo', '')})
-                logging.debug('Calling Drive API with content %s', str(content))
-                resource = service.files().insert(
-                    body=resource,
-                    media_body=MediaInMemoryUpload(
-                        content,
-                        data['mimeType'],
-                        resumable=True)
-                ).execute()
+                    content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
+                                          'syncNotesVideo': data.get('syncNotesVideo', '')})
+                    logging.debug('Calling Drive API with content %s', str(content))
+                    resource = service.files().insert(
+                        body=resource,
+                        media_body=MediaInMemoryUpload(
+                            content,
+                            data['mimeType'],
+                            resumable=True)
+                    ).execute()
 
-                if BaseHandler.is_production():
-                    clement_permission = {
-                        'value': 'clement@videonot.es',
-                        'type': 'user',
-                        'role': 'reader'
-                    }
+                    if BaseHandler.is_production():
+                        clement_permission = {
+                            'value': 'clement@videonot.es',
+                            'type': 'user',
+                            'role': 'reader'
+                        }
 
-                    anyone_permission = {
-                        'type': 'anyone',
-                        'role': 'reader',
-                        'withLink': True
-                    }
+                        anyone_permission = {
+                            'type': 'anyone',
+                            'role': 'reader',
+                            'withLink': True
+                        }
 
-                    try:
-                        logging.info('Add Clement as a reader')
-                        service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
-                    except HttpError:
-                        logging.info('Error when adding Clement as a reader')
+                        try:
+                            logging.info('Add Clement as a reader')
+                            service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
+                        except HttpError:
+                            logging.info('Error when adding Clement as a reader')
 
-                    try:
-                        logging.info('Add anyone as a reader')
-                        service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
-                    except HttpError:
-                        logging.info('Error when adding anyone as a reader')
-                        # Respond with the new file id as JSON.
-            logging.debug('Return ID %s', resource['id'])
-            channel.send_message(client_id, json.dumps({'id': resource['id']}))
-        except AccessTokenRefreshError:
-            # In cases where the access token has expired and cannot be refreshed
-            # (e.g. manual token revoking) redirect the user to the authorization page
-            # to authorize.
-            return self.abort(401)
-        except (HttpError, ValueError, taskqueue.Error), e:
-            logging.getLogger("error").exception("Exception occurred when updating file")
-            channel.send_message(client_id, json.dumps({'errorDescription': str(e)}))
+                        try:
+                            logging.info('Add anyone as a reader')
+                            service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
+                        except HttpError:
+                            logging.info('Error when adding anyone as a reader')
+                            # Respond with the new file id as JSON.
+                logging.debug('Return ID %s', resource['id'])
+                return self.RespondJSON({'id': resource['id']})
+            except AccessTokenRefreshError:
+                # In cases where the access token has expired and cannot be refreshed
+                # (e.g. manual token revoking) redirect the user to the authorization page
+                # to authorize.
+                logging.info('AccessTokenRefreshError')
+                return self.abort(401)
+            except HttpError, http_error:
+                logging.getLogger("error").exception("Try #%d: Exception occurred when updating file", n)
+                # HTTP status code 403 indicates that the app is not authorized to save the file (third-party app disabled, user without access, etc.)
+                # Don't need to try several times
+                if http_error.resp.status == 403:
+                    return self.abort(403)
+                else:
+                    time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
+            except HTTPException:
+                logging.getLogger("error").exception("Try #%d: Exception occurred when updating file", n)
+                time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
 
-class ServiceWorkerPut(BaseDriveHandler):
-    def post(self):
-        """Called when HTTP PUT requests are received by the web application.
+        logging.getLogger("error").exception("Exception occurred when updating file after %d tries", max_try)
+        return self.abort(500)
+
+    def put(self):
+        """
+        Called when HTTP PUT requests are received by the web application.
 
         The PUT body is JSON which is deserialized and used as values to update
         a file in Drive. The authorization access token for this action is
         retreived from the data store.
         """
-        user_id = self.request.get('userId')
-        client_id = self.request.get('clientId')
-
-        if not user_id:
-            logging.getLogger("error").error("No client id in request")
-            return
-        else:
-            self.session['userid'] = user_id
-
-        if not client_id:
-            logging.getLogger("error").error("No client id in request")
-            return
 
         # Create a Drive service
         service = self.CreateDrive()
         if service is None:
             return
-            # Load the data that has been posted as JSON
 
-        try:
-            data = json.loads(self.request.get('data'))
-            logging.info('Updating file %s', data['id'])
-            # Create a new file data structure.
-            content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                                  'syncNotesVideo': data.get('syncNotesVideo', '')})
-            if 'content' in data:
-                data.pop('content')
-            if content is not None:
-                # Make an update request to update the file. A MediaInMemoryUpload
-                # instance is used to upload the file body. Because of a limitation, this
-                # request must be made in two parts, the first to update the metadata, and
-                # the second to update the body.
-                resource = service.files().update(
-                    fileId=data['id'],
-                    newRevision=self.request.get('newRevision', False),
-                    body=data,
-                    media_body=MediaInMemoryUpload(
-                        content, data['mimeType'], resumable=True)
-                ).execute()
-            else:
-                # Only update the metadata, a patch request is prefered but not yet
-                # supported on Google App Engine; see
-                # http://code.google.com/p/googleappengine/issues/detail?id=6316.
-                resource = service.files().update(
-                    fileId=data['id'],
-                    newRevision=self.request.get('newRevision', False),
-                    body=data).execute()
-                # Respond with the new file id as JSON.
-            channel.send_message(client_id, json.dumps({'id': resource['id']}))
-        except (HttpError, ValueError, taskqueue.Error), e:
-            logging.getLogger("error").exception("Exception occurred when updating file")
-            channel.send_message(client_id, json.dumps({'errorDescription': str(e)}))
+        for n in range(0,5):
+            try:
+                # Load the data that has been posted as JSON
+                logging.debug('Get JSON data')
+                data = self.RequestJSON()
+                logging.debug('JSON data retrieved %s', json.dumps(data))
 
+                logging.info('Updating file %s', data['id'])
 
+                # Create a new file data structure.
+                content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
+                                      'syncNotesVideo': data.get('syncNotesVideo', '')})
+                if 'content' in data:
+                    data.pop('content')
+                if content is not None:
+                    # Make an update request to update the file. A MediaInMemoryUpload
+                    # instance is used to upload the file body. Because of a limitation, this
+                    # request must be made in two parts, the first to update the metadata, and
+                    # the second to update the body.
+                    resource = service.files().update(
+                        fileId=data['id'],
+                        newRevision=self.request.get('newRevision', False),
+                        body=data,
+                        media_body=MediaInMemoryUpload(
+                            content, data['mimeType'], resumable=True)
+                    ).execute()
+                else:
+                    # Only update the metadata, a patch request is prefered but not yet
+                    # supported on Google App Engine; see
+                    # http://code.google.com/p/googleappengine/issues/detail?id=6316.
+                    resource = service.files().update(
+                        fileId=data['id'],
+                        newRevision=self.request.get('newRevision', False),
+                        body=data).execute()
+                    # Respond with the new file id as JSON.
+                return self.RespondJSON({'id': resource['id']})
+            except HttpError, http_error:
+                logging.getLogger("error").exception("Try #%d: Exception occurred when updating file", n)
+                # HTTP status code 403 indicates that the app is not authorized to save the file (third-party app disabled, user without access, etc.)
+                # Don't need to try several times
+                if http_error.resp.status == 403:
+                    return self.abort(403)
+                else:
+                    time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
+            except HTTPException:
+                logging.getLogger("error").exception("Exception occurred when updating file")
+                time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
+            except AccessTokenRefreshError:
+                # Catch AccessTokenRefreshError which occurs when the API client library
+                # fails to refresh a token. This occurs, for example, when a refresh token
+                # is revoked. When this happens the user is redirected to the
+                # Authorization URL.
+                logging.info('AccessTokenRefreshError')
+                return self.abort(401)
+
+        return self.abort(500)
 
 class AuthHandler(BaseDriveHandler):
     def get(self):
@@ -899,10 +890,7 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/', HomePage, 'home'),
         webapp2.Route(r'/edit/<:[A-Za-z0-9\-_]*>', EditPage, 'edit'),
         webapp2.Route(r'/courses', CoursesHandler),
-        webapp2.Route(r'/get-channel-token', GetChannelToken),
         webapp2.Route(r'/svc', ServiceHandler),
-        webapp2.Route(r'/svc-worker-post', ServiceWorkerPost),
-        webapp2.Route(r'/svc-worker-put', ServiceWorkerPut),
         webapp2.Route(r'/about', AboutHandler),
         webapp2.Route(r'/auth', AuthHandler, 'auth'),
         webapp2.Route(r'/user', UserHandler),
