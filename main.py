@@ -636,7 +636,7 @@ class ServiceWorkerPost(BaseDriveHandler):
 
                 if BaseHandler.is_production():
                     clement_permission = {
-                        'value': 'clement@unishared.com',
+                        'value': 'clement@videonot.es',
                         'type': 'user',
                         'role': 'reader'
                     }
