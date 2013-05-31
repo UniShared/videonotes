@@ -573,6 +573,9 @@ class ServiceHandler(BaseDriveHandler):
         data = self.RequestJSON()
         logging.debug('JSON data retrieved %s', json.dumps(data))
 
+        content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
+                              'syncNotesVideo': data.get('syncNotesVideo', '')})
+
         max_try = 5
         for n in range(0, max_try):
             try:
@@ -585,7 +588,7 @@ class ServiceHandler(BaseDriveHandler):
                         'title': data['title'],
                         'description': data['description'],
                         'mimeType': data['mimeType'],
-                        }
+                    }
 
                     if 'parent' in data and data['parent']:
                         logging.debug('Creating from a parent folder %s', data['parent'])
@@ -593,9 +596,6 @@ class ServiceHandler(BaseDriveHandler):
 
                     # Make an insert request to create a new file. A MediaInMemoryUpload
                     # instance is used to upload the file body.
-
-                    content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                                          'syncNotesVideo': data.get('syncNotesVideo', '')})
                     logging.debug('Calling Drive API with content %s', str(content))
                     resource = service.files().insert(
                         body=resource,
@@ -629,8 +629,9 @@ class ServiceHandler(BaseDriveHandler):
                             service.permissions().insert(fileId=resource['id'], body=anyone_permission).execute()
                         except HttpError:
                             logging.info('Error when adding anyone as a reader')
-                            # Respond with the new file id as JSON.
-                logging.debug('Return ID %s', resource['id'])
+
+                # Respond with the new file id as JSON.
+                logging.debug('New ID created %s', resource['id'])
                 return self.RespondJSON({'id': resource['id']})
             except AccessTokenRefreshError:
                 # In cases where the access token has expired and cannot be refreshed
@@ -639,7 +640,7 @@ class ServiceHandler(BaseDriveHandler):
                 logging.info('AccessTokenRefreshError')
                 return self.abort(401)
             except HttpError, http_error:
-                logging.getLogger("error").exception("Try #%d: Exception occurred when updating file", n)
+                logging.getLogger("error").exception("Try #%d: Exception occurred when creating file", n)
                 # HTTP status code 403 indicates that the app is not authorized to save the file (third-party app disabled, user without access, etc.)
                 # Don't need to try several times
                 if http_error.resp.status == 403:
@@ -647,10 +648,10 @@ class ServiceHandler(BaseDriveHandler):
                 else:
                     time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
             except HTTPException:
-                logging.getLogger("error").exception("Try #%d: Exception occurred when updating file", n)
+                logging.getLogger("error").exception("Try #%d: Exception occurred when creating file", n)
                 time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
 
-        logging.getLogger("error").exception("Exception occurred when updating file after %d tries", max_try)
+        logging.getLogger("error").exception("Exception occurred when creating file after %d tries", max_try)
         return self.abort(500)
 
     def put(self):
@@ -667,20 +668,22 @@ class ServiceHandler(BaseDriveHandler):
         if service is None:
             return
 
-        for n in range(0,5):
+        # Load the data that has been posted as JSON
+        logging.debug('Get JSON data')
+        data = self.RequestJSON()
+        logging.debug('JSON data retrieved %s', json.dumps(data))
+
+        logging.info('Updating file %s', data['id'])
+
+        # Create a new file data structure.
+        content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
+                              'syncNotesVideo': data.get('syncNotesVideo', '')})
+        if 'content' in data:
+            data.pop('content')
+
+        max_try = 5
+        for n in range(0, max_try):
             try:
-                # Load the data that has been posted as JSON
-                logging.debug('Get JSON data')
-                data = self.RequestJSON()
-                logging.debug('JSON data retrieved %s', json.dumps(data))
-
-                logging.info('Updating file %s', data['id'])
-
-                # Create a new file data structure.
-                content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                                      'syncNotesVideo': data.get('syncNotesVideo', '')})
-                if 'content' in data:
-                    data.pop('content')
                 if content is not None:
                     # Make an update request to update the file. A MediaInMemoryUpload
                     # instance is used to upload the file body. Because of a limitation, this
@@ -712,7 +715,7 @@ class ServiceHandler(BaseDriveHandler):
                 else:
                     time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
             except HTTPException:
-                logging.getLogger("error").exception("Exception occurred when updating file")
+                logging.getLogger("error").exception("Try #%d: Exception occurred when updating file", n)
                 time.sleep((2 ** n) + (random.randint(0, 1000) / 1000))
             except AccessTokenRefreshError:
                 # Catch AccessTokenRefreshError which occurs when the API client library
@@ -722,6 +725,7 @@ class ServiceHandler(BaseDriveHandler):
                 logging.info('AccessTokenRefreshError')
                 return self.abort(401)
 
+        logging.getLogger("error").exception("Exception occurred when updating file after %d tries", max_try)
         return self.abort(500)
 
 class AuthHandler(BaseDriveHandler):
