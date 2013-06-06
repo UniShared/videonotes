@@ -1,7 +1,5 @@
 application: unishared-gae
-#version: production
-#version: staging
-version: local
+version: staging-new-hp
 runtime: python27
 threadsafe: true
 api_version: 1

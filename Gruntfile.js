@@ -73,11 +73,12 @@ module.exports = function (grunt) {
                     'static/lib/angular-ui-bootstrap-custom/ui-bootstrap-custom-tpls-0.3.0.min.js',
                     'static/lib/modernizr-custom/modernizr.min.js', 'static/lib/detectizr/detectizr.min.js',
                     'static/lib/popcorn/popcorn-complete.min.js',
+                    'static/lib/angularSmoothscroll/dist/scripts/b8aa6767.scripts.js',
                     'static/js/<%= dist %>/tmp/external.min.js', 'static/js/<%= dist %>/tmp/app.min.js'],
                 dest: 'static/js/<%= dist %>/<%= pkg.name %>.min.js'
             },
             css: {
-                src: ['static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/app.css'],
+                src: ['static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/styles.css', 'static/css/app.css', 'static/css/home.css'],
                 dest: 'static/css/<%= dist %>/tmp/concat.css'
             }
         },
