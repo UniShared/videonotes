@@ -1,179 +1,12 @@
-/* app css stylesheet */
-$main-blue-color: #3cbdee;
-$main-orange-color: #F18A16;
-$main-grey-color: #585858;
-$main-yellow-color: #FFC000;
+/* App styles */
+@import "base";
 
-$text-color: #787975;
+#app {
+  $right-margin: 10px;
 
-$font-family: 'BebasNeueRegular', Impact;
-
-@font-face {
-  font-family: 'BebasNeueRegular';
-  src: url('/font/bebasneue-webfont.eot');
-  src: url('/font/bebasneue-webfont.eot?#iefix') format("embedded-opentype"), url('/font/bebasneue-webfont.woff') format("woff"), url('/font/bebasneue-webfont.ttf') format("truetype"), url('/font/bebasneue-webfont.svg#BebasNeueRegular') format("svg");
-  font-weight: normal !important;
-  font-style: normal;
-}
-
-body {
-  height: 100%;
-  line-height: 1.4em;
-  background-image: url('/img/bg.png');
-}
-
-[ng\:cloak], [ng-cloak], .ng-cloak {
-  display: none !important;
-}
-
-h1, h2, h3, h4 {
-  font-family: $font-family;
-  font-weight: normal;
-}
-
-#overlay {
-  position: fixed;
-  left: 0px;
-  top: 0px;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-
-  .loading {
-    top: 35%;
-
-    position: relative;
-    height: 0px;
-    img {
-      margin: 0 auto;
-      display: block;
-    }
+  button:not([class*="icon-"]) {
+    font-family: $font-family-museoslab;
   }
-}
-
-.navbar {
-  .brand {
-    margin-left: 0px;
-  }
-
-  .navbar-inner {
-    height: 70px;
-    background-color: rgba(241, 241, 241, 0.9);
-    border-bottom: 1px solid white;
-    box-shadow: 0px 0px 50px rgba(0, 0, 0, 0.2);
-
-    .profile-picture {
-      width: 22px;
-    }
-
-    .nav {
-      li {
-        float: none;
-      }
-      .subnav {
-        margin-bottom: 0px;
-
-        .nav > li > a {
-          color: #333;
-          padding-top: 2px;
-          padding-bottom: 2px;
-
-          &:hover {
-            background-color: #F5F5F5;
-            color: #333;
-          }
-        }
-      }
-
-      .social-button {
-        float: right;
-        display: inline;
-        padding: 6px;
-        margin: 2px;
-      }
-
-      .width-75 {
-        width: 75px;
-      }
-    }
-  }
-}
-
-#home {
-  h1, h2, h3, h4 {
-    color: $main-grey-color;
-  }
-
-  .title {
-    margin-top: 20px;
-  }
-
-  .product {
-    .body {
-      background-image: url('/img/bg_top.png');
-      margin-top: 20px;
-      padding-top: 20px;
-      padding-bottom: 20px;
-    }
-
-    .signin {
-      margin-top: 110px;
-    }
-
-    .integrated-with-drive {
-      display: inline-block;
-      margin-left: 18px;
-      margin-top: 10px;
-      margin-right: 5px;
-    }
-
-    .drive-logo {
-      margin-bottom: 15px;
-    }
-  }
-
-  .container {
-    width: 960px;
-    margin: 0 auto;
-  }
-
-  .emphaze {
-    color: $main-yellow-color;
-  }
-
-  .partners {
-    margin-top: 15px;
-
-    .coursera {
-      margin-top: 18px;
-    }
-
-    .khan {
-      margin-left: 30px;
-    }
-
-    .youtube {
-      margin-top: 5px;
-    }
-
-    .edx {
-      margin-top: 7px;
-      margin-left: 20px;
-    }
-  }
-
-  .users_feedbacks {
-    margin-top: 30px;
-    .user_feedback {
-      text-align: center;
-      font-style: italic;
-    }
-  }
-}
-
-#container {
-  margin-top: 70px;
 
   #left {
     padding-left: 10px;
@@ -185,6 +18,7 @@ h1, h2, h3, h4 {
         display: inline-block;
       }
     }
+
     #video-body {
       padding: 20px;
       background-color: white;
@@ -254,14 +88,18 @@ h1, h2, h3, h4 {
       .videoplayer {
         .no-video {
           .or {
-            width: 30px;
+            width: 60px;
             margin: 0 auto;
             margin-bottom: 30px;
           }
 
           .load-sample-video-container {
-            width: 210px;
+            width: 220px;
             margin: 0 auto;
+
+            .btn {
+              width: 100%;
+            }
           }
         }
 
@@ -311,13 +149,12 @@ h1, h2, h3, h4 {
     width: 50%;
     float: right;
 
-    $right: 10px;
     #editor-title {
       position: absolute;
-      top: 82px;
+      top: 58px;
       bottom: 0px;
       left: 50%;
-      right: $right;
+      right: $right-margin;
 
       .notes-title {
         img {
@@ -371,10 +208,10 @@ h1, h2, h3, h4 {
       border-radius: 5px;
 
       position: absolute;
-      top: 131px;
+      top: 104px;
       left: 50%;
       bottom: 0px;
-      right: $right;
+      right: $right-margin;
       height: 69.5%;
 
       .menu {
@@ -405,10 +242,10 @@ h1, h2, h3, h4 {
 
     #editor {
       position: absolute;
-      top: 170px;
+      top: 143px;
       bottom: 0px;
       left: 50%;
-      right: $right;
+      right: $right-margin;
       height: 65%;
       border-bottom-left-radius: 5px;
 
@@ -423,7 +260,6 @@ h1, h2, h3, h4 {
           }
         }
       }
-
     }
   }
 }
@@ -433,32 +269,4 @@ h1, h2, h3, h4 {
     margin-bottom: 10px;
     margin-right: 10px;
   }
-}
-
-#doc-bar {
-  line-height: 27px;
-}
-
-#error {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-}
-
-.dropdown-menu span {
-  display: block;
-  padding: 3px 15px;
-  clear: both;
-  font-weight: normal;
-  line-height: 18px;
-  color: #333333;
-  white-space: nowrap;
-}
-
-.view {
-  margin-top: 25px;
-}
-
-.popover {
-  z-index: 1031;
 }
