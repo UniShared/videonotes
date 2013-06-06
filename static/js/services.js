@@ -716,7 +716,7 @@ module.factory('autosaver',
         var service = $rootScope.$new(true);
         service.doc = doc;
         service.confirmOnLeave = function (e) {
-            if (doc.dirty) {
+            if (user.isAuthenticated() && doc.dirty) {
                 var msg = "You have unsaved data.";
 
                 // For IE and Firefox
