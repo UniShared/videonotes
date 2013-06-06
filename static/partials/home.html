@@ -1,61 +1,136 @@
 <div id="home">
-    <section class="product">
-        <div class="container">
-            <div class="title row-fluid">
-                <div class="span12">
-                    <h2>The easiest way to take notes from videos, everything <span class="emphaze">synchronized</span>!
-                    </h2>
+    <div class="container">
+        <section id="hero">
+            <div class="row-fluid">
+                <div class="span6"><img src="/img/screenshot.png" alt="{{appName}}"/></div>
+                <div class="span6 signin">
+                    <h1 class="catch-phrase">The easiest way to take notes synchronized with videos!</h1>
+                    <a class="btn btn-primary btn-success" ng-click="auth()">
+                        <img class="drive-logo" src="/img/drive_icon.png"/>
+                        <h4>Connect with Google Drive</h4>
+                    </a>
                 </div>
             </div>
-        </div>
+        </section>
+        <section id="works-with">
+            <h2>Works with</h2>
 
-        <div class="body row-fluid">
-            <div class="container">
-                <div class="span8"><img src="/img/screenshot.png" alt="{{appName}}"/></div>
-                <div class="span4 signin">
-                    <a class="btn btn-primary btn-large " ng-click="auth()">Create your notes</a>
-                    <h4 class="integrated-with-drive">Integrated with</h4><img class="drive-logo" src="/img/drive_icon.png"
+            <div class="container-box">
+                <div class="platforms">
+                    <div class="platform">
+                        <img class="coursera" src="/img/coursera_logo.png" alt="Coursera"/>
+                    </div>
+
+                    <div class="platform">
+                        <img class="udacity" src="/img/udacity_logo.png" alt="Udacity"/>
+                    </div>
+
+                    <div class="platform">
+                        <img class="edx" src="/img/edx_logo.png" alt="edX"/>
+                    </div>
+
+                    <div class="platform">
+                        <img class="khan" src="/img/khan_academy_logo.png" alt="Khan academy"/>
+                    </div>
+
+                    <div class="platform">
+                        <img class="vimeo" src="/img/vimeo_logo.png" alt="Vimeo"/>
+                    </div>
+
+                    <div class="platform">
+                        <img class="youtube" src="/img/youtube_logo.png" alt="Youtube"/>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-    <section class="external">
-        <div class="container">
-            <div class="partners row-fluid">
-                <div class="span1"></div>
-                <div class="span2">
-                    <img class="coursera partner" src="/img/coursera_logo.png" alt="Coursera"/>
+        </section>
+        <section id="features">
+            <h2>Simple yet powerful!</h2>
+
+            <div class="container-box">
+                <div class="row-fluid feature synchronized">
+                    <div class="span7 description">
+                        <h2>Automatically synchronized</h2>
+                        <h4 class="description-details">All the notes you type are automatically synchronized with the
+                            video. Later, just click on a
+                            line
+                            for
+                            the video to jump to the relevant part.</h4>
+                    </div>
+                    <div class="span5">
+                        <img src="/img/synchro.png" alt="{{appName}}"/>
+                    </div>
                 </div>
 
-                <div class="span2">
-                    <img class="partner" src="/img/udacity_logo.png" alt="Udacity"/>
+                <div class="row-fluid feature integrated-with-drive">
+                    <div class="span5">
+                        <img src="/img/integration_drive.png" alt="{{appName}}"/>
+                    </div>
+                    <div class="span7 description">
+                        <h2>Integrated with Google Drive</h2>
+                        <h4 class="description-details">Create and manage your
+                            VideoNotes directly via your
+                            Google Drive and access them from everywhere</h4>
+                    </div>
                 </div>
 
-                <div class="span2">
-                    <img class="partner edx" src="/img/edx_logo.png" alt="edX"/>
+                <div class="row-fluid feature share">
+                    <div class="span7 description">
+                        <h2>Easy to share</h2>
+                        <h4 class="description-details">Manage your permissions and share your VideoNotes with your
+                            friends, fellow students, or
+                            make
+                            them private anytime</h4>
+                    </div>
+                    <div class="span5">
+                        <img src="/img/share.png" alt="{{appName}}"/>
+                    </div>
                 </div>
-
-                <div class="span2">
-                    <img class="partner khan" src="/img/khan_academy_logo.png" alt="edX"/>
-                </div>
-
-                <div class="span2">
-                    <img class="partner youtube" src="/img/youtube_logo.png" alt="Youtube"/>
-                </div>
-                <div class="span1"></div>
             </div>
-
-            <div class="users_feedbacks">
-                <h3 class="user_feedback">“That&apos;s amazing! I would lose so much time pausing the video, opening Evernote and taking
-                    notes.”
-                    Alexandros</h3>
-
-                <h3 class="user_feedback">“This is very nicely done. The time code links and automatic saving to my Gdrive makes this a very
-                    useful app.”
-                    Jim</h3>
-
-                <h3 class="user_feedback">“This is the best note taking tool I have ever seen! Thanks!” Jaclyn</h3>
+            <div class="signin">
+                <a class="btn btn-primary btn-success" ng-click="auth()">
+                    <img class="drive-logo" src="/img/drive_icon.png"/>
+                    <h4>Connect with Google Drive</h4>
+                </a>
             </div>
-        </div>
-    </section>
+        </section>
+        <section id="users-feedback">
+            <h2>Join millions of online students!</h2>
+
+            <div class="container-box">
+                <div class="row-fluid">
+                    <div class="span2">
+                        <img src="/img/quote.svg" alt="Users feedback" class="quote_logo"/>
+                    </div>
+                    <div class="span10">
+                        <div class="user-feedback">
+                            <h4 class="user-feedback">
+                                “This is very nicely done. The time code
+                                links and automatic saving to
+                                my
+                                Google Drive makes this a very
+                                useful app.”
+                            </h4>
+                            <h5>Jim</h5>
+                        </div>
+
+                        <div class="user-feedback">
+                            <h4 class="user-feedback">“That&apos;s amazing! I would lose so much time pausing the video,
+                                opening
+                                Evernote and taking
+                                notes.”
+                            </h4>
+                            <h5>Alexandros</h5>
+                        </div>
+
+                        <div class="user-feedback last">
+                            <h4>“This is the best note taking tool I have ever seen! Thanks!”</h4>
+                            <h5>Jaclyn</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <h5>&#169; VideoNot.es 2013</h5>
+
+    </div>
 </div>
