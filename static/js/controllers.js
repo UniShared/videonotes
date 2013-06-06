@@ -41,6 +41,15 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         }
 
         initTour();
+
+        $scope.isHome = $location.path() === '/';
+    };
+
+    $scope.auth = function () {
+        segmentio.track('Sign in');
+        if (!user.isAuthenticated()) {
+            $location.path('/edit/');
+        }
     };
 
     var initTour = function () {
@@ -162,17 +171,17 @@ controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', functio
     });
 }]);
 
+controllersModule.controller('NavbarCtrl', ['$scope', function($scope) {
+    $scope.menus = [];
+
+    $scope.$on('setMenu', function (event, menus) {
+        $scope.menus = menus;
+        $scope.$apply();
+    });
+}]);
+
 controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', '$location', 'user', 'segmentio', function($scope, $rootScope, $location, user, segmentio) {
-    $scope.auth = function () {
-        segmentio.track('Sign in');
-        if (!user.isAuthenticated()) {
-            $rootScope.$broadcast('loading');
-            user.login().then(function () {
-                $rootScope.$broadcast('loaded');
-                $location.path('/edit/');
-            });
-        }
-    };
+    $rootScope.$broadcast('setMenu', [{text:'Features', target:'features', offset: 50}]);
 }]);
 
 /*function CoursesListCtrl($scope, $location, user, course) {
@@ -201,9 +210,14 @@ controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', '$location', '
  }*/
 
 controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', function ($scope, $rootScope, user) {
+    $scope.isAuthenticated = user.isAuthenticated();
+
     $scope.$on('authentified', function () {
         $scope.user = user.getInfo();
+        $scope.isAuthenticated = true;
     });
+
+    $rootScope.$broadcast('setMenu', undefined);
 }]);
 
 controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, user) {
