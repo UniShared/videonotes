@@ -40,6 +40,8 @@ nosetests.xml
 .sass-cache*/
 static/.sass-cache
 static/css/app.css
+static/css/home.css
+static/css/styles.css
 static/css/build
 
 # Built JS
