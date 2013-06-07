@@ -8,11 +8,17 @@
   font-style: normal;
 }
 
-body {
+html, body {
   height: 100%;
+  overflow: auto;
+  overflow-y: scroll !important;
+}
+
+body {
   line-height: 1.4em;
   font-family: $font-family-museoslab;
-  background: url("/img/bg.png")
+  background: url("/img/bg.png");
+  overflow: auto;
 }
 
 #container {

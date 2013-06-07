@@ -3,7 +3,12 @@
 
 #home {
   $margin-bottom: 75px;
-  background: url("/img/background.jpg") no-repeat top center fixed;
+  $background-size:contain;
+
+  background: url('/img/background.jpg') no-repeat center center fixed;
+  -webkit-overflow-scrolling: touch !important;
+  background-attachment: fixed !important;
+  background-size: cover !important;
 
   h1, h2, h4 {
     color: white;
