@@ -176,7 +176,6 @@ controllersModule.controller('NavbarCtrl', ['$scope', function($scope) {
 
     $scope.$on('setMenu', function (event, menus) {
         $scope.menus = menus;
-        $scope.$apply();
     });
 }]);
 
@@ -216,14 +215,14 @@ controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', functi
         $scope.user = user.getInfo();
         $scope.isAuthenticated = true;
     });
-
-    $rootScope.$broadcast('setMenu', undefined);
 }]);
 
-controllersModule.controller('MainCtrl', ['$scope', 'user', function($scope, user) {
+controllersModule.controller('MainCtrl', ['$scope', '$rootScope', 'user', function($scope, $rootScope, user) {
     if (!user.isAuthenticated()) {
         user.login();
     }
+
+    $rootScope.$broadcast('setMenu', null);
 }]);
 
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'segmentio', function ($scope, sampleVideo, doc, video, segmentio) {
