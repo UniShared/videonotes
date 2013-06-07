@@ -46,10 +46,14 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.auth = function () {
-        segmentio.track('Sign in');
         if (!user.isAuthenticated()) {
             $location.path('/edit/');
         }
+    };
+
+    $scope.authHeader = function () {
+        segmentio.track('Sign-in header');
+        $scope.auth();
     };
 
     var initTour = function () {
@@ -179,7 +183,19 @@ controllersModule.controller('NavbarCtrl', ['$scope', function($scope) {
     });
 }]);
 
-controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', '$location', 'user', 'segmentio', function($scope, $rootScope, $location, user, segmentio) {
+controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', 'segmentio', function($scope, $rootScope, segmentio) {
+    // Called when sign-in via the first (in the hero, banner) "Connect with GDrive" button
+    $scope.authHero = function () {
+        segmentio.track('Sign-in hero');
+        $scope.auth();
+    };
+
+    // Called when sign-in via the second "Connect with GDrive" button, below the features block
+    $scope.authFeatures = function () {
+        segmentio.track('Sign-in features');
+        $scope.auth();
+    };
+
     $rootScope.$broadcast('setMenu', [{text:'Features', target:'features', offset: 50}]);
 }]);
 
@@ -378,7 +394,6 @@ controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'segmentio', funct
     }
 
 }]);
-
 
 controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosaver', 'segmentio', function ($scope, editor, doc, autosaver, segmentio) {
     $scope.editor = editor;
