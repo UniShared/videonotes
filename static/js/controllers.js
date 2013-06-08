@@ -197,6 +197,9 @@ controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', 'segmentio', f
     };
 
     $rootScope.$broadcast('setMenu', [{text:'Features', target:'features', offset: 50}]);
+
+    // Calling jQuery backstretch to set background
+    $.backstretch('/img/background.jpg');
 }]);
 
 /*function CoursesListCtrl($scope, $location, user, course) {
@@ -239,6 +242,9 @@ controllersModule.controller('MainCtrl', ['$scope', '$rootScope', 'user', functi
     }
 
     $rootScope.$broadcast('setMenu', null);
+
+    // Remove backstretch background if exists
+    $('.backstretch').remove();
 }]);
 
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'segmentio', function ($scope, sampleVideo, doc, video, segmentio) {
