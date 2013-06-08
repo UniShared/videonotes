@@ -1,0 +1,37 @@
+{
+  "name": "angular-smoothscroll",
+  "version": "0.0.0",
+  "main": "dist/scripts/2d8e100/scripts.js",
+  "dependencies": {
+    "jquery": "~1.9.1",
+    "angular": "~1.0.7",
+    "es5-shim": "~2.0.11",
+    "json3": "~3.2.4"
+  },
+  "devDependencies": {
+    "angular-mocks": "~1.0.7",
+    "angular-scenario": "~1.0.7"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "app/",
+    "dist/components",
+    "test/",
+    "**/*.txt",
+    "karma-e2e.conf.js",
+    "karma.conf.js",
+    "package.json",
+    "Gruntfile.js"
+  ],
+  "gitHead": "f0a5f43f293e9c7dc0a3858bedd05120399530c5",
+  "readme": "angular-smoothscroll\n====================\n\nAngularJS directives to get a smooth scroll effect (like this: http://css-tricks.com/examples/SmoothPageScroll/).\nPure vanilla JS and jQuery versions.\n\n#How to use it?\n\n## Installation\n\n### Build your own copy\n\n1. Build Coffeescript `grunt coffee:dist`\n2. Copy generated JS in .tmp folder and include it\n\n### Get the last version\n\nCopy the last version from the `dist/scripts` folder\n\n### Via Twitter Bower (https://github.com/bower/bower)\n\nRun `bower install angular-smoothscroll` in your project\n\n###Add the dependency to your app \nDeclare an AngularJS module with a dependency: `app.module('myApp', ['angularSmoothscroll'])`\n\n##Vanilla JS (to improve, too fast) \n\nJust declare an HTML link element which will start scroll, add the `smooth-scroll` directive and pass the target ID: `<a smooth-scroll target=\"target\">Scroll to Target</a>`\n\n##jQuery version \nDeclare an HTML link element which will start scroll, add the `smooth-scroll-jquery` directive and pass the target ID: `<a smooth-scroll-jquery target=\"target\">Scroll to Target</a>`. No target means scroll to top.\n\nYou can declare the speed (default is 500): `<a smooth-scroll-jquery target=\"target\" speed=\"1000\">Scroll to Target</a>`\n\nWith both versions, you can declare the offset (default is 100): `<a smooth-scroll[-jquery] target=\"target\" offset=\"30\">Scroll to Target</a>`\n\n#How to contribute?\n\n1. Clone this repo\n2. Make your changes\n3. Test them: `grunt test`\n4. Open a pull-request\n\n#To improve\n\n1. Vanilla JS implementation which is not working very well\n2. Make the Angular JS unit tests pass (cf. http://stackoverflow.com/questions/16929046/effectively-unit-test-an-angularjs-directive-which-is-manipulating-the-dom?noredirect=1#comment24448390_16929046)\n\nPowered by AngularJS (http://angularjs.org), Yeoman (http://yeoman.io), Grunt (http://gruntjs.com) and Karma (http://karma-runner.github.io/0.8/index.html)",
+  "readmeFilename": "README.md",
+  "_id": "angular-smoothscroll@0.0.1",
+  "description": "angular-smoothscroll ====================",
+  "commit": "f0a5f43f293e9c7dc0a3858bedd05120399530c5",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/arnaudbreton/angular-smoothscroll.git"
+  }
+}
