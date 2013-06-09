@@ -46,6 +46,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.auth = function () {
+        segmentio.track('Sign-in');
         if (!user.isAuthenticated()) {
             $location.path('/edit/');
         }
