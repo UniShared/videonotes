@@ -554,8 +554,8 @@ module.factory('editor',
                 }
                 else {
                     // No text or only before / after
-                    // Using current player time
-                    doc.info.syncNotesVideo[line] = video.currentTime();
+                    // Using current player time minus a delta
+                    doc.info.syncNotesVideo[line] = video.currentTime() - 3;
                 }
                 $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
             }
