@@ -192,6 +192,7 @@ class BaseHandler(webapp2.RequestHandler):
         Args:
           data: The data that will be converted to JSON to return.
         """
+        self.response.headers['Access-Control-Allow-Origin'] = 'https://www.udacity.com'
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(data))
 
