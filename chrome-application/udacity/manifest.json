@@ -1,0 +1,18 @@
+{
+    "name" : "VideoNot.es Udacity",
+    "version" : "0.1",
+    "manifest_version" : 2,
+    "description" : "The easiest way to take notes from videos. Everything synchronized!",
+    "permissions": [
+        "https://www.udacity.com/*",
+        "http://local.videonot.es:8080/svc"
+    ],
+    "content_scripts": [
+        {
+            "matches": ["https://www.udacity.com/*"],
+            "css": [],
+            "js": ["www-widgetapi-vfljlXsRD.js", "lib/ace/ace.js", "jquery-1.10.1.min.js", "videonotes_udacity.js"],
+            "run_at": "document_end"
+        }
+    ]
+}
