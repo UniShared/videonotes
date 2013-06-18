@@ -13,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import urllib
+import urlparse
+
 __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
 
@@ -131,6 +134,8 @@ class DriveState(object):
 
 
 class BaseHandler(webapp2.RequestHandler):
+    AUTHORIZED_DOMAINS = [u'www.udacity.com', u'www.coursera.org']
+
     def handle_exception(self, exception, debug):
         # If the exception is a HTTPException, use its error code.
         # Otherwise use a generic 500 error code.
@@ -224,6 +229,11 @@ class BaseHandler(webapp2.RequestHandler):
     @staticmethod
     def is_development_server():
         return 'Development' in os.environ['SERVER_SOFTWARE']
+
+    @staticmethod
+    def is_authorized_domain(url):
+        parse = urlparse.urlparse(url)
+        return parse.netloc in BaseHandler.AUTHORIZED_DOMAINS
 
 
 class BaseDriveHandler(BaseHandler):
@@ -781,10 +791,37 @@ class AuthHandler(BaseDriveHandler):
 
         if not creds:
             logging.debug('No credentials, redirecting to Oauth2 URL')
+            next = self.request.get('next')
+            if next and BaseHandler.is_authorized_domain(next):
+                self.session['next'] = next
+
+            file_id = self.request.get('file_id')
+            if file_id:
+                self.session['fileId'] = file_id
+
             redirect_uri = self.RedirectAuth()
             return self.redirect(redirect_uri)
 
-        return self.redirect('/edit/')
+        if 'next' in self.session:
+            next = self.session['next']
+            del self.session['next']
+            params = {'videonotes_start': 1}
+
+            if 'fileId' in self.session:
+                file_id = self.session['fileId']
+                del self.session['fileId']
+                if file_id:
+                    params.update({'videonotes_id': file_id})
+
+            url_parts = list(urlparse.urlparse(next))
+            query = dict(urlparse.parse_qsl(url_parts[4]))
+            query.update(params)
+
+            url_parts[4] = urllib.urlencode(query)
+
+            return self.redirect(str(urlparse.urlunparse(url_parts)))
+        else:
+            return self.redirect('/edit/')
 
 
 class UserHandler(BaseDriveHandler):
@@ -813,10 +850,16 @@ class UserHandler(BaseDriveHandler):
 class ProxyHandler(BaseHandler):
     def get(self):
         url = self.request.get('q')
+
         logging.debug('Fetch URL %s', url)
-        result = urlfetch.fetch(url)
-        if result.status_code == 200:
-            self.response.out.write(result.content.strip())
+        if BaseHandler.is_authorized_domain(url):
+            logging.debug('Authorized domain URL %s', url)
+            result = urlfetch.fetch(url)
+            if result.status_code == 200:
+                self.response.out.write(result.content.strip())
+        else:
+            logging.getLogger("error").error('Unauthorized domain %s', url)
+            return self.abort(403)
 
 
 class CoursesHandler(BaseHandler):
