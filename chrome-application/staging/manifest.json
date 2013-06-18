@@ -1,30 +1,30 @@
 {
-    "name" : "VideoNot.es staging",
-    "version" : "0.1",
+    "name" : "VideoNot.es for Udacity",
+    "version" : "0.1.2",
     "manifest_version" : 2,
-    "description" : "The easiest way to take notes from videos. Everything synchronized!",
-    "container" : "GOOGLE_DRIVE",
-    "api_console_project_id" : "120016459711",
+    "description" : "The easiest way to take notes synchronized with your favourite video lectures",
+    
     "icons": {
-        "128": "icon-128.png"
+        "128": "img/icon-128.png"
     },
-    "app" : {
-        "urls": [
-            "http://staging.videonot.es/",
-            "http://staging.videonot.es/edit/"
-        ],
-        "launch" : {
-            "web_url" : "http://staging.videonot.es/edit/"
+        
+    "permissions": [
+        "https://www.udacity.com/course/viewer*",
+        "http://staging-udacity.videonot.es/svc"
+    ],
+    "web_accessible_resources": [ 
+        "css/styles.min.css", "lib/font-awesome/css/font-awesome.min.css", "lib/font-awesome/font/fontawesome-webfont.*",
+        "img/icon-32.png", "config.json" 
+    ],
+    "content_scripts": [
+        {
+            "matches": ["https://www.udacity.com/course/viewer*"],
+            "css": ["css/styles.min.css"],
+            "js": [
+                "lib/jquery/jquery-1.10.1.min.js", "lib/ace/ace.min.js", "lib/jqueryUI/jquery-ui-1.10.3.custom.min.js", 
+                "js/videonotes-chrome.min.js"
+            ],
+            "run_at": "document_end"
         }
-    },
-    "gdrive_mime_types": {
-        "http://drive.google.com/intents/opendrivedoc": [
-            {
-                "type": ["application/vnd.unishared.document", "application/vnd.google.drive.ext-type.videonotes"],
-                "href": "http://staging.videonot.es/edit/",
-                "title" : "Open",
-                "disposition" : "window"
-            }
-        ]
-    }
+    ]
 }

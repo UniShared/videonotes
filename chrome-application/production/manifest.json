@@ -26,5 +26,21 @@
                 "disposition" : "window"
             }
         ]
-    }
+    },
+    "permissions": [
+        "https://www.udacity.com/course/viewer/*",
+        "http://videonot.es/svc"
+    ],
+    "web_accessible_resources": [ "css/styles.css" ],
+    "content_scripts": [
+        {
+            "matches": ["https://www.udacity.com/course/viewer/*"],
+            "css": ["css/styles.css"],
+            "js": [
+                "lib/jquery-1.10.1.min.js", "lib/ace/ace.min.js", 
+                "js/videonotes-chrome.min.js"
+            ],
+            "run_at": "document_end"
+        }
+    ]
 }
