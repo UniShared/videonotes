@@ -1,0 +1,81 @@
+@mixin vendor-prefix($name, $argument) {
+  #{$name}: $argument;
+  -webkit-#{$name}: $argument;
+  -ms-#{$name}: $argument;
+  -moz-#{$name}: $argument;
+  -o-#{$name}: $argument;
+}
+
+#videonotes-container {
+  $transition: height .5s;
+
+  width: 300px;
+  height: 50px;
+  position: absolute;
+  z-index: 1000000000;
+  top: 0;
+  left: 70%;
+  padding-left: 10px;
+  background-color: white;
+
+  @include vendor-prefix(border-radius, 10px);
+  @include vendor-prefix(transition, $transition);
+
+  #videonotes-head {
+    height: 50px;
+
+    .head-left {
+      width: 70%;
+      display: inline-block;
+      float: left;
+
+      .logo {
+        float: left;
+        padding-left: 4px;
+        padding-top: 11px;
+        padding-right: 10px;
+      }
+
+      .videonotes-start {
+        cursor: pointer;
+        color: #4e4e4e;
+      }
+    }
+
+    .head-right {
+      float: right;
+      margin: 5px;
+
+      .icon-move {
+        cursor: move;
+      }
+
+      .videonotes-collapse {
+        display: none;
+        margin-right: 10px;
+      }
+    }
+  }
+
+  #videonotes-body {
+    position: relative;
+    height: 55%;
+    @include vendor-prefix(transition, $transition);
+
+    #videonotes-editor {
+      position: absolute;
+      top: 10px;
+      bottom: 0px;
+      left: 0;
+      width: 99%;
+      height: 100%;
+      border-bottom-left-radius: 5px;
+
+      .ace_gutter {
+        .ace_gutter-cell.ace_breakpoint {
+          background-color: #FFEFBF;
+        }
+      }
+    }
+  }
+}
