@@ -469,7 +469,7 @@ module.factory('editor',
             });
 
             session.$breakpointListener = function (e) {
-                var currentSync = service.getCurentSync();
+                var currentSync = service.getCurrentSync();
                 if (!doc.info && !currentSync)
                     return;
                 var delta = e.data;
@@ -547,13 +547,13 @@ module.factory('editor',
             }
         };
 
-        service.getCurentSync = function () {
+        service.getCurrentSync = function () {
             return doc.info.videos[doc.info.currentVideo];
         };
 
         service.syncLine = function (session, line) {
             // Is there a video loaded?
-            var currentSync = service.getCurentSync();
+            var currentSync = service.getCurrentSync();
 
             if (doc.info && doc.info.currentVideo) {
                 $log.info('Video loaded');
@@ -597,7 +597,7 @@ module.factory('editor',
             }
         };
         service.unsync = function (session, line) {
-            var currentSync = service.getCurentSync();
+            var currentSync = service.getCurrentSync();
             if (doc.info && currentSync && line in currentSync) {
                 session.clearBreakpoint(line);
                 delete currentSync[line];
