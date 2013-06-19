@@ -524,11 +524,11 @@ module.factory('editor',
                 }
             });
 
-
             doc.lastSave = 0;
             doc.info = fileInfo;
 
             service.updateBreakpoints(session);
+            service.jump(0);
 
             editor.setSession(session);
             session.setUseWrapMode(true);
