@@ -10,7 +10,7 @@
         
     "permissions": [
         "https://www.udacity.com/course/viewer*",
-        "http://staging-udacity.videonot.es/svc"
+        "http://udacity.videonot.es/svc"
     ],
     "web_accessible_resources": [ 
         "css/styles.min.css", "lib/font-awesome/css/font-awesome.min.css", "lib/font-awesome/font/fontawesome-webfont.*",
