@@ -46,8 +46,20 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.auth = function () {
-        if (!user.isAuthenticated()) {
-            $location.path('/edit/');
+        segmentio.track('Sign-in');
+
+        var installCallback = function () {
+            if (!user.isAuthenticated()) {
+                $location.path('/edit/');
+                $scope.$apply();
+            }
+        };
+
+        if(Modernizr.Detectizr.device.browser === "chrome" && !chrome.app.isInstalled) {
+            chrome.webstore.install(undefined, installCallback, installCallback);
+        }
+        else {
+            installCallback();
         }
     };
 

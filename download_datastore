@@ -1,0 +1,1 @@
+appcfg.py download_data --config_file=bulkloader.yaml --url=http://unishared-gae.appspot.com/_ah/remote_api --filename=registered-users.csv --kind=RegisteredUser
