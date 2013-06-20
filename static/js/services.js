@@ -539,7 +539,7 @@ module.factory('editor',
             if (session && doc.info) {
                 session.clearBreakpoints();
                 for(var sync in doc.info.videos) {
-                    for (var line in sync) {
+                    for (var line in doc.info.videos[sync]) {
                         if (doc.info.videos[sync][line] > -1)
                             session.setBreakpoint(line);
                     }
