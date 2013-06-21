@@ -679,6 +679,7 @@ class ServiceHandler(BaseDriveHandler):
         content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
                               'syncNotesVideo': data.get('syncNotesVideo', '')})
         if 'content' in data:
+            data['indexableText'] = {'text':data['content']}
             data.pop('content')
 
         max_try = 5
