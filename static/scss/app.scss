@@ -3,6 +3,7 @@
 
 #app {
   $right-margin: 10px;
+  $min-width-gutter: 40px;
 
   button:not([class*="icon-"]) {
     font-family: $font-family-museoslab;
@@ -250,13 +251,27 @@
       border-bottom-left-radius: 5px;
 
       .ace_gutter {
-        .ace_gutter-cell.ace_breakpoint {
-          background-color: $main-yellow-color;
-        }
+        min-width: $min-width-gutter;
+        .ace_gutter-layer {
+          min-width: $min-width-gutter;
 
-        &.inactive {
-          .ace_gutter-cell.ace_breakpoint {
-            background-color: #FFEFBF;
+          .ace_gutter-cell {
+            min-width: 40px;
+            padding-left: 3px;
+
+            &.ace_breakpoint {
+              background-color: $main-yellow-color;
+
+              span {
+                float: left;
+              }
+            }
+          }
+
+          &.inactive {
+            .ace_gutter-cell.ace_breakpoint {
+              background-color: #FFEFBF;
+            }
           }
         }
       }

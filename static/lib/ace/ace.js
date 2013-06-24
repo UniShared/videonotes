@@ -3634,13 +3634,13 @@ var TextInput = function(parentNode, host) {
 exports.TextInput = TextInput;
 });
 
-define('ace/mouse/mouse_handler', ['require', 'exports', 'module' , 'ace/lib/event', 'ace/lib/useragent', 'ace/mouse/default_handlers', 'ace/mouse/default_gutter_handler', 'ace/mouse/mouse_event', 'ace/mouse/dragdrop', 'ace/config'], function(require, exports, module) {
+define('ace/mouse/mouse_handler', ['require', 'exports', 'module' , 'ace/lib/event', 'ace/lib/useragent', 'ace/mouse/default_handlers', 'ace/mouse/mouse_event', 'ace/mouse/dragdrop', 'ace/config'], function(require, exports, module) {
 
 
 var event = require("../lib/event");
 var useragent = require("../lib/useragent");
 var DefaultHandlers = require("./default_handlers").DefaultHandlers;
-var DefaultGutterHandler = require("./default_gutter_handler").GutterHandler;
+//var DefaultGutterHandler = require("./default_gutter_handler").GutterHandler;
 var MouseEvent = require("./mouse_event").MouseEvent;
 var DragdropHandler = require("./dragdrop").DragdropHandler;
 var config = require("../config");
@@ -3649,7 +3649,7 @@ var MouseHandler = function(editor) {
     this.editor = editor;
 
     new DefaultHandlers(this);
-    new DefaultGutterHandler(this);
+    //new DefaultGutterHandler(this);
     new DragdropHandler(this);
 
     event.addListener(editor.container, "mousedown", function(e) {
@@ -12361,7 +12361,7 @@ var Gutter = function(parentEl) {
         if (this.session)
             this.session.removeEventListener("change", this.$updateAnnotations);
         this.session = session;
-        session.on("change", this.$updateAnnotations);
+        //session.on("change", this.$updateAnnotations);
     };
 
     this.addGutterDecoration = function(row, className){
@@ -12447,6 +12447,11 @@ var Gutter = function(parentEl) {
                 breakpoints[i] || "", decorations[i] || "", annotation.className,
                 "' style='height:", this.session.getRowLength(i) * config.lineHeight, "px;'>"
             );
+
+            if(annotation.text && annotation.text.length) {
+                html.push("<span>", annotation.text[0], "</span>");
+            }
+
 
             if (foldWidgets) {
                 var c = foldWidgets[i];
