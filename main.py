@@ -592,7 +592,24 @@ class ServiceHandler(BaseDriveHandler):
 
                     if 'parent' in data and data['parent']:
                         logging.debug('Creating from a parent folder %s', data['parent'])
-                        resource['parents'] = [{'id': data['parent']}]
+                        default_folder_id = data['parent']
+                    else:
+                        if 'defaultFolderId' in self.session and self.session['defaultFolderId']:
+                            default_folder_id = self.session['defaultFolderId']
+                        else:
+                            default_folder_list = service.files().list(q='title="VideoNot.es"').execute()
+                            if default_folder_list and 'items' in default_folder_list and len(default_folder_list['items']):
+                                default_folder_id = default_folder_list['items'][0]['id']
+                                self.session['defaultFolderId'] = default_folder_id
+                            else:
+                                folder_ressource = {
+                                    'title': 'VideoNot.es',
+                                    'mimeType': 'application/vnd.google-apps.folder'
+                                }
+                                default_folder = service.files().insert(body=folder_ressource).execute()
+                                default_folder_id = default_folder['id']
+                                self.session['defaultFolderId'] = default_folder_id
+                    resource['parents'] = [{'id':default_folder_id}]
 
                     # Make an insert request to create a new file. A MediaInMemoryUpload
                     # instance is used to upload the file body.
