@@ -573,7 +573,12 @@ module.factory('editor',
                 else {
                     // No text or only before / after
                     // Using current player time minus a delta
-                    doc.info.syncNotesVideo[line] = video.currentTime();
+                    if(parseInt(video.currentTime() - 3, 10) > 0) {
+                        doc.info.syncNotesVideo[line] = video.currentTime() - 3;
+                    }
+                    else {
+                        doc.info.syncNotesVideo[line] = video.currentTime();
+                    }
                 }
                 this.updateBreakpoints(session);
                 $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
