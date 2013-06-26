@@ -699,6 +699,7 @@ class ServiceHandler(BaseDriveHandler):
 
         # Create a new file data structure.
         content = FileUtils.get_content_from_data(data)
+        data['indexableText'] = {'text': content['content']}
 
         max_try = 5
         for n in range(0, max_try):
