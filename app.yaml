@@ -1,8 +1,7 @@
 application: unishared-gae
-version: udacity
 #version: production
 #version: staging
-#version: local
+version: local
 runtime: python27
 threadsafe: true
 api_version: 1
