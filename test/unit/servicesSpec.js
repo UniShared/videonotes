@@ -101,6 +101,28 @@ describe('service', function() {
             }));
         });
 
+        describe('create method', function () {
+            it('should create a version 2 document', inject(function (doc, editor) {
+                editor.create();
+
+                expect(doc.info).toEqual({
+                    version: 2,
+                    content: '',
+                    currentVideo: null,
+                    videos: {},
+                    syncNotesVideo: true,
+                    labels: {
+                        starred: false
+                    },
+                    editable: true,
+                    title: 'Untitled notes',
+                    description: '',
+                    mimeType: 'application/vnd.unishared.document',
+                    parent: null
+                });
+            }));
+        });
+
         describe('save method', function () {
             var mockSnapshot = {},
                 resolveResponse = {
@@ -208,6 +230,34 @@ describe('service', function() {
                     action: 'save',
                     message: "Too many errors occurred while saving the file. Please contact us"
                 });
+            }));
+        });
+
+        describe('jump', function () {
+            beforeEach(inject(function (doc) {
+                doc.info = {
+                    syncNotesVideo: true,
+                    currentVideo: 'a',
+                    videos: {
+                        'a': {
+                            0: 1
+                        },
+                        'b': {
+                            1: 2
+                        }
+                    }
+                };
+            }));
+
+            it('should not jump when sync disabled', inject(function (doc, editor) {
+                doc.info.syncNotesVideo = false;
+                editor.jump(1);
+                expect(doc.info.currentVideo).toEqual('a');
+            }));
+
+            it('should change the current video if current line is sync with a different one', inject(function (doc, editor) {
+                editor.jump(1);
+                expect(doc.info.currentVideo).toEqual('b');
             }));
         });
     });
@@ -325,9 +375,11 @@ describe('service', function() {
             expect(autosaver.saveFn).toHaveBeenCalled();
         }));
 
-        it('should have a confirmOnLeave method which is returning a message', inject(function (doc, autosaver) {
+        it('should have a confirmOnLeave method which is returning a message when user is authenfied', inject(function (doc, autosaver, user) {
             expect(typeof autosaver.confirmOnLeave).toBe('function');
+            spyOn(user, 'isAuthenticated').andReturn(true);
             doc.dirty = true;
+
             var msgExpected = "You have unsaved data.",
                 msgReturned = autosaver.confirmOnLeave();
             expect(msgExpected).toEqual(msgReturned);
