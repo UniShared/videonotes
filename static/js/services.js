@@ -82,7 +82,7 @@ module.factory('doc',
         return service;
     }]);
 
-module.factory('video', ['$rootScope', '$log', '$timeout', 'segmentio', function ($rootScope, $log, $timeout, segmentio) {
+module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', function ($rootScope, $log, $timeout, $q, segmentio) {
     return {
         videoElement: null,
         player: null,
@@ -250,6 +250,26 @@ module.factory('video', ['$rootScope', '$log', '$timeout', 'segmentio', function
             else {
                 return this.player.playbackRate();
             }
+        },
+        takeScreenshot: function () {
+            var dimensions = {
+                top: this.videoElement.offsetTop,
+                left: this.videoElement.offsetLeft,
+                width: this.videoElement.offsetWidth,
+                height: this.videoElement.offsetHeight
+                },
+                extensionEventDiv = document.getElementById('videonotesEventDiv'),
+                customEvent = new CustomEvent('videonotes::getSnapshot', {detail: {dimensions: dimensions}}),
+                defer = $q.defer();
+
+            extensionEventDiv.addEventListener('videonotes::getSnapshot', function callback(result) {
+                extensionEventDiv.removeEventListener(callback);
+                defer.resolve(result.detail.snapshot);
+                $rootScope.$apply();
+            });
+            extensionEventDiv.dispatchEvent(customEvent);
+
+            return defer.promise;
         }
     };
 }]);
@@ -424,7 +444,7 @@ module.factory('editor',
             var timestamp, videoUrl;
             for(var sync in doc.info.videos) {
                 if(doc.info.videos[sync][line]) {
-                    timestamp = doc.info.videos[sync][line];
+                    timestamp = doc.info.videos[sync][line]['time'];
                     videoUrl = sync;
                 }
             }
@@ -477,10 +497,10 @@ module.factory('editor',
                 if (range.end.row == range.start.row) {
                     // Removing sync mark if line is now empty
                     if (session.getLine(range.start.row).trim() === '') {
-                        service.unsync(session, range.start.row);
+                        service.unsync(range.start.row);
                     }
                     else if (!(range.start.row in currentSync)) {
-                        service.syncLine(session, range.start.row);
+                        service.syncLine(range.start.row);
                     }
 
                     return;
@@ -509,7 +529,7 @@ module.factory('editor',
                         }
                     }
                 }
-                currentSync = shiftedSyncNotesVideo;
+                doc.info.videos[doc.info.currentVideo] = shiftedSyncNotesVideo;
 
                 service.updateBreakpoints(session);
             }.bind(session);
@@ -547,7 +567,7 @@ module.factory('editor',
                 session.clearBreakpoints();
                 for(var sync in doc.info.videos) {
                     for (var line in doc.info.videos[sync]) {
-                        var timestamp = parseFloat(doc.info.videos[sync][line]);
+                        var timestamp = parseFloat(doc.info.videos[sync][line].time);
                         if (timestamp > -1)
                         {
                             var minutes = parseInt(timestamp / 60, 10) % 60,
@@ -565,16 +585,31 @@ module.factory('editor',
             }
         };
 
-        service.getCurrentSync = function () {
-            return doc.info.videos[doc.info.currentVideo];
+        service.getCurrentSync = function (line) {
+            if (doc.info.currentVideo) {
+                var currentSync = doc.info.videos[doc.info.currentVideo];
+                if (undefined != line) {
+                    currentSync[line] = {
+                        time: null,
+                        screenshot: null
+                    };
+
+                    return currentSync[line];
+                }
+
+                return doc.info.videos[doc.info.currentVideo];
+            }
         };
 
-        service.syncLine = function (session, line) {
+        service.syncLine = function (line) {
             // Is there a video loaded?
-            var currentSync = service.getCurrentSync();
+            var currentSync = service.getCurrentSync(),
+                currentSyncLine = service.getCurrentSync(line),
+                session = editor.getSession();
 
             if (doc.info && doc.info.currentVideo) {
                 $log.info('Video loaded');
+
                 // Is there some texts before and after?
                 var timestampBefore, isLineBefore = false,
                     timestampAfter, isLineAfter = false;
@@ -582,11 +617,11 @@ module.factory('editor',
                 for (var lineSynced in currentSync) {
                     if (!isLineBefore && lineSynced < line) {
                         isLineBefore = true;
-                        timestampBefore = currentSync[lineSynced];
+                        timestampBefore = currentSync[lineSynced].time;
                     }
                     else if (!isLineAfter && lineSynced > line) {
                         isLineAfter = true;
-                        timestampAfter = currentSync[lineSynced];
+                        timestampAfter = currentSync[lineSynced].time;
                     }
 
                     if (isLineBefore && isLineAfter) {
@@ -597,20 +632,20 @@ module.factory('editor',
                 if (isLineBefore && isLineAfter) {
                     // Text before and after
                     // Timestamp for this line must be average time between nearest line before/after
-                    currentSync[line] = (timestampBefore + timestampAfter) / 2;
+                    currentSyncLine.time = (timestampBefore + timestampAfter) / 2;
                 }
                 else {
                     // No text or only before / after
                     // Using current player time minus a delta
                     if(parseInt(video.currentTime() - 3, 10) > 0) {
-                        currentSync[line] = video.currentTime() - 3;
+                        currentSyncLine.time = video.currentTime() - 3;
                     }
                     else {
-                        currentSync[line] = video.currentTime();
+                        currentSyncLine.time = video.currentTime();
                     }
                 }
-                
-                $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
+
+                $log.info('Setting timestamp', line, currentSyncLine.time);
                 this.updateBreakpoints(session);
             }
             // No video => mark it anyway, don't want to sync this line
@@ -619,13 +654,31 @@ module.factory('editor',
                 currentSync[line] = -1
             }
         };
-        service.unsync = function (session, line) {
-            var currentSync = service.getCurrentSync();
+
+        service.setScreenshot = function (screenshot) {
+            var lineCursorPosition = editor.getCursorPosition().row,
+                currentSync = service.getCurrentSync(lineCursorPosition),
+                screenshotSymbol = '<screenshot>',
+                session = editor.getSession();
+
+            if(session.getLine(lineCursorPosition).indexOf(screenshotSymbol) === -1) {
+                session.insert({row:lineCursorPosition, column:0}, screenshotSymbol);
+                service.syncLine(lineCursorPosition);
+            }
+
+            currentSync.screenshot = screenshot;
+        };
+
+        service.unsync = function (line) {
+            var currentSync = service.getCurrentSync(line),
+                session = editor.getSession();
+
             if (doc.info && currentSync && line in currentSync) {
                 session.clearBreakpoint(line);
                 delete currentSync[line];
             }
         };
+
         service.state = function () {
             if (service.loading) {
                 return EditorState.LOAD;
@@ -662,6 +715,7 @@ module.factory('editor',
         service.$watch('doc.info.syncVideoNotes.enabled', function () {
             service.focusEditor();
         });
+
         service.$watch('doc.info.editable', function (newValue, oldValue) {
             if (editor && newValue !== oldValue) {
                 editor.setReadOnly(!newValue);
