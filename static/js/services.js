@@ -530,10 +530,13 @@ module.factory('editor',
             service.updateBreakpoints(session);
             service.jump(0);
 
-            editor.setSession(session);
             session.setUseWrapMode(true);
             session.setWrapLimitRange(80);
-            editor.focus();
+
+            if(editor) {
+                editor.setSession(session);
+                editor.focus();
+            }
         };
         service.updateBreakpoints = function (session) {
             if (session && doc.info) {
