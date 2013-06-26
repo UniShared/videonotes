@@ -15,6 +15,7 @@
 # limitations under the License.
 import urllib
 import urlparse
+from utils import FileUtils
 
 __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
@@ -500,62 +501,6 @@ class EditPage(BaseDriveHandler):
 
 class ServiceHandler(BaseDriveHandler):
     """Web handler for the service to read and write to Drive."""
-    LAST_FILE_VERSION = 2
-
-    def transformations(self, f):
-        """
-        Transform a file from a version to an another
-        """
-        return self.transformation_v1_to_v2(f)
-
-    def transformation_v1_to_v2(self, f):
-        """
-        Transform a v1 file to v2
-        V1: single video
-        V2: multi videos support
-        """
-
-        # V1 has no version field
-        if not 'version' in f:
-            # Set version field to 2
-            f['version'] = ServiceHandler.LAST_FILE_VERSION
-
-            # Enabled field is now directly syncNotesVideo since this field does not contain timestamps anymore
-            sync_status = f['syncNotesVideo']['enabled']
-            del f['syncNotesVideo']['enabled']
-
-            # We are now storing a dict of videos' URLs and for each, timestamps
-            f['currentVideo'] = f['video']
-            f['videos'] = {
-                f['video']: f['syncNotesVideo']
-            }
-
-            f['syncNotesVideo'] = sync_status
-
-        return f
-
-    def get_empty_file(self):
-        return {
-            'version': ServiceHandler.LAST_FILE_VERSION,
-            'content': '',
-            'currentVideo': None,
-            'videos': {},
-            'syncNotesVideos': True
-        }
-
-    def get_content_from_data(self, data):
-        content = json.dumps({
-            'version': data.get('version', ServiceHandler.LAST_FILE_VERSION),
-            'videos': data.get('videos', {}),
-            'currentVideo': data.get('currentVideo', None),
-            'content': data.get('content', ''),
-            'syncNotesVideo': data.get('syncNotesVideo', True)
-        })
-
-        if 'content' in data:
-            data.pop('content')
-
-        return content
 
     def get(self):
         """Called when HTTP GET requests are received by the web application.
@@ -595,17 +540,17 @@ class ServiceHandler(BaseDriveHandler):
                             f.update(json_content)
                         except ValueError:
                             logging.info("ValueError when decoding raw content in JSON")
-                            f.update(self.get_empty_file())
+                            f.update(FileUtils.get_empty_file())
                     else:
                         logging.debug("No content or error response")
-                        f.update(self.get_empty_file())
+                        f.update(FileUtils.get_empty_file())
                 else:
                     logging.debug('No download URL')
-                    f.update(self.get_empty_file())
+                    f.update(FileUtils.get_empty_file())
             else:
                 f = None
                 # Generate a JSON response with the file data and return to the client.
-            f = self.transformations(f)
+            f = FileUtils.transformations(f)
             self.RespondJSON(f)
         except AccessTokenRefreshError:
             # Catch AccessTokenRefreshError which occurs when the API client library
@@ -634,7 +579,7 @@ class ServiceHandler(BaseDriveHandler):
         data = self.RequestJSON()
         logging.debug('JSON data retrieved %s', json.dumps(data))
 
-        content = self.get_content_from_data(data)
+        content = FileUtils.get_content_from_data(data)
 
         max_try = 5
         for n in range(0, max_try):
@@ -736,7 +681,7 @@ class ServiceHandler(BaseDriveHandler):
         logging.info('Updating file %s', data['id'])
 
         # Create a new file data structure.
-        content = self.get_content_from_data(data)
+        content = FileUtils.get_content_from_data(data)
 
         max_try = 5
         for n in range(0, max_try):
