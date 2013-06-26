@@ -276,13 +276,9 @@ module.factory('editor',
             editor.commands.removeCommand('splitline');
             editor.commands.removeCommand('golinedown');
             editor.on("gutterclick", function (e) {
-                if (doc.info.syncNotesVideo.enabled) {
-                    var lineCursorPosition = e.getDocumentPosition().row,
-                        timestamp = doc.info.syncNotesVideo[lineCursorPosition];
+                var lineCursorPosition = e.getDocumentPosition().row;
 
-                    video.player.currentTime(timestamp);
-                }
-
+                service.jump(lineCursorPosition);
             });
             service.updateEditor(doc.info);
         };
@@ -300,11 +296,11 @@ module.factory('editor',
             doc.dirty = true;
 
             service.updateEditor({
+                version: 2,
                 content: '',
-                video: null,
-                syncNotesVideo: {
-                    enabled: true
-                },
+                currentVideo: null,
+                videos: {},
+                syncNotesVideo: true,
                 labels: {
                     starred: false
                 },
@@ -419,6 +415,42 @@ module.factory('editor',
                 });
             return promise;
         };
+
+        service.jump = function (line) {
+            if (!doc.info.syncNotesVideo) {
+                return;
+            }
+
+            var timestamp, videoUrl;
+            for(var sync in doc.info.videos) {
+                if(doc.info.videos[sync][line]) {
+                    timestamp = doc.info.videos[sync][line];
+                    videoUrl = sync;
+                }
+            }
+
+            if (timestamp) {
+                $log.info('Timestamp', line, timestamp);
+                if (timestamp > -1 && doc.info.syncNotesVideo) {
+                    if(video.videoUrl !== videoUrl) {
+                        doc.info.currentVideo = videoUrl
+                        video.videoUrl = doc.info.currentVideo;
+                        video.load();
+                        var offListener = service.$on('video::loadeddata', function () {
+                            video.currentTime(timestamp);
+                            offListener();
+                        });
+                    }
+                    else {
+                        video.currentTime(timestamp);
+                    }
+                }
+            }
+            else {
+                $log.info('No timestamp');
+            }
+        };
+
         service.updateEditor = function (fileInfo) {
             if (!fileInfo) {
                 return;
@@ -437,7 +469,8 @@ module.factory('editor',
             });
 
             session.$breakpointListener = function (e) {
-                if (!doc.info && !doc.info.syncNotesVideo)
+                var currentSync = service.getCurrentSync();
+                if (!doc.info || !currentSync)
                     return;
                 var delta = e.data;
                 var range = delta.range;
@@ -446,7 +479,7 @@ module.factory('editor',
                     if (session.getLine(range.start.row).trim() === '') {
                         service.unsync(session, range.start.row);
                     }
-                    else if (!(range.start.row in doc.info.syncNotesVideo)) {
+                    else if (!(range.start.row in currentSync)) {
                         service.syncLine(session, range.start.row);
                     }
 
@@ -463,45 +496,31 @@ module.factory('editor',
                     shift = -1;
                 }
 
-                var shiftedSyncNotesVideo = {},
-                    isUpdated = false;
-                for (var line in doc.info.syncNotesVideo) {
+                var shiftedSyncNotesVideo = {};
+                for (var line in currentSync) {
                     var intLine = parseInt(line);
                     if (!isNaN(intLine)) {
                         if (line < firstRow) {
-                            shiftedSyncNotesVideo[line] = doc.info.syncNotesVideo[line];
+                            shiftedSyncNotesVideo[line] = currentSync[line];
                         }
                         else {
                             var nextLine = parseInt(line) + shift;
-                            shiftedSyncNotesVideo[nextLine] = doc.info.syncNotesVideo[line];
-                            isUpdated = true;
+                            shiftedSyncNotesVideo[nextLine] = currentSync[line];
                         }
                     }
                 }
+                currentSync = shiftedSyncNotesVideo;
 
-                if(isUpdated) {
-                    shiftedSyncNotesVideo.enabled = doc.info.syncNotesVideo.enabled;
-                    doc.info.syncNotesVideo = shiftedSyncNotesVideo;
-                    service.updateBreakpoints(session);
-                }
+                service.updateBreakpoints(session);
             }.bind(session);
             session.on("change", session.$breakpointListener);
 
             session.getSelection().on('changeCursor', function (e) {
-                var lineCursorPosition = editor.getCursorPosition().row,
-                    timestamp = doc.info.syncNotesVideo[lineCursorPosition];
+                var lineCursorPosition = editor.getCursorPosition().row;
 
                 if (lineCursorPosition != service.lastRow) {
                     service.lastRow = lineCursorPosition;
-                    if (timestamp) {
-                        $log.info('Timestamp', lineCursorPosition, timestamp);
-                        if (timestamp > -1 && doc.info.syncNotesVideo.enabled) {
-                            video.currentTime(timestamp);
-                        }
-                    }
-                    else {
-                        $log.info('No timestamp');
-                    }
+                    service.jump(service.lastRow);
                 }
             });
 
@@ -510,29 +529,34 @@ module.factory('editor',
             doc.info = fileInfo;
 
             service.updateBreakpoints(session);
+            service.jump(0);
 
-            editor.setSession(session);
-//                editor.setReadOnly(!doc.info.editable);
             session.setUseWrapMode(true);
             session.setWrapLimitRange(80);
-            editor.focus();
+
+            if(editor) {
+                editor.setSession(session);
+                editor.focus();
+            }
         };
         service.updateBreakpoints = function (session) {
             if (session && doc.info) {
                 var annotations = [],
                     breakpoints = [];
-                session.clearBreakpoints();
-                for (var line in doc.info.syncNotesVideo) {
-                    var timestamp = parseFloat(doc.info.syncNotesVideo[line]);
-                    if (timestamp > -1)
-                    {
-                        var time = doc.info.syncNotesVideo[line],
-                            minutes = parseInt(time / 60, 10) % 60,
-                            seconds = ("0" + parseInt(time % 60, 10)).slice(-2);
 
-                        breakpoints.push(line);
-                        annotations.push({row:line, text:
-                            '{0}:{1}'.format(minutes, seconds)});
+                session.clearBreakpoints();
+                for(var sync in doc.info.videos) {
+                    for (var line in doc.info.videos[sync]) {
+                        var timestamp = parseFloat(doc.info.videos[sync][line]);
+                        if (timestamp > -1)
+                        {
+                            var minutes = parseInt(timestamp / 60, 10) % 60,
+                                seconds = ("0" + parseInt(timestamp % 60, 10)).slice(-2);
+
+                            breakpoints.push(line);
+                            annotations.push({row:line, text:
+                                '{0}:{1}'.format(minutes, seconds)});
+                        }
                     }
                 }
 
@@ -540,24 +564,29 @@ module.factory('editor',
                 session.setAnnotations(annotations);
             }
         };
+
+        service.getCurrentSync = function () {
+            return doc.info.videos[doc.info.currentVideo];
+        };
+
         service.syncLine = function (session, line) {
             // Is there a video loaded?
-            if (doc.info && doc.info.syncNotesVideo && doc.info.video) {
+            var currentSync = service.getCurrentSync();
+
+            if (doc.info && doc.info.currentVideo) {
                 $log.info('Video loaded');
                 // Is there some texts before and after?
                 var timestampBefore, isLineBefore = false,
                     timestampAfter, isLineAfter = false;
 
-                //session.setBreakpoint(line);
-
-                for (var lineSynced in doc.info.syncNotesVideo) {
+                for (var lineSynced in currentSync) {
                     if (!isLineBefore && lineSynced < line) {
                         isLineBefore = true;
-                        timestampBefore = doc.info.syncNotesVideo[lineSynced];
+                        timestampBefore = currentSync[lineSynced];
                     }
                     else if (!isLineAfter && lineSynced > line) {
                         isLineAfter = true;
-                        timestampAfter = doc.info.syncNotesVideo[lineSynced];
+                        timestampAfter = currentSync[lineSynced];
                     }
 
                     if (isLineBefore && isLineAfter) {
@@ -568,31 +597,33 @@ module.factory('editor',
                 if (isLineBefore && isLineAfter) {
                     // Text before and after
                     // Timestamp for this line must be average time between nearest line before/after
-                    doc.info.syncNotesVideo[line] = (timestampBefore + timestampAfter) / 2;
+                    currentSync[line] = (timestampBefore + timestampAfter) / 2;
                 }
                 else {
                     // No text or only before / after
                     // Using current player time minus a delta
                     if(parseInt(video.currentTime() - 3, 10) > 0) {
-                        doc.info.syncNotesVideo[line] = video.currentTime() - 3;
+                        currentSync[line] = video.currentTime() - 3;
                     }
                     else {
-                        doc.info.syncNotesVideo[line] = video.currentTime();
+                        currentSync[line] = video.currentTime();
                     }
                 }
-                this.updateBreakpoints(session);
+                
                 $log.info('Setting timestamp', line, doc.info.syncNotesVideo[line]);
+                this.updateBreakpoints(session);
             }
             // No video => mark it anyway, don't want to sync this line
             else {
                 $log.info('No video');
-                doc.info.syncNotesVideo[line] = -1
+                currentSync[line] = -1
             }
         };
         service.unsync = function (session, line) {
-            if (doc.info && doc.info.syncNotesVideo && line in doc.info.syncNotesVideo) {
+            var currentSync = service.getCurrentSync();
+            if (doc.info && currentSync && line in currentSync) {
                 session.clearBreakpoint(line);
-                delete doc.info.syncNotesVideo[line];
+                delete currentSync[line];
             }
         };
         service.state = function () {
@@ -628,7 +659,7 @@ module.factory('editor',
             service.focusEditor();
         });
 
-        service.$watch('doc.info.syncNotesVideo.enabled', function () {
+        service.$watch('doc.info.syncVideoNotes.enabled', function () {
             service.focusEditor();
         });
         service.$watch('doc.info.editable', function (newValue, oldValue) {

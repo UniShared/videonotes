@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
 
@@ -21,6 +22,9 @@ import sys
 
 sys.path.insert(0, 'lib')
 
+import urllib
+import urlparse
+from utils import FileUtils
 import os
 import httplib2
 import random
@@ -131,6 +135,8 @@ class DriveState(object):
 
 
 class BaseHandler(webapp2.RequestHandler):
+    AUTHORIZED_DOMAINS = [u'www.udacity.com', u'www.coursera.org']
+
     def handle_exception(self, exception, debug):
         # If the exception is a HTTPException, use its error code.
         # Otherwise use a generic 500 error code.
@@ -192,6 +198,7 @@ class BaseHandler(webapp2.RequestHandler):
         Args:
           data: The data that will be converted to JSON to return.
         """
+        self.response.headers['Access-Control-Allow-Origin'] = 'https://www.udacity.com'
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(data))
 
@@ -223,6 +230,11 @@ class BaseHandler(webapp2.RequestHandler):
     @staticmethod
     def is_development_server():
         return 'Development' in os.environ['SERVER_SOFTWARE']
+
+    @staticmethod
+    def is_authorized_domain(url):
+        parse = urlparse.urlparse(url)
+        return parse.netloc in BaseHandler.AUTHORIZED_DOMAINS
 
 
 class BaseDriveHandler(BaseHandler):
@@ -490,11 +502,6 @@ class EditPage(BaseDriveHandler):
 class ServiceHandler(BaseDriveHandler):
     """Web handler for the service to read and write to Drive."""
 
-    def get_empty_file(self, f):
-        f['content'] = {'content': ''}
-        f['video'] = {'video': ''}
-        f['syncNotesVideo'] = {'syncNotesVideo': {'enabled': True}}
-
     def get(self):
         """Called when HTTP GET requests are received by the web application.
 
@@ -530,21 +537,20 @@ class ServiceHandler(BaseDriveHandler):
                     if resp and resp.status == int(200) and raw_content:
                         try:
                             json_content = json.loads(raw_content)
-                            f['content'] = json_content['content']
-                            f['video'] = json_content['video']
-                            f['syncNotesVideo'] = json_content['syncNotesVideo']
+                            f.update(json_content)
                         except ValueError:
                             logging.info("ValueError when decoding raw content in JSON")
-                            self.get_empty_file(f)
+                            f.update(FileUtils.get_empty_file())
                     else:
                         logging.debug("No content or error response")
-                        self.get_empty_file(f)
+                        f.update(FileUtils.get_empty_file())
                 else:
                     logging.debug('No download URL')
-                    self.get_empty_file(f)
+                    f.update(FileUtils.get_empty_file())
             else:
                 f = None
                 # Generate a JSON response with the file data and return to the client.
+            f = FileUtils.transformations(f)
             self.RespondJSON(f)
         except AccessTokenRefreshError:
             # Catch AccessTokenRefreshError which occurs when the API client library
@@ -573,8 +579,7 @@ class ServiceHandler(BaseDriveHandler):
         data = self.RequestJSON()
         logging.debug('JSON data retrieved %s', json.dumps(data))
 
-        content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                              'syncNotesVideo': data.get('syncNotesVideo', '')})
+        content = FileUtils.get_content_from_data(data)
 
         max_try = 5
         for n in range(0, max_try):
@@ -693,11 +698,7 @@ class ServiceHandler(BaseDriveHandler):
         logging.info('Updating file %s', data['id'])
 
         # Create a new file data structure.
-        content = json.dumps({'video': data.get('video', ''), 'content': data.get('content', ''),
-                              'syncNotesVideo': data.get('syncNotesVideo', '')})
-        if 'content' in data:
-            data['indexableText'] = {'text':data['content']}
-            data.pop('content')
+        content = FileUtils.get_content_from_data(data)
 
         max_try = 5
         for n in range(0, max_try):
@@ -752,10 +753,37 @@ class AuthHandler(BaseDriveHandler):
 
         if not creds:
             logging.debug('No credentials, redirecting to Oauth2 URL')
+            next = self.request.get('next')
+            if next and BaseHandler.is_authorized_domain(next):
+                self.session['next'] = next
+
+            file_id = self.request.get('file_id')
+            if file_id:
+                self.session['fileId'] = file_id
+
             redirect_uri = self.RedirectAuth()
             return self.redirect(redirect_uri)
 
-        return self.redirect('/edit/')
+        if 'next' in self.session:
+            next = self.session['next']
+            del self.session['next']
+            params = {'videonotes_start': 1}
+
+            if 'fileId' in self.session:
+                file_id = self.session['fileId']
+                del self.session['fileId']
+                if file_id:
+                    params.update({'videonotes_id': file_id})
+
+            url_parts = list(urlparse.urlparse(next))
+            query = dict(urlparse.parse_qsl(url_parts[4]))
+            query.update(params)
+
+            url_parts[4] = urllib.urlencode(query)
+
+            return self.redirect(str(urlparse.urlunparse(url_parts)))
+        else:
+            return self.redirect('/edit/')
 
 
 class UserHandler(BaseDriveHandler):
@@ -784,10 +812,16 @@ class UserHandler(BaseDriveHandler):
 class ProxyHandler(BaseHandler):
     def get(self):
         url = self.request.get('q')
+
         logging.debug('Fetch URL %s', url)
-        result = urlfetch.fetch(url)
-        if result.status_code == 200:
-            self.response.out.write(result.content.strip())
+        if BaseHandler.is_authorized_domain(url):
+            logging.debug('Authorized domain URL %s', url)
+            result = urlfetch.fetch(url)
+            if result.status_code == 200:
+                self.response.out.write(result.content.strip())
+        else:
+            logging.getLogger("error").error('Unauthorized domain %s', url)
+            return self.abort(403)
 
 
 class CoursesHandler(BaseHandler):

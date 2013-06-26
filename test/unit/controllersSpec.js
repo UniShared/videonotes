@@ -35,7 +35,10 @@ describe('Controllers', function () {
         var videoCtrl;
 
         beforeEach(angular.mock.inject(function ($rootScope, $controller, doc, video) {
-            doc.info = {};
+            doc.info = {
+                currentVideo: null,
+                videos: {}
+            };
 
             var playing = false;
             video.load = jasmine.createSpy();
@@ -96,12 +99,15 @@ describe('Controllers', function () {
             spyOn(scope, 'endLoading').andCallThrough();
 
             scope.doc.info = {
-                video: 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7'
+                currentVideo: 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7',
+                videos: {
+                    'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7': {}
+                }
             };
 
             scope.loadPlayer();
 
-            expect(video.videoUrl).toEqual(scope.doc.info.video);
+            expect(video.videoUrl).toEqual(scope.doc.info.currentVideo);
             expect(scope.loading).toBe(true);
             expect(video.load).toHaveBeenCalled();
         }));
@@ -109,7 +115,7 @@ describe('Controllers', function () {
         it('should have a loadSampleVideo method', angular.mock.inject(function (doc) {
             scope.loadPlayer = jasmine.createSpy();
             expect(scope.videoUrl).toBe(null);
-            expect(doc.info.video).toBeUndefined();
+            expect(doc.info.videos).toEqual({});
 
             scope.loadSampleVideo();
 
@@ -164,16 +170,20 @@ describe('Controllers', function () {
                 scope.tour = {
                     ended: jasmine.createSpy('tour.ended').andReturn(true)
                 };
+
                 scope.videoUrl = 'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7'
 
                 scope.submitVideo();
                 expect(scope.videoStatus.error).toEqual(false);
-                expect(doc.info.video).toEqual(scope.videoUrl);
+                expect(doc.info.currentVideo).toEqual(scope.videoUrl);
+                expect(doc.info.videos).toEqual({
+                    'https://class.coursera.org/knowthyself-001/lecture/download.mp4?lecture_id=7': {}
+                });
                 expect(segmentio.track).toHaveBeenCalledWith('Load video', {url:scope.videoUrl});
                 expect(scope.loadPlayer).toHaveBeenCalled();
             }));
 
-            it('should call show tour when not ended and submitVideo', function () {
+            it('should call show tour when not ended and submitVideo', inject(function (doc) {
                 scope.tour = {
                     ended: jasmine.createSpy('tour.ended').andReturn(false),
                     hideStep: jasmine.createSpy('tour.hideStep'),
@@ -185,7 +195,7 @@ describe('Controllers', function () {
                 expect(scope.tour.ended).toHaveBeenCalled();
                 expect(scope.tour.hideStep).toHaveBeenCalledWith(0);
                 expect(scope.tour.showStep).toHaveBeenCalledWith(1);
-            });
+            }));
 
             it('should not call show tour when ended and submitVideo', function () {
                 scope.tour = {

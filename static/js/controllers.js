@@ -258,6 +258,13 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
         error: false
     };
 
+    $scope.addVideo = function (videoUrl) {
+        if(!doc.info.videos[videoUrl]) {
+            doc.info.videos[videoUrl] = {};
+        }
+        doc.info.currentVideo = videoUrl;
+    };
+
     $scope.submitVideo = function () {
         $scope.edit = false;
         $scope.videoStatus.error = false;
@@ -266,9 +273,9 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
             $scope.tour.showStep(1);
         }
 
-        if(doc.info.video !== $scope.videoUrl) {
-            doc.info.video = $scope.videoUrl;
+        if(doc.info.currentVideo !== $scope.videoUrl) {
             segmentio.track('Load video', {url: $scope.videoUrl});
+            $scope.addVideo($scope.videoUrl);
             $scope.loadPlayer();
         }
     };
@@ -279,16 +286,16 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     };
 
     $scope.loadPlayer = function () {
-        if (doc && doc.info && doc.info.video) {
+        if (doc && doc.info && doc.info.currentVideo) {
             $scope.edit = false;
-            $scope.videoUrl = doc.info.video;
+            $scope.videoUrl = doc.info.currentVideo;
             $scope.loading = true;
 
             $scope.videoStatus.error = false;
             $scope.videoStatus.speed = 1;
 
-            if(video.videoUrl !== doc.info.video) {
-                video.videoUrl = doc.info.video;
+            if(video.videoUrl !== doc.info.currentVideo) {
+                video.videoUrl = doc.info.currentVideo;
                 video.load();
             }
         }
@@ -318,7 +325,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
 
     $scope.loadSampleVideo = function () {
         segmentio.track('Video load sample');
-        doc.info.video = sampleVideo;
+        $scope.addVideo(sampleVideo);
         $scope.loadPlayer();
     };
 
@@ -410,11 +417,11 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init = function () {
             $scope.sync = {};
         if (doc.info && doc.info.syncNotesVideo) {
-            if (doc.info.syncNotesVideo.enabled === undefined) {
-                doc.info.syncNotesVideo.enabled = true;
+            if (doc.info.syncNotesVideo === undefined) {
+                doc.info.syncNotesVideo = true;
             }
 
-            $scope.sync.enabled = doc.info.syncNotesVideo.enabled
+            $scope.sync.enabled = doc.info.syncNotesVideo
         }
         else {
             $scope.sync.enabled = true;
@@ -469,7 +476,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
 
     $scope.$watch('sync.enabled', function () {
         if (doc && doc.info) {
-            doc.info.syncNotesVideo.enabled = $scope.sync.enabled;
+            doc.info.syncNotesVideo = $scope.sync.enabled;
             segmentio.track('Editor sync {0}'.format($scope.sync.enabled ? "enable" : "disable"));
         }
     }, true);

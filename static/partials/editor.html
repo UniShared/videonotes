@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="videoplayer">
-                        <div class="no-video" ng-hide="doc.info.video" ng-disabled="!doc.info.editable">
+                        <div class="no-video" ng-hide="doc.info.currentVideo" ng-disabled="!doc.info.editable">
                             <h1 class="or">OR</h1>
 
                             <div class="load-sample-video-container">
@@ -84,7 +84,7 @@
                             </div>
                         </div>
 
-                        <div class="row-fluid with-video" ng-show="doc.info.video">
+                        <div class="row-fluid with-video" ng-show="doc.info.currentVideo">
                             <div class="span12">
                                 <img class="loading" src="/img/loading.gif" ng-show="loading">
 
