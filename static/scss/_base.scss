@@ -1,3 +1,6 @@
+@import url(http://weloveiconfonts.com/api/?family=zocial);
+@import url(http://weloveiconfonts.com/api/?family=zocial);
+
 /* Common values */
 $main-blue-color: #3cbdee;
 $main-orange-color: #F18A16;
@@ -9,3 +12,8 @@ $text-color: #787975;
 $font-family-helvetica-neue: "HelveticaNeue";
 $font-family-museoslab: "MuseoSlab";
 
+
+/* zocial */
+[class*="zocial-"]:before {
+  font-family: 'zocial', sans-serif;
+}
