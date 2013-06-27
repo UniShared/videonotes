@@ -668,7 +668,6 @@ module.factory('editor',
             }
 
             currentSync.snapshot = snapshot;
-            window.open(snapshot);
         };
 
         service.unsync = function (line) {

@@ -146,6 +146,9 @@
                                     ng-show="doc.info.editable && doc.info.currentVideo && device.isExtensionLoaded"><a
                                         class="icon-large icon-screenshot" ng-click="insertScreenshot()" href></a>
                                 </li>
+                                <li tooltip="Export to Evernote" tooltip-placement="bottom">
+                                    <a class="icon-large zocial-evernote" ng-click="exportToEvernote()" href></a>
+                                </li>
                                 <li class="menu-help" tooltip="Help" tooltip-placement="bottom">
                                     <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
                                 <li class="menu-switch-sync" tooltip="Switch sync ({{switchShortcut}})"

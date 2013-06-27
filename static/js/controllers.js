@@ -489,6 +489,11 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
         });
     };
 
+    $scope.exportToEvernote = function () {
+        segmentio.track('Document export to Evernote');
+        window.open('/export/evernote/' + doc.info.id);
+    };
+
     $scope.$watch('sync.enabled', function () {
         if (doc && doc.info) {
             doc.info.syncNotesVideo = $scope.sync.enabled;
