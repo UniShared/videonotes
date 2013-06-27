@@ -1,9 +1,9 @@
+import collections
 import json
+import logging
+import os
 
 class FileUtils():
-    """
-    Transform a VideoNot.es file from a version to another (currently version 2)
-    """
     LAST_FILE_VERSION = 2
 
     @staticmethod
@@ -65,3 +65,110 @@ class FileUtils():
             f['syncNotesVideo'] = sync_status
 
         return f
+
+    @staticmethod
+    def flatten_sync(sync):
+        """
+        Flatten a nested sync
+
+        Input format:
+        {
+            "http://video1": {
+                0: {
+                    time: ...,
+                    screenshot: ...
+                },
+                2: {
+                    time: ...,
+                    screenshot: ...
+                },
+                ...
+            },
+            "http://video2": {
+                1: {
+                    time: ...,
+                    screenshot: ...
+                },
+                3: {
+                    time: ...,
+                    screenshot: ...
+                },
+                ...
+            }
+        }
+        Output format:
+        {
+            0: {
+                url: "http://video1"
+                time: ...,
+                screenshot: ...
+            },
+            1: {
+                url: "http://video2"
+                time: ...,
+                screenshot: ...
+            },
+            2: {
+                url: "http://video1"
+                time: ...,
+                screenshot: ...
+            },
+            3: {
+                url: "http://video2"
+                time: ...,
+                screenshot: ...
+            },
+            ...
+        }
+        """
+        flat_sync = {}
+        for url_video in sync:
+            video = sync[url_video]
+            for line_sync in video:
+                video[line_sync]['url'] = url_video
+                flat_sync[int(line_sync)] = video[line_sync]
+        return collections.OrderedDict(sorted(flat_sync.items()))
+
+def SibPath(name):
+    """Generate a path that is a sibling of this file.
+
+    Args:
+      name: Name of sibling file.
+    Returns:
+      Path to sibling file.
+    """
+    return os.path.join(os.path.dirname(__file__), name)
+
+class DriveState(object):
+    """Store state provided by Drive."""
+
+    def __init__(self, state):
+        """Create a new instance of drive state.
+
+        Parse and load the JSON state parameter.
+
+        Args:
+          state: State query parameter as a string.
+        """
+        if state:
+            state_data = json.loads(state)
+            self.action = state_data['action']
+
+            if 'folderId' in state_data:
+                self.parent = state_data['folderId']
+            self.ids = map(str, state_data.get('ids', []))
+        else:
+            self.action = 'create'
+            self.parent = []
+
+        logging.debug('Create Drive state, parent %s, action %s', unicode(self.parent) if hasattr(self, 'parent') else None, self.action)
+
+    @classmethod
+    def FromRequest(cls, request):
+        """Create a Drive State instance from an HTTP request.
+
+        Args:
+          cls: Type this class method is called against.
+          request: HTTP request.
+        """
+        return DriveState(request.get('state'))
