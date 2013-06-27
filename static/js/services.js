@@ -262,7 +262,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
                 customEvent = new CustomEvent('videonotes::getSnapshot', {detail: {dimensions: dimensions}}),
                 defer = $q.defer();
 
-            extensionEventDiv.addEventListener('videonotes::getSnapshot', function callback(result) {
+            extensionEventDiv.addEventListener('videonotes::snapshotResult', function callback(result) {
                 extensionEventDiv.removeEventListener(callback);
                 defer.resolve(result.detail.snapshot);
                 $rootScope.$apply();
@@ -589,10 +589,12 @@ module.factory('editor',
             if (doc.info.currentVideo) {
                 var currentSync = doc.info.videos[doc.info.currentVideo];
                 if (undefined != line) {
-                    currentSync[line] = {
-                        time: null,
-                        screenshot: null
-                    };
+                    if(!currentSync[line]) {
+                        currentSync[line] = {
+                            time: null,
+                            screenshot: null
+                        };
+                    }
 
                     return currentSync[line];
                 }
@@ -667,6 +669,7 @@ module.factory('editor',
             }
 
             currentSync.screenshot = screenshot;
+            console.log(screenshot);
         };
 
         service.unsync = function (line) {
