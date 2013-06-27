@@ -2,8 +2,8 @@
 
 var controllersModule = angular.module('app.controllers', []);
 
-controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'segmentio', 'config',
-    function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, segmentio, config) {
+controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'segmentio', 'config',
+    function ($window, $rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, segmentio, config) {
     $scope.appName = appName;
 
     Modernizr.Detectizr.detect({detectOs: true, detectBrowser: true});
@@ -161,6 +161,10 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         segmentio.track('Document created');
     });
     $scope.$onMany(['firstSaved', 'loaded'], $scope.startTour);
+
+    $window.addEventListener('videonotes::extensionLoaded', function () {
+        $scope.device.isExtensionLoaded = (document.getElementById('videonotesEventDiv') !== null);
+    });
 }]);
 
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
@@ -415,7 +419,8 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.doc = doc;
 
     $scope.init = function () {
-            $scope.sync = {};
+        $scope.sync = {};
+
         if (doc.info && doc.info.syncNotesVideo) {
             if (doc.info.syncNotesVideo === undefined) {
                 doc.info.syncNotesVideo = true;
@@ -445,7 +450,7 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'segmentio',
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'segmentio', function ($scope, $rootScope, $window, config, editor, doc, segmentio) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'video', 'doc', 'segmentio', function ($scope, $rootScope, $window, config, editor, video, doc, segmentio) {
     var onFilePicked = function (data) {
         $scope.safeApply(function () {
             if (data.action == 'picked') {
@@ -454,6 +459,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
             }
         });
     };
+
     $scope.open = function () {
         var view = new google.picker.View(google.picker.ViewId.DOCS);
         view.setMimeTypes('application/vnd.unishared.document');
@@ -465,13 +471,22 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
         picker.setVisible(true);
         segmentio.track('Document open');
     };
+
     $scope.create = function () {
         editor.create();
         segmentio.track('Document create new');
     };
+
     $scope.save = function () {
         editor.save(true);
         segmentio.track('Document save');
+    };
+
+    $scope.insertScreenshot = function () {
+        segmentio.track('Document screenshot');
+        video.takeScreenshot().then(function (screenshot) {
+            editor.setScreenshot(screenshot);
+        });
     };
 
     $scope.$watch('sync.enabled', function () {
