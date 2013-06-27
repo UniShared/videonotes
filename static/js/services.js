@@ -251,7 +251,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
                 return this.player.playbackRate();
             }
         },
-        takeScreenshot: function () {
+        takeSnapshot: function () {
             var dimensions = {
                 top: this.videoElement.offsetTop,
                 left: this.videoElement.offsetLeft,
@@ -592,7 +592,6 @@ module.factory('editor',
                     if(!currentSync[line]) {
                         currentSync[line] = {
                             time: null,
-                            screenshot: null
                         };
                     }
 
@@ -657,19 +656,19 @@ module.factory('editor',
             }
         };
 
-        service.setScreenshot = function (screenshot) {
+        service.setSnapshot = function (snapshot) {
             var lineCursorPosition = editor.getCursorPosition().row,
                 currentSync = service.getCurrentSync(lineCursorPosition),
-                screenshotSymbol = '<screenshot>',
+                snapshotSymbol = '<snapshot>',
                 session = editor.getSession();
 
-            if(session.getLine(lineCursorPosition).indexOf(screenshotSymbol) === -1) {
-                session.insert({row:lineCursorPosition, column:0}, screenshotSymbol);
+            if(session.getLine(lineCursorPosition).indexOf(snapshotSymbol) === -1) {
+                session.insert({row:lineCursorPosition, column:0}, snapshotSymbol);
                 service.syncLine(lineCursorPosition);
             }
 
-            currentSync.screenshot = screenshot;
-            console.log(screenshot);
+            currentSync.snapshot = snapshot;
+            window.open(snapshot);
         };
 
         service.unsync = function (line) {

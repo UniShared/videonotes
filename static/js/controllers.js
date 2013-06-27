@@ -484,8 +484,8 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
 
     $scope.insertScreenshot = function () {
         segmentio.track('Document screenshot');
-        video.takeScreenshot().then(function (screenshot) {
-            editor.setScreenshot(screenshot);
+        video.takeSnapshot().then(function (snapshot) {
+            editor.setSnapshot(snapshot);
         });
     };
 
