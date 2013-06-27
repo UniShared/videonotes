@@ -267,11 +267,11 @@
               }
             }
           }
+        }
 
-          &.inactive {
-            .ace_gutter-cell.ace_breakpoint {
-              background-color: #FFEFBF;
-            }
+        &.inactive {
+          .ace_gutter-cell.ace_breakpoint {
+            background-color: #FFEFBF;
           }
         }
       }

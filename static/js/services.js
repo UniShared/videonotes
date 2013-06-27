@@ -712,7 +712,7 @@ module.factory('editor',
             service.focusEditor();
         });
 
-        service.$watch('doc.info.syncVideoNotes.enabled', function () {
+        service.$watch('doc.info.syncVideoNotes', function () {
             service.focusEditor();
         });
 
