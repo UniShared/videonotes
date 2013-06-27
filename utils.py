@@ -58,8 +58,17 @@ class FileUtils():
 
             # We are now storing a dict of videos' URLs and for each, timestamps
             f['currentVideo'] = f['video']
+
+            old_sync = f['syncNotesVideo']
+
+            new_sync = {}
+            for line_synced in old_sync:
+                new_sync[line_synced] = {
+                    'time' : old_sync[line_synced]
+                }
+
             f['videos'] = {
-                f['video']: f['syncNotesVideo']
+                f['video']: new_sync
             }
             del f['video']
 
