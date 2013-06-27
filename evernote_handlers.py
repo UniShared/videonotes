@@ -82,7 +82,6 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
         client = self.get_authorized_client()
         if not client:
             return self.redirect('/auth-evernote?next={0}'.format(self.request.path))
-        notestore = client.get_note_store()
 
         try:
             file = self.get_file(file_id)
@@ -93,6 +92,7 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
         base_url = self.request.host_url + '/edit/{0}'.format(file['id'])
 
         # Look for the VideoNot.es Notebook
+        notestore = client.get_note_store()
         notesbooks = notestore.listNotebooks()
         notebook = None
 
@@ -106,44 +106,25 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
             notebook.name = 'VideoNot.es'
             notebook = notestore.createNotebook(notebook)
 
-        # Formatting the VideoNot.es in ENML
-        note = Note()
-        note.title = file['title']
-        note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">'
-
-        flat_sync = FileUtils.flatten_sync(file['videos'])
-        content_html = []
-        i = 0
-        for line in file['content'].split('\n'):
-            if line:
-                if line == '<screenshot>':
-                    if flat_sync[i] and flat_sync[i]['screenshot']:
-                        if i > 0:
-                            content_html.append('<br/>')
-
-                        content_html.append('<img src="{0}" />'.format(flat_sync[i]['screenshot']))
-                        content_html.append('<a href="{0}">{0}</a>'.format(flat_sync[i]['url']))
-                        content_html.append('<br/><br/>')
-                else:
-                    link = '<a href="{0}?l={1}">+</a>'.format(base_url, i)
-                    content_html.append(link + ' ' + line)
-                    content_html.append('<br/>')
-            else:
-                content_html.append(line)
-            i+=1
-
-        content_html.append('<br/><br/>')
-        content_html.append('<a href="{0}">View in VideoNot.es</a>'.format(base_url))
-        note.content += '<en-note>{0}</en-note>'.format(''.join(content_html).encode('utf-8'))
-
-        logging.debug('Evernote export of %s: %s', file_id, note.content)
+        # Formatting the note in ENML
+        content_enml = FileUtils.to_ENML(file, base_url)
+        content_enml.append('<br></br><br></br>')
+        content_enml.append('<a href="{0}">View in VideoNot.es</a>'.format(base_url))
 
         # Saving the note in Evernote
+        note = Note()
+        note.title = file['title']
+        note_content = ''.join(content_enml).encode('utf-8')
+        note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note>{0}</en-note>'.format(note_content)
+
         if notebook:
             note.notebookGuid = notebook.guid
         note = notestore.createNote(note)
 
-        # Returning the Note's guid
+        logging.debug('VideoNot.es %s exported to Evernote: %s', file_id, note_content)
+        logging.info('VideoNot.es %s exported to Evernote with id: %s', file_id, note.guid)
+
+        # Returning to the new note in Evernote
         user_store = client.get_user_store()
         notestore_url = '/'.join(user_store.getNoteStoreUrl().split('/')[0:5])
         return self.redirect(notestore_url + '/view/notebook/{0}'.format(note.guid))

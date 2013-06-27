@@ -85,3 +85,85 @@ class TestFileUtils(unittest.TestCase):
         effective_output = FileUtils.flatten_sync(input_sync)
 
         self.assertDictEqual(expected_output, effective_output)
+
+    def test_to_enml_with_screenshots(self):
+        file = {
+            'id': 'test',
+            'content': 'test' + '\n' + '<{0}>'.format(FileUtils.SNAPSHOT_KEY),
+            'videos': {
+                'video1': {
+                    2: {
+                        'time': 0,
+                        'snapshot': None
+                    },
+                    1: {
+                        'time': 0,
+                        'snapshot': 'snapshot'
+                    }
+                },
+                'video2': {
+                    0: {
+                        'time': 0,
+                        'snapshot': None
+                    },
+                    3: {
+                        'time': 0,
+                        'snapshot': None
+                    }
+                }
+            }
+        }
+
+        base_url = 'http://test.videonot.es/edit/' + file['id']
+
+        expected_enml = [
+            '<a href="{0}?l=0">+</a> test'.format(base_url),
+            '<br></br>',
+            '<br></br>',
+            '<img src="{0}"></img>'.format('snapshot'),
+            '<a href="{0}">{0}</a>'.format('video1'),
+            '<br></br><br></br>'
+        ]
+
+        content_enml = FileUtils.to_ENML(file, base_url)
+        self.assertEqual(expected_enml, content_enml)
+
+    def test_to_enml_without_screenshots(self):
+        file = {
+            'id': 'test',
+            'content': 'test' + '\n' + 'test2',
+            'videos': {
+                'video1': {
+                    2: {
+                        'time': 0,
+                        'snapshot': None
+                    },
+                    1: {
+                        'time': 0,
+                        'snapshot': None
+                    }
+                },
+                'video2': {
+                    0: {
+                        'time': 0,
+                        'snapshot': None
+                    },
+                    3: {
+                        'time': 0,
+                        'snapshot': None
+                    }
+                }
+            }
+        }
+
+        base_url = 'http://test.videonot.es/edit/' + file['id']
+
+        expected_enml = [
+            '<a href="{0}?l=0">+</a> test'.format(base_url),
+            '<br></br>',
+            '<a href="{0}?l=1">+</a> test2'.format(base_url),
+            '<br></br>',
+        ]
+
+        content_enml = FileUtils.to_ENML(file, base_url)
+        self.assertEqual(expected_enml, content_enml)

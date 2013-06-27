@@ -5,6 +5,7 @@ import os
 
 class FileUtils():
     LAST_FILE_VERSION = 2
+    SNAPSHOT_KEY = 'snapshot'
 
     @staticmethod
     def get_empty_file():
@@ -76,22 +77,22 @@ class FileUtils():
             "http://video1": {
                 0: {
                     time: ...,
-                    screenshot: ...
+                    snapshot: ...
                 },
                 2: {
                     time: ...,
-                    screenshot: ...
+                    snapshot: ...
                 },
                 ...
             },
             "http://video2": {
                 1: {
                     time: ...,
-                    screenshot: ...
+                    snapshot: ...
                 },
                 3: {
                     time: ...,
-                    screenshot: ...
+                    snapshot: ...
                 },
                 ...
             }
@@ -101,22 +102,22 @@ class FileUtils():
             0: {
                 url: "http://video1"
                 time: ...,
-                screenshot: ...
+                snapshot: ...
             },
             1: {
                 url: "http://video2"
                 time: ...,
-                screenshot: ...
+                snapshot: ...
             },
             2: {
                 url: "http://video1"
                 time: ...,
-                screenshot: ...
+                snapshot: ...
             },
             3: {
                 url: "http://video2"
                 time: ...,
-                screenshot: ...
+                snapshot: ...
             },
             ...
         }
@@ -128,6 +129,35 @@ class FileUtils():
                 video[line_sync]['url'] = url_video
                 flat_sync[int(line_sync)] = video[line_sync]
         return collections.OrderedDict(sorted(flat_sync.items()))
+
+    @staticmethod
+    def to_ENML(file, base_url):
+        """
+        Formatting a VideoNot.es in ENML (Evernote markup)
+        """
+        flat_sync = FileUtils.flatten_sync(file['videos'])
+        content_enml = []
+        i = 0
+
+        for line in file['content'].split('\n'):
+            if line:
+                if line == '<{0}>'.format(FileUtils.SNAPSHOT_KEY):
+                    if flat_sync[i] and FileUtils.SNAPSHOT_KEY in flat_sync[i]:
+                        if i > 0:
+                            content_enml.append('<br></br>')
+
+                        content_enml.append('<img src="{0}"></img>'.format(flat_sync[i][FileUtils.SNAPSHOT_KEY]))
+                        content_enml.append('<a href="{0}">{0}</a>'.format(flat_sync[i]['url']))
+                        content_enml.append('<br></br><br></br>')
+                else:
+                    link = '<a href="{0}?l={1}">+</a>'.format(base_url, i)
+                    content_enml.append(link + ' ' + line)
+                    content_enml.append('<br></br>')
+            else:
+                content_enml.append(line)
+            i += 1
+
+        return content_enml
 
 def SibPath(name):
     """Generate a path that is a sibling of this file.
