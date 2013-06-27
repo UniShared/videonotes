@@ -272,6 +272,7 @@ describe('service', function() {
             };
             spyOn(Popcorn, 'smart').andReturn(mockPopcorn);
         });
+
         it("should be able to detect Coursera's lecture URL", inject(function (video) {
             var courseName = 'adhd-001', lectureId = 5;
             var url = 'https://class.coursera.org/{0}/lecture/{1}'.format(courseName, lectureId);
@@ -348,6 +349,63 @@ describe('service', function() {
             expect(video.pause).toHaveBeenCalled();
             expect(video.play).not.toHaveBeenCalled();
         }));
+
+        describe('takeSnapshot', function () {
+            var eventDiv;
+            beforeEach(inject(function (video) {
+                eventDiv = document.createElement('div');
+                eventDiv.id = 'videonotesEventDiv';
+                document.body.appendChild(eventDiv);
+
+                video.videoElement = document.createElement('div');
+                document.body.appendChild(video.videoElement);
+            }));
+
+            afterEach(inject(function (video) {
+                eventDiv.parentNode.removeChild(eventDiv);
+                video.videoElement.parentNode.removeChild(video.videoElement);
+            }));
+
+            it('should send a getSnapshot event', inject(function (video) {
+                var callback = jasmine.createSpy();
+                eventDiv.addEventListener('videonotes::getSnapshot', callback);
+
+                video.takeSnapshot();
+
+                waitsFor(function() {
+                    return callback.callCount > 0;
+                }, "getSnapshot callback to have been called", 1000);
+
+                runs(function () {
+                    expect(callback).toHaveBeenCalled();
+                });
+
+                eventDiv.removeEventListener('videonotes::getSnapshot', callback);
+            }));
+
+            it('should return a promise called with the snapshot', inject(function ($rootScope, video) {
+                var callbackPromise = jasmine.createSpy(),
+                    snapshotResult = {detail: {snapshot: 'snapshot'}};
+
+                eventDiv.addEventListener('videonotes::getSnapshot', function callback() {
+                    eventDiv.removeEventListener('videonotes::getSnapshot', callback);
+                    var customEvent = new CustomEvent('videonotes::snapshotResult', snapshotResult);
+                    eventDiv.dispatchEvent(customEvent);
+                });
+
+                var promiseSnapshot = video.takeSnapshot();
+                promiseSnapshot.then(callbackPromise);
+
+                waitsFor(function() {
+                    $rootScope.$digest();
+                    return callbackPromise.callCount > 0;
+                }, "Promise snapshot callback to have been called", 1000);
+
+                runs(function () {
+                    expect(callbackPromise).toHaveBeenCalledWith('snapshot');
+                })
+            }));
+        });
     });
 
     describe('config', function () {
