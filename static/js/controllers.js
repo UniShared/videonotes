@@ -25,7 +25,6 @@ controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$lo
     $scope.init = function () {
         if ($routeParams.id) {
             editor.load($routeParams.id);
-            //$scope.startTour();
         }
         else if ($routeParams.templateId) {
             editor.copy($routeParams.templateId);
@@ -148,6 +147,10 @@ controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$lo
             $log.info('Start tour');
             $scope.tour && $scope.tour.start();
         }, 1);
+
+        if($routeParams.l) {
+            editor.jump($routeParams.l-1);
+        }
     };
 
     $scope.shortcuts = function ($event) {

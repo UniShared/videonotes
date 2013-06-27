@@ -464,6 +464,9 @@ module.factory('editor',
                     else {
                         video.currentTime(timestamp);
                     }
+
+                    editor.gotoLine(line+1);
+                    editor.navigateLineEnd();
                 }
             }
             else {
