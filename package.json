@@ -9,6 +9,7 @@
     "grunt-compass": "~0.3.9",
     "grunt-contrib-watch": "~0.3.1",
     "grunt-karma": "~0.4.3",
-    "grunt-contrib-cssmin": "~0.6.0"
+    "grunt-contrib-cssmin": "~0.6.0",
+    "grunt-contrib-compass": "~0.3.0"
   }
 }
