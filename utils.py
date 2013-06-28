@@ -159,7 +159,7 @@ class FileUtils():
                         content_enml.append('<a href="{0}">{0}</a>'.format(flat_sync[i]['url']))
                         content_enml.append('<br></br><br></br>')
                 else:
-                    link = '<a href="{0}?l={1}">+</a>'.format(base_url, i)
+                    link = '<a href="{0}?l={1}">+</a>'.format(base_url, i+1)
                     content_enml.append(link + ' ' + line)
                     content_enml.append('<br></br>')
             else:
