@@ -298,7 +298,9 @@ module.factory('editor',
             editor.on("gutterclick", function (e) {
                 var lineCursorPosition = e.getDocumentPosition().row;
 
-                service.jump(lineCursorPosition);
+                if (doc.info.syncNotesVideo) {
+                    service.jump(lineCursorPosition);
+                }
             });
             service.updateEditor(doc.info);
         };
@@ -437,11 +439,8 @@ module.factory('editor',
         };
 
         service.jump = function (line) {
-            if (!doc.info.syncNotesVideo) {
-                return;
-            }
-
             var timestamp, videoUrl;
+
             for(var sync in doc.info.videos) {
                 if(doc.info.videos[sync][line]) {
                     timestamp = doc.info.videos[sync][line]['time'];
@@ -451,9 +450,9 @@ module.factory('editor',
 
             if (timestamp) {
                 $log.info('Timestamp', line, timestamp);
-                if (timestamp > -1 && doc.info.syncNotesVideo) {
+                if (timestamp > -1) {
                     if(video.videoUrl !== videoUrl) {
-                        doc.info.currentVideo = videoUrl
+                        doc.info.currentVideo = videoUrl;
                         video.videoUrl = doc.info.currentVideo;
                         video.load();
                         var offListener = service.$on('video::loadeddata', function () {
@@ -543,7 +542,10 @@ module.factory('editor',
 
                 if (lineCursorPosition != service.lastRow) {
                     service.lastRow = lineCursorPosition;
-                    service.jump(service.lastRow);
+
+                    if (doc.info.syncNotesVideo) {
+                        service.jump(service.lastRow);
+                    }
                 }
             });
 
