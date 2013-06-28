@@ -275,7 +275,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
 }]);
 
 module.factory('editor',
-    ['doc', 'backend', 'video', '$q', '$rootScope', '$log', function (doc, backend, video, $q, $rootScope, $log) {
+    ['$q', '$rootScope', '$log', '$timeout', 'doc', 'backend', 'video', function ($q, $rootScope, $log, $timeout, doc, backend, video) {
         var editor = null,
             EditSession = require("ace/edit_session").EditSession,
             service = $rootScope.$new(true);
@@ -666,8 +666,9 @@ module.factory('editor',
                 session = editor.getSession();
 
             if(session.getLine(lineCursorPosition).indexOf(snapshotSymbol) === -1) {
-                session.insert({row:lineCursorPosition, column:0}, snapshotSymbol);
+                session.insert({row:lineCursorPosition, column:0}, snapshotSymbol + '\n');
                 service.syncLine(lineCursorPosition);
+                editor.focus();
             }
 
             currentSync.snapshot = snapshot;
