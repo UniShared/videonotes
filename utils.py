@@ -1,4 +1,5 @@
 import collections
+from datetime import timedelta, datetime
 import json
 import logging
 import os
@@ -152,12 +153,30 @@ class FileUtils():
             if line:
                 if line == '<{0}>'.format(FileUtils.SNAPSHOT_KEY):
                     if flat_sync[i] and FileUtils.SNAPSHOT_KEY in flat_sync[i]:
+                        video_url = flat_sync[i]['url']
+                        sync_time = flat_sync[i]['time']
+
+                        # Adding the Youtube time parameter
+                        if 'youtube' in video_url and sync_time > 0.01:
+                            video_url = video_url.replace('www.youtube.com/watch?v=', 'youtu.be/')
+
+                            sec = timedelta(seconds=sync_time)
+                            d = datetime(1,1,1) + sec
+
+                            minutes = seconds = ''
+                            if d.second > 0:
+                                seconds = '{0}s'.format(d.second)
+                            if d.minute > 0:
+                                minutes = '{0}m'.format(d.minute)
+
+                            video_url += '?t=' + minutes + seconds
+
                         if i > 0:
                             content_enml.append('<br></br>')
 
                         content_enml.append('<img src="{0}"></img>'.format(flat_sync[i][FileUtils.SNAPSHOT_KEY]))
                         content_enml.append('<br></br>')
-                        content_enml.append('<a href="{0}">{0}</a>'.format(flat_sync[i]['url']))
+                        content_enml.append('<a href="{0}">{0}</a>'.format(video_url))
                         content_enml.append('<br></br><br></br>')
                 else:
                     link = '<a href="{0}?l={1}">+</a>'.format(base_url, i+1)

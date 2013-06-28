@@ -121,6 +121,49 @@ class TestFileUtils(unittest.TestCase):
         content_enml = FileUtils.to_ENML(file, base_url)
         self.assertEqual(expected_enml, content_enml)
 
+    def test_to_enml_with_screenshots_youtube(self):
+        file = {
+            'id': 'test',
+            'content': 'test' + '\n' + '<{0}>'.format(FileUtils.SNAPSHOT_KEY),
+            'videos': {
+                'http://www.youtube.com/watch?v=abc': {
+                    2: {
+                        'time': 0,
+                        'snapshot': None
+                    },
+                    1: {
+                        'time': 15,
+                        'snapshot': 'snapshot'
+                    }
+                },
+                'http://www.youtube.com/watch?v=acbd': {
+                    0: {
+                        'time': 0,
+                        'snapshot': None
+                    },
+                    3: {
+                        'time': 0,
+                        'snapshot': None
+                    }
+                }
+            }
+        }
+
+        base_url = 'http://test.videonot.es/edit/' + file['id']
+
+        expected_enml = [
+            '<a href="{0}?l=1">+</a> test'.format(base_url),
+            '<br></br>',
+            '<br></br>',
+            '<img src="{0}"></img>'.format('snapshot'),
+            '<br></br>',
+            '<a href="{0}">{0}</a>'.format('http://youtu.be/abc?t=15s'),
+            '<br></br><br></br>'
+        ]
+
+        content_enml = FileUtils.to_ENML(file, base_url)
+        self.assertEqual(expected_enml, content_enml)
+
     def test_to_enml_without_screenshots(self):
         file = {
             'id': 'test',
