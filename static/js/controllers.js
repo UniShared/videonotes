@@ -424,12 +424,8 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.init = function () {
         $scope.sync = {};
 
-        if (doc.info && doc.info.syncNotesVideo) {
-            if (doc.info.syncNotesVideo === undefined) {
-                doc.info.syncNotesVideo = true;
-            }
-
-            $scope.sync.enabled = doc.info.syncNotesVideo
+        if (doc.info && undefined !== doc.info.syncNotesVideo) {
+            $scope.sync.enabled = doc.info.syncNotesVideo;
         }
         else {
             $scope.sync.enabled = true;
