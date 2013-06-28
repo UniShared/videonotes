@@ -503,7 +503,7 @@ module.factory('editor',
                         service.unsync(range.start.row);
                     }
                     else if (!(range.start.row in currentSync)) {
-                        service.syncLine(range.start.row);
+                        service.syncLine(range.start.row, true);
                     }
 
                     return;
@@ -605,7 +605,7 @@ module.factory('editor',
             }
         };
 
-        service.syncLine = function (line) {
+        service.syncLine = function (line, shift) {
             // Is there a video loaded?
             var currentSync = service.getCurrentSync(),
                 currentSyncLine = service.getCurrentSync(line),
@@ -641,8 +641,13 @@ module.factory('editor',
                 else {
                     // No text or only before / after
                     // Using current player time minus a delta
-                    if(parseInt(video.currentTime() - 3, 10) > 0) {
-                        currentSyncLine.time = video.currentTime() - 3;
+                    if(shift) {
+                        if(parseInt(video.currentTime() - 3, 10) > 0) {
+                            currentSyncLine.time = video.currentTime() - 3;
+                        }
+                        else {
+                            currentSyncLine.time = video.currentTime();
+                        }
                     }
                     else {
                         currentSyncLine.time = video.currentTime();
@@ -667,7 +672,7 @@ module.factory('editor',
 
             if(session.getLine(lineCursorPosition).indexOf(snapshotSymbol) === -1) {
                 session.insert({row:lineCursorPosition, column:0}, snapshotSymbol + '\n');
-                service.syncLine(lineCursorPosition);
+                service.syncLine(lineCursorPosition, false);
                 editor.focus();
             }
 
