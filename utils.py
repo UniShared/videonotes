@@ -156,6 +156,7 @@ class FileUtils():
                             content_enml.append('<br></br>')
 
                         content_enml.append('<img src="{0}"></img>'.format(flat_sync[i][FileUtils.SNAPSHOT_KEY]))
+                        content_enml.append('<br></br>')
                         content_enml.append('<a href="{0}">{0}</a>'.format(flat_sync[i]['url']))
                         content_enml.append('<br></br><br></br>')
                 else:

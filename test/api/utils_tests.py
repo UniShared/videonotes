@@ -109,10 +109,11 @@ class TestFileUtils(unittest.TestCase):
         base_url = 'http://test.videonot.es/edit/' + file['id']
 
         expected_enml = [
-            '<a href="{0}?l=0">+</a> test'.format(base_url),
+            '<a href="{0}?l=1">+</a> test'.format(base_url),
             '<br></br>',
             '<br></br>',
             '<img src="{0}"></img>'.format('snapshot'),
+            '<br></br>',
             '<a href="{0}">{0}</a>'.format('video1'),
             '<br></br><br></br>'
         ]
@@ -151,9 +152,9 @@ class TestFileUtils(unittest.TestCase):
         base_url = 'http://test.videonot.es/edit/' + file['id']
 
         expected_enml = [
-            '<a href="{0}?l=0">+</a> test'.format(base_url),
+            '<a href="{0}?l=1">+</a> test'.format(base_url),
             '<br></br>',
-            '<a href="{0}?l=1">+</a> test2'.format(base_url),
+            '<a href="{0}?l=2">+</a> test2'.format(base_url),
             '<br></br>',
         ]
 
