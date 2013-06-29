@@ -25,24 +25,7 @@ controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$lo
     };
 
     $scope.init = function () {
-        if ($routeParams.id) {
-            editor.load($routeParams.id);
-        }
-        else if ($routeParams.templateId) {
-            editor.copy($routeParams.templateId);
-        }
-        else {
-            // New doc, but defer to next event cycle to ensure init
-            $timeout(function () {
-                    var parentId = $location.search()['parent'];
-                    editor.create(parentId);
-                    editor.save();
-                },
-                1);
-        }
-
         initTour();
-
         $scope.isHome = $location.path() === '/';
     };
 
@@ -274,15 +257,35 @@ controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', functi
     });
 }]);
 
-controllersModule.controller('MainCtrl', ['$scope', '$rootScope', 'user', 'segmentio', function($scope, $rootScope, user, segmentio) {
+controllersModule.controller('MainCtrl', ['$scope', '$rootScope', '$routeParams', '$timeout', '$location', 'user', 'editor', function($scope, $rootScope, $routeParams, $timeout, $location, user, editor) {
     if (!user.isAuthenticated()) {
         user.login();
     }
+
+    $scope.init = function () {
+        if ($routeParams.id) {
+            editor.load($routeParams.id);
+        }
+        else if ($routeParams.templateId) {
+            editor.copy($routeParams.templateId);
+        }
+        else {
+            // New doc, but defer to next event cycle to ensure init
+            $timeout(function () {
+                    var parentId = $location.search()['parent'];
+                    editor.create(parentId);
+                    editor.save();
+                },
+                1);
+        }
+    };
 
     $rootScope.$broadcast('setMenu', null);
 
     // Remove backstretch background if exists
     $('.backstretch').remove();
+
+    $scope.$on('$routeChangeSuccess', $scope.init);
 }]);
 
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'segmentio', function ($scope, sampleVideo, doc, video, segmentio) {
