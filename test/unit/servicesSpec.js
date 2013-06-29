@@ -240,22 +240,26 @@ describe('service', function() {
                     currentVideo: 'a',
                     videos: {
                         'a': {
-                            0: 1
+                            0: {
+                                time: 1
+                            }
                         },
                         'b': {
-                            1: 2
+                            1: {
+                                time: 2
+                            }
                         }
                     }
                 };
             }));
 
-            it('should not jump when sync disabled', inject(function (doc, editor) {
-                doc.info.syncNotesVideo = false;
-                editor.jump(1);
-                expect(doc.info.currentVideo).toEqual('a');
-            }));
-
             it('should change the current video if current line is sync with a different one', inject(function (doc, editor) {
+                var ace = require("ace/editor").Editor;
+                ace.prototype.gotoLine = jasmine.createSpy();
+
+                editor.updateEditor = jasmine.createSpy();
+                editor.rebind(document.createElement('div'));
+
                 editor.jump(1);
                 expect(doc.info.currentVideo).toEqual('b');
             }));

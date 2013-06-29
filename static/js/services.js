@@ -445,6 +445,7 @@ module.factory('editor',
                 if(doc.info.videos[sync][line]) {
                     timestamp = doc.info.videos[sync][line]['time'];
                     videoUrl = sync;
+                    break;
                 }
             }
 
