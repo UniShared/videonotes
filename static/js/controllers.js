@@ -2,14 +2,16 @@
 
 var controllersModule = angular.module('app.controllers', []);
 
-controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'segmentio', 'config',
-    function ($window, $rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, segmentio, config) {
+controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', '$compile', 'appName', 'user', 'editor', 'segmentio', 'config',
+    function ($window, $rootScope, $scope, $location, $route, $routeParams, $timeout, $log, $compile, appName, user, editor, segmentio, config) {
     $scope.appName = appName;
 
     Modernizr.Detectizr.detect({detectOs: true, detectBrowser: true});
 
     var isMac = Modernizr.Detectizr.device.os == "mac" && Modernizr.Detectizr.device.osVersion == "os x";
     $scope.device = {
+        isChrome: Modernizr.Detectizr.device.browser === 'chrome',
+        isExtensionLoaded: false,
         isMac: isMac,
         modifierSymbols: {
             meta: isMac ? '⌘' : '',
@@ -57,6 +59,11 @@ controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$lo
         $scope.auth();
     };
 
+    $scope.installChromeExtension = function () {
+        segmentio.track('Install Chrome extension');
+        chrome.webstore.install();
+    };
+
     var initTour = function () {
         $scope.tour = new Tour({
             name: "tour",
@@ -73,6 +80,22 @@ controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$lo
             },
             onShow: function (tour) {
                 segmentio.track('Tour show step', {id:tour._current});
+            },
+            onShown: function (tour) {
+                if(tour._current === 4) {
+                    if($scope.device.isChrome && !document.querySelector('#menu-snapshot-details')) {
+                        var contentSnapshot = '<span id="menu-snapshot-details">Insert a snapshot that will be included when exporting to Evernote.'
+                            + '<span ng-show="!device.isExtensionLoaded"><br/>To use this feature, please install our <a href ng-click="installChromeExtension()">Chrome extension</a></span>';
+                            + '</span>';
+
+                        var contentSnapshotCompiled = $compile(contentSnapshot)($scope);
+
+                        $timeout(function () {
+                            var popoverContent = document.querySelector('.tour .popover-content');
+                            popoverContent.insertBefore(contentSnapshotCompiled[0], popoverContent.firstChild);
+                        }, 250);
+                    }
+                }
             },
             onEnd: function () {
                 segmentio.track('Tour ended');
@@ -102,6 +125,12 @@ controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$lo
         $scope.tour.addStep({
             element: ".menu-open",
             content: "Later, you can open previous notes. <br> You can also manage them directly from your <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-snapshot",
+            content: '',
             placement: "bottom"
         });
 
@@ -245,7 +274,7 @@ controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', functi
     });
 }]);
 
-controllersModule.controller('MainCtrl', ['$scope', '$rootScope', 'user', function($scope, $rootScope, user) {
+controllersModule.controller('MainCtrl', ['$scope', '$rootScope', 'user', 'segmentio', function($scope, $rootScope, user, segmentio) {
     if (!user.isAuthenticated()) {
         user.login();
     }
@@ -449,7 +478,7 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'segmentio',
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'video', 'doc', 'segmentio', function ($scope, $rootScope, $window, config, editor, video, doc, segmentio) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', '$timeout', 'config', 'editor', 'video', 'doc', 'segmentio', function ($scope, $rootScope, $window, $timeout, config, editor, video, doc, segmentio) {
     var onFilePicked = function (data) {
         $scope.safeApply(function () {
             if (data.action == 'picked') {
@@ -483,9 +512,17 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
 
     $scope.insertScreenshot = function () {
         segmentio.track('Document screenshot');
-        video.takeSnapshot().then(function (snapshot) {
-            editor.setSnapshot(snapshot);
-        });
+
+        if(!$scope.device.isExtensionLoaded) {
+            segmentio.track('Document screenshot w/ extension');
+            $scope.tour.end();
+            $scope.tour.start(true, 4);
+        }
+        else {
+            video.takeSnapshot().then(function (snapshot) {
+                editor.setSnapshot(snapshot);
+            });
+        }
     };
 
     $scope.exportToEvernote = function () {
