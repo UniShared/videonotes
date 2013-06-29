@@ -111,6 +111,11 @@ class EditPage(BaseDriveHandler):
                 code = '?code=%s' % code
             self.redirect('/edit/%s%s' % (drive_state.ids[0], code))
             return
+        elif 'resource_id' in self.session and self.session['resource_id']:
+            logging.debug('Restoring resource ID')
+            resource_id = self.session['resource_id']
+            del self.session['resource_id']
+            return self.redirect('/edit/' + resource_id)
         elif drive_state.action == 'create':
             if drive_state.parent:
                 self.redirect('/edit/?parent={0}'.format(drive_state.parent))
@@ -125,11 +130,6 @@ class EditPage(BaseDriveHandler):
                 self.session['resource_id'] = resource_id_in_url
             logging.debug('Redirecting to auth handler')
             return self.redirect('/auth')
-        elif 'resource_id' in self.session and self.session['resource_id']:
-            logging.debug('Restoring resource ID')
-            resource_id = self.session['resource_id']
-            del self.session['resource_id']
-            return self.redirect('/edit/' + resource_id)
 
         return self.RenderTemplate(EditPage.TEMPLATE)
 
