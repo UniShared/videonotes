@@ -90,6 +90,7 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
                 return self.redirect('/auth?next={0}'.format(self.request.path))
 
         base_url = self.request.host_url + '/edit/{0}'.format(file['id'])
+        extension_loaded = bool(int(self.request.get('extensionLoaded', 1)))
 
         # Look for the VideoNot.es Notebook
         notestore = client.get_note_store()
@@ -109,7 +110,11 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
         # Formatting the note in ENML
         content_enml = FileUtils.to_ENML(file, base_url)
         content_enml.append('<br></br><br></br>')
+
         content_enml.append('<a href="{0}">View in VideoNot.es</a>'.format(base_url))
+        if not extension_loaded:
+            content_enml.append('<br/>')
+            content_enml.append('(Tips: Do you know you can add snapshots of the video to your export by installing the <a href="http://videonot.es">Chrome Extension</a>)')
 
         # Saving the note in Evernote
         note = Note()

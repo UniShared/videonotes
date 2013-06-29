@@ -527,7 +527,8 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', '$t
 
     $scope.exportToEvernote = function () {
         segmentio.track('Document export to Evernote');
-        window.open('/export/evernote/' + doc.info.id);
+        var extensionLoadedParam = $scope.device.isExtensionLoaded ? "1" : "0";
+        window.open('/export/evernote/{0}?extensionLoaded={1}'.format(doc.info.id, extensionLoadedParam));
     };
 
     $scope.$watch('sync.enabled', function () {
