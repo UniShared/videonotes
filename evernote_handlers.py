@@ -42,7 +42,7 @@ class BaseEvernoteHandler(BaseHandler):
         return EvernoteClient(
             consumer_key=BaseEvernoteHandler.EN_CONSUMER_KEY,
             consumer_secret=BaseEvernoteHandler.EN_CONSUMER_SECRET,
-            sandbox=True
+            sandbox=False
         )
 
     def get_authorized_client(self):
