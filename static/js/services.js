@@ -597,7 +597,7 @@ module.factory('editor',
                 if (undefined != line) {
                     if(!currentSync[line]) {
                         currentSync[line] = {
-                            time: null,
+                            time: null
                         };
                     }
 
@@ -663,7 +663,7 @@ module.factory('editor',
             // No video => mark it anyway, don't want to sync this line
             else {
                 $log.info('No video');
-                currentSync[line] = -1
+                currentSyncLine.time = -1
             }
         };
 
