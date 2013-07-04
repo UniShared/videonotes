@@ -14,7 +14,7 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
 
     <link rel="chrome-webstore-item"
-          href="https://chrome.google.com/webstore/detail/gfpamkcpoehaekolkipeomdbaihfdbdp">
+          href="https://chrome.google.com/webstore/detail/kmbcnighpdagelfjmlbakfnciogcelgi">
     <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/css/bootstrap.no-responsive.no-icons.min.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
     <link href="http://ivaynberg.github.com/select2/select2-3.3.2/select2.css" rel="stylesheet"/>
@@ -22,9 +22,7 @@
     <link href="/css/build/videonotes.min.css" rel="stylesheet">
     {% else %}
     <link href="/lib/bootstrap-switch/bootstrapSwitch.css" rel="stylesheet">
-    <link href="/css/styles.css" rel="stylesheet">
-    <link href="/css/app.css" rel="stylesheet">
-    <link href="/css/home.css" rel="stylesheet">
+    <link href="/css/build/tmp/main.css" rel="stylesheet">
     {% endif %}
     <link rel="icon" type="image/png" href="/img/favicon.ico">
 </head>
@@ -73,7 +71,7 @@
                                 </ul>
                             </li>
                              <li ng-show="isHome">
-                                <a href ng-click="auth()" ng-hide="isAuthenticated"><h4>Sign-in</h4></a>
+                                <a href ng-click="authHeader()" ng-hide="isAuthenticated"><h4>Sign-in</h4></a>
                             </li>
                         </ul>
                     </div>

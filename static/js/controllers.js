@@ -2,14 +2,16 @@
 
 var controllersModule = angular.module('app.controllers', []);
 
-controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', 'appName', 'user', 'editor', 'segmentio', 'config',
-    function ($rootScope, $scope, $location, $route, $routeParams, $timeout, $log, appName, user, editor, segmentio, config) {
+controllersModule.controller('AppCtrl', ['$window', '$rootScope', '$scope', '$location', '$route', '$routeParams', '$timeout', '$log', '$compile', 'appName', 'user', 'editor', 'segmentio', 'config',
+    function ($window, $rootScope, $scope, $location, $route, $routeParams, $timeout, $log, $compile, appName, user, editor, segmentio, config) {
     $scope.appName = appName;
 
     Modernizr.Detectizr.detect({detectOs: true, detectBrowser: true});
 
     var isMac = Modernizr.Detectizr.device.os == "mac" && Modernizr.Detectizr.device.osVersion == "os x";
     $scope.device = {
+        isChrome: Modernizr.Detectizr.device.browser === 'chrome',
+        isExtensionLoaded: false,
         isMac: isMac,
         modifierSymbols: {
             meta: isMac ? '⌘' : '',
@@ -23,25 +25,7 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     };
 
     $scope.init = function () {
-        if ($routeParams.id) {
-            editor.load($routeParams.id);
-            //$scope.startTour();
-        }
-        else if ($routeParams.templateId) {
-            editor.copy($routeParams.templateId);
-        }
-        else {
-            // New doc, but defer to next event cycle to ensure init
-            $timeout(function () {
-                    var parentId = $location.search()['parent'];
-                    editor.create(parentId);
-                    editor.save();
-                },
-                1);
-        }
-
         initTour();
-
         $scope.isHome = $location.path() === '/';
     };
 
@@ -56,6 +40,11 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
     $scope.authHeader = function () {
         segmentio.track('Sign-in header');
         $scope.auth();
+    };
+
+    $scope.installChromeExtension = function () {
+        segmentio.track('Install Chrome extension');
+        chrome.webstore.install();
     };
 
     var initTour = function () {
@@ -74,6 +63,22 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
             },
             onShow: function (tour) {
                 segmentio.track('Tour show step', {id:tour._current});
+            },
+            onShown: function (tour) {
+                if(tour._current === 4) {
+                    if($scope.device.isChrome && !document.querySelector('#menu-snapshot-details')) {
+                        var contentSnapshot = '<span id="menu-snapshot-details">Insert a snapshot that will be included when exporting to Evernote.'
+                            + '<span ng-show="!device.isExtensionLoaded"><br/>To use this feature, please install our <a href ng-click="installChromeExtension()">Chrome extension</a></span>';
+                            + '</span>';
+
+                        var contentSnapshotCompiled = $compile(contentSnapshot)($scope);
+
+                        $timeout(function () {
+                            var popoverContent = document.querySelector('.tour .popover-content');
+                            popoverContent.insertBefore(contentSnapshotCompiled[0], popoverContent.firstChild);
+                        }, 250);
+                    }
+                }
             },
             onEnd: function () {
                 segmentio.track('Tour ended');
@@ -103,6 +108,12 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         $scope.tour.addStep({
             element: ".menu-open",
             content: "Later, you can open previous notes. <br> You can also manage them directly from your <a href='https://drive.google.com/' target='_blank'>Google Drive</a>",
+            placement: "bottom"
+        });
+
+        $scope.tour.addStep({
+            element: ".menu-snapshot",
+            content: '',
             placement: "bottom"
         });
 
@@ -148,6 +159,10 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
             $log.info('Start tour');
             $scope.tour && $scope.tour.start();
         }, 1);
+
+        if($routeParams.l) {
+            editor.jump($routeParams.l-1);
+        }
     };
 
     $scope.shortcuts = function ($event) {
@@ -161,6 +176,10 @@ controllersModule.controller('AppCtrl', ['$rootScope', '$scope', '$location', '$
         segmentio.track('Document created');
     });
     $scope.$onMany(['firstSaved', 'loaded'], $scope.startTour);
+
+    $window.addEventListener('videonotes::extensionLoaded', function () {
+        $scope.device.isExtensionLoaded = (document.getElementById('videonotesEventDiv') !== null);
+    });
 }]);
 
 controllersModule.controller('OverlayCtrl', ['$scope', '$log', 'editor', function ($scope, $log, editor) {
@@ -238,15 +257,35 @@ controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', functi
     });
 }]);
 
-controllersModule.controller('MainCtrl', ['$scope', '$rootScope', 'user', function($scope, $rootScope, user) {
+controllersModule.controller('MainCtrl', ['$scope', '$rootScope', '$routeParams', '$timeout', '$location', 'user', 'editor', function($scope, $rootScope, $routeParams, $timeout, $location, user, editor) {
     if (!user.isAuthenticated()) {
         user.login();
     }
+
+    $scope.init = function () {
+        if ($routeParams.id) {
+            editor.load($routeParams.id);
+        }
+        else if ($routeParams.templateId) {
+            editor.copy($routeParams.templateId);
+        }
+        else {
+            // New doc, but defer to next event cycle to ensure init
+            $timeout(function () {
+                    var parentId = $location.search()['parent'];
+                    editor.create(parentId);
+                    editor.save();
+                },
+                1);
+        }
+    };
 
     $rootScope.$broadcast('setMenu', null);
 
     // Remove backstretch background if exists
     $('.backstretch').remove();
+
+    $scope.$on('$routeChangeSuccess', $scope.init);
 }]);
 
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'segmentio', function ($scope, sampleVideo, doc, video, segmentio) {
@@ -258,6 +297,13 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
         error: false
     };
 
+    $scope.addVideo = function (videoUrl) {
+        if(!doc.info.videos[videoUrl]) {
+            doc.info.videos[videoUrl] = {};
+        }
+        doc.info.currentVideo = videoUrl;
+    };
+
     $scope.submitVideo = function () {
         $scope.edit = false;
         $scope.videoStatus.error = false;
@@ -266,9 +312,9 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
             $scope.tour.showStep(1);
         }
 
-        if(doc.info.video !== $scope.videoUrl) {
-            doc.info.video = $scope.videoUrl;
+        if(doc.info.currentVideo !== $scope.videoUrl) {
             segmentio.track('Load video', {url: $scope.videoUrl});
+            $scope.addVideo($scope.videoUrl);
             $scope.loadPlayer();
         }
     };
@@ -279,16 +325,16 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     };
 
     $scope.loadPlayer = function () {
-        if (doc && doc.info && doc.info.video) {
+        if (doc && doc.info && doc.info.currentVideo) {
             $scope.edit = false;
-            $scope.videoUrl = doc.info.video;
+            $scope.videoUrl = doc.info.currentVideo;
             $scope.loading = true;
 
             $scope.videoStatus.error = false;
             $scope.videoStatus.speed = 1;
 
-            if(video.videoUrl !== doc.info.video) {
-                video.videoUrl = doc.info.video;
+            if(video.videoUrl !== doc.info.currentVideo) {
+                video.videoUrl = doc.info.currentVideo;
                 video.load();
             }
         }
@@ -318,7 +364,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
 
     $scope.loadSampleVideo = function () {
         segmentio.track('Video load sample');
-        doc.info.video = sampleVideo;
+        $scope.addVideo(sampleVideo);
         $scope.loadPlayer();
     };
 
@@ -408,13 +454,10 @@ controllersModule.controller('EditorCtrl', ['$scope', 'editor', 'doc', 'autosave
     $scope.doc = doc;
 
     $scope.init = function () {
-            $scope.sync = {};
-        if (doc.info && doc.info.syncNotesVideo) {
-            if (doc.info.syncNotesVideo.enabled === undefined) {
-                doc.info.syncNotesVideo.enabled = true;
-            }
+        $scope.sync = {};
 
-            $scope.sync.enabled = doc.info.syncNotesVideo.enabled
+        if (doc.info && undefined !== doc.info.syncNotesVideo) {
+            $scope.sync.enabled = doc.info.syncNotesVideo;
         }
         else {
             $scope.sync.enabled = true;
@@ -438,7 +481,7 @@ controllersModule.controller('ShareCtrl', ['$scope','config','doc', 'segmentio',
     }
 }]);
 
-controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'config', 'editor', 'doc', 'segmentio', function ($scope, $rootScope, $window, config, editor, doc, segmentio) {
+controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', '$timeout', 'config', 'editor', 'video', 'doc', 'segmentio', function ($scope, $rootScope, $window, $timeout, config, editor, video, doc, segmentio) {
     var onFilePicked = function (data) {
         $scope.safeApply(function () {
             if (data.action == 'picked') {
@@ -447,6 +490,7 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
             }
         });
     };
+
     $scope.open = function () {
         var view = new google.picker.View(google.picker.ViewId.DOCS);
         view.setMimeTypes('application/vnd.unishared.document');
@@ -458,18 +502,41 @@ controllersModule.controller('MenuCtrl', ['$scope', '$rootScope', '$window', 'co
         picker.setVisible(true);
         segmentio.track('Document open');
     };
+
     $scope.create = function () {
         editor.create();
         segmentio.track('Document create new');
     };
+
     $scope.save = function () {
         editor.save(true);
         segmentio.track('Document save');
     };
 
+    $scope.insertScreenshot = function () {
+        segmentio.track('Document screenshot');
+
+        if(!$scope.device.isExtensionLoaded) {
+            segmentio.track('Document screenshot w/ extension');
+            $scope.tour.end();
+            $scope.tour.start(true, 4);
+        }
+        else {
+            video.takeSnapshot().then(function (snapshot) {
+                editor.setSnapshot(snapshot);
+            });
+        }
+    };
+
+    $scope.exportToEvernote = function () {
+        segmentio.track('Document export to Evernote');
+        var extensionLoadedParam = $scope.device.isExtensionLoaded ? "1" : "0";
+        window.open('/export/evernote/{0}?extensionLoaded={1}'.format(doc.info.id, extensionLoadedParam));
+    };
+
     $scope.$watch('sync.enabled', function () {
         if (doc && doc.info) {
-            doc.info.syncNotesVideo.enabled = $scope.sync.enabled;
+            doc.info.syncNotesVideo = $scope.sync.enabled;
             segmentio.track('Editor sync {0}'.format($scope.sync.enabled ? "enable" : "disable"));
         }
     }, true);

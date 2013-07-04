@@ -78,7 +78,7 @@ module.exports = function (grunt) {
                 dest: 'static/js/<%= dist %>/<%= pkg.name %>.min.js'
             },
             css: {
-                src: ['static/lib/bootstrap-switch/bootstrapSwitch.css', 'static/css/styles.css', 'static/css/app.css', 'static/css/home.css'],
+                src: ['<%= compass.prod.dest %>/*.css', 'static/lib/bootstrap-switch/bootstrapSwitch.css'],
                 dest: 'static/css/<%= dist %>/tmp/concat.css'
             }
         },
@@ -103,14 +103,14 @@ module.exports = function (grunt) {
         compass: {
             dev: {
                 src: 'static/scss',
-                dest: 'static/css',
+                dest: 'static/css/build/tmp',
                 linecomments: true,
                 forcecompile: true,
                 debugsass: true
             },
             prod: {
                 src: 'static/scss',
-                dest: 'static/css',
+                dest: 'static/css/build/tmp',
                 outputstyle: 'compressed',
                 linecomments: false,
                 forcecompile: true,

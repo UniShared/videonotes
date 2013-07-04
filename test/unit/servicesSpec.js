@@ -101,6 +101,28 @@ describe('service', function() {
             }));
         });
 
+        describe('create method', function () {
+            it('should create a version 2 document', inject(function (doc, editor) {
+                editor.create();
+
+                expect(doc.info).toEqual({
+                    version: 2,
+                    content: '',
+                    currentVideo: null,
+                    videos: {},
+                    syncNotesVideo: true,
+                    labels: {
+                        starred: false
+                    },
+                    editable: true,
+                    title: 'Untitled notes',
+                    description: '',
+                    mimeType: 'application/vnd.unishared.document',
+                    parent: null
+                });
+            }));
+        });
+
         describe('save method', function () {
             var mockSnapshot = {},
                 resolveResponse = {
@@ -210,6 +232,38 @@ describe('service', function() {
                 });
             }));
         });
+
+        describe('jump', function () {
+            beforeEach(inject(function (doc) {
+                doc.info = {
+                    syncNotesVideo: true,
+                    currentVideo: 'a',
+                    videos: {
+                        'a': {
+                            0: {
+                                time: 1
+                            }
+                        },
+                        'b': {
+                            1: {
+                                time: 2
+                            }
+                        }
+                    }
+                };
+            }));
+
+            it('should change the current video if current line is sync with a different one', inject(function (doc, editor) {
+                var ace = require("ace/editor").Editor;
+                ace.prototype.gotoLine = jasmine.createSpy();
+
+                editor.updateEditor = jasmine.createSpy();
+                editor.rebind(document.createElement('div'));
+
+                editor.jump(1);
+                expect(doc.info.currentVideo).toEqual('b');
+            }));
+        });
     });
 
     describe('video', function () {
@@ -222,6 +276,7 @@ describe('service', function() {
             };
             spyOn(Popcorn, 'smart').andReturn(mockPopcorn);
         });
+
         it("should be able to detect Coursera's lecture URL", inject(function (video) {
             var courseName = 'adhd-001', lectureId = 5;
             var url = 'https://class.coursera.org/{0}/lecture/{1}'.format(courseName, lectureId);
@@ -298,6 +353,63 @@ describe('service', function() {
             expect(video.pause).toHaveBeenCalled();
             expect(video.play).not.toHaveBeenCalled();
         }));
+
+        describe('takeSnapshot', function () {
+            var eventDiv;
+            beforeEach(inject(function (video) {
+                eventDiv = document.createElement('div');
+                eventDiv.id = 'videonotesEventDiv';
+                document.body.appendChild(eventDiv);
+
+                video.videoElement = document.createElement('div');
+                document.body.appendChild(video.videoElement);
+            }));
+
+            afterEach(inject(function (video) {
+                eventDiv.parentNode.removeChild(eventDiv);
+                video.videoElement.parentNode.removeChild(video.videoElement);
+            }));
+
+            it('should send a getSnapshot event', inject(function (video) {
+                var callback = jasmine.createSpy();
+                eventDiv.addEventListener('videonotes::getSnapshot', callback);
+
+                video.takeSnapshot();
+
+                waitsFor(function() {
+                    return callback.callCount > 0;
+                }, "getSnapshot callback to have been called", 1000);
+
+                runs(function () {
+                    expect(callback).toHaveBeenCalled();
+                });
+
+                eventDiv.removeEventListener('videonotes::getSnapshot', callback);
+            }));
+
+            it('should return a promise called with the snapshot', inject(function ($rootScope, video) {
+                var callbackPromise = jasmine.createSpy(),
+                    snapshotResult = {detail: {snapshot: 'snapshot'}};
+
+                eventDiv.addEventListener('videonotes::getSnapshot', function callback() {
+                    eventDiv.removeEventListener('videonotes::getSnapshot', callback);
+                    var customEvent = new CustomEvent('videonotes::snapshotResult', snapshotResult);
+                    eventDiv.dispatchEvent(customEvent);
+                });
+
+                var promiseSnapshot = video.takeSnapshot();
+                promiseSnapshot.then(callbackPromise);
+
+                waitsFor(function() {
+                    $rootScope.$digest();
+                    return callbackPromise.callCount > 0;
+                }, "Promise snapshot callback to have been called", 1000);
+
+                runs(function () {
+                    expect(callbackPromise).toHaveBeenCalledWith('snapshot');
+                })
+            }));
+        });
     });
 
     describe('config', function () {
@@ -325,9 +437,11 @@ describe('service', function() {
             expect(autosaver.saveFn).toHaveBeenCalled();
         }));
 
-        it('should have a confirmOnLeave method which is returning a message', inject(function (doc, autosaver) {
+        it('should have a confirmOnLeave method which is returning a message when user is authenfied', inject(function (doc, autosaver, user) {
             expect(typeof autosaver.confirmOnLeave).toBe('function');
+            spyOn(user, 'isAuthenticated').andReturn(true);
             doc.dirty = true;
+
             var msgExpected = "You have unsaved data.",
                 msgReturned = autosaver.confirmOnLeave();
             expect(msgExpected).toEqual(msgReturned);

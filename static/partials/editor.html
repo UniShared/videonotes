@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="videoplayer">
-                        <div class="no-video" ng-hide="doc.info.video" ng-disabled="!doc.info.editable">
+                        <div class="no-video" ng-hide="doc.info.currentVideo" ng-disabled="!doc.info.editable">
                             <h1 class="or">OR</h1>
 
                             <div class="load-sample-video-container">
@@ -84,7 +84,7 @@
                             </div>
                         </div>
 
-                        <div class="row-fluid with-video" ng-show="doc.info.video">
+                        <div class="row-fluid with-video" ng-show="doc.info.currentVideo">
                             <div class="span12">
                                 <img class="loading" src="/img/loading.gif" ng-show="loading">
 
@@ -142,6 +142,13 @@
                                 <li tooltip="Save notes ({{saveShortcut}})" tooltip-placement="bottom"
                                     ng-hide="!doc.info.editable"><a
                                         class="icon-large icon-save" ng-click="save()" href></a></li>
+                                <li class="menu-snapshot" tooltip="Insert snapshot in export" tooltip-placement="bottom"
+                                    ng-show="doc.info.editable && doc.info.currentVideo && device.isChrome"><a
+                                        class="icon-large icon-screenshot" ng-click="insertScreenshot()" href></a>
+                                </li>
+                                <li tooltip="Export to Evernote" tooltip-placement="bottom">
+                                    <a class="icon-large zocial-evernote" ng-click="exportToEvernote()" href></a>
+                                </li>
                                 <li class="menu-help" tooltip="Help" tooltip-placement="bottom">
                                     <a class="icon-large icon-question-sign" href ng-click="restartTour()"></a></li>
                                 <li class="menu-switch-sync" tooltip="Switch sync ({{switchShortcut}})"

@@ -115,16 +115,23 @@
         }
       };
 
-      Tour.prototype.start = function(force) {
+      Tour.prototype.start = function(force, firstStep) {
         var promise,
           _this = this;
 
         if (force == null) {
           force = false;
         }
+
+        if(firstStep == null) {
+            firstStep = 0;
+        }
+
         if (this.ended() && !force) {
           return this._debug("Tour ended, start prevented.");
         }
+
+        _this.setCurrentStep(firstStep);
         $(document).off("click.bootstrap-tour", ".popover .next").on("click.bootstrap-tour", ".popover .next", function(e) {
           e.preventDefault();
           return _this.next();
