@@ -223,31 +223,6 @@ controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', 'segmentio', f
     $.backstretch('/img/background.jpg');
 }]);
 
-/*function CoursesListCtrl($scope, $location, user, course) {
- course.list().then(function (courses) {
- $scope.courses = courses.data;
- });
-
- $scope.$on('authentified', function () {
- $location.path('/edit/template/' + course.getTemplateId());
- });
-
- $scope.startNotes = function (templateId) {
- course.setTemplateId(templateId);
-
- if(!user.isAuthenticated()) {
- user.login();
- }
- else {
- $location.path('/edit/template/' + templateId);
- }
- };
-
- if(course.getTemplateId()) {
- $scope.startNotes(course.getTemplateId());
- }
- }*/
-
 controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', function ($scope, $rootScope, user) {
     $scope.isAuthenticated = user.isAuthenticated();
 

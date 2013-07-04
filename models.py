@@ -8,14 +8,6 @@ from oauth2client.appengine import CredentialsProperty
 
 __author__ = 'Arnaud BRETON (UniShared)'
 
-class WeekModel(db.Model):
-    id = db.IntegerProperty(required=True)
-    videos = db.ListProperty(db.Link)
-
-class CourseModel(db.Model):
-    name = db.StringProperty(required=True)
-    weeks = db.ReferenceProperty(WeekModel, collection_name='weeks')
-
 class Credentials(db.Model):
     """Datastore entity for storing OAuth2.0 credentials.
 

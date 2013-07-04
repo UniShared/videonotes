@@ -748,9 +748,6 @@ module.factory('backend',
             socket;
 
         var service = {
-            courses: function () {
-                return $http.get('/courses');
-            },
             user: function () {
                 return $http.get('/user');
             },
@@ -788,23 +785,6 @@ module.factory('backend',
 
         return service;
     }]);
-
-module.factory('course', ['backend', function (backend) {
-    var _this = this;
-    this.templateId = null;
-
-    return {
-        list: function () {
-            return backend.courses();
-        },
-        setTemplateId: function (templateId) {
-            _this.templateId = templateId;
-        },
-        getTemplateId: function () {
-            return _this.templateId;
-        }
-    }
-}]);
 
 module.factory('user', ['$rootScope', 'backend', 'segmentio', function ($rootScope, backend, segmentio) {
     var _this = this;
