@@ -23,7 +23,7 @@ ALL_SCOPES = ('https://www.googleapis.com/auth/drive.install '
 
 
 class BaseHandler(webapp2.RequestHandler):
-    AUTHORIZED_DOMAINS = [u'www.udacity.com', u'www.coursera.org']
+    AUTHORIZED_DOMAINS = [u'www.udacity.com', u'class.coursera.org']
 
     def handle_exception(self, exception, debug):
         # If the exception is a HTTPException, use its error code.

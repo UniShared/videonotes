@@ -32,7 +32,6 @@ from BufferedSmtpHandler import BufferingSMTPHandler
 from httplib import HTTPException
 from apiclient.errors import HttpError
 import webapp2
-from models import CourseModel
 from apiclient.http import MediaUpload
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import AccessTokenRefreshError
@@ -417,15 +416,6 @@ class ProxyHandler(BaseHandler):
             logging.getLogger("error").error('Unauthorized domain %s', url)
             return self.abort(403)
 
-
-class CoursesHandler(BaseHandler):
-    """Web handler for the service to list courses information."""
-
-    def get(self):
-        """Called when HTTP GET requests are received by the web application."""
-        return self.RespondJSON(CourseModel.all())
-
-
 class AboutHandler(BaseDriveHandler):
     """Web handler for the service to read user information."""
 
@@ -539,7 +529,6 @@ app = webapp2.WSGIApplication(
     [
         webapp2.Route(r'/', HomePage, 'home'),
         webapp2.Route(r'/edit/<:[A-Za-z0-9\-_]*>', EditPage, 'edit'),
-        webapp2.Route(r'/courses', CoursesHandler),
         webapp2.Route(r'/svc', ServiceHandler),
         webapp2.Route(r'/about', AboutHandler),
         webapp2.Route(r'/auth', AuthHandler, 'auth'),
