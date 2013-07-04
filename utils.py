@@ -160,8 +160,10 @@ class FileUtils():
                         sync_time = flat_sync[i]['time']
 
                         # Adding the Youtube time parameter
-                        if sync_time > 0.01 and any(match in video_url for match in ['youtube', 'youtu.be']):
-                            video_url = video_url.replace('www.youtube.com/watch?v=', 'youtu.be/')
+                        url_data = urlparse.urlparse(video_url)
+                        if sync_time > 0.01 and any(match in url_data.hostname for match in ['youtube', 'youtu.be']):
+                            query = urlparse.parse_qs(url_data.query)
+                            video_id = query["v"][0]
 
                             sec = timedelta(seconds=sync_time)
                             d = datetime(1,1,1) + sec
@@ -172,6 +174,7 @@ class FileUtils():
                             if d.minute > 0:
                                 minutes = '{0}m'.format(d.minute)
 
+                            video_url = 'http://youtu.be/' + video_id
                             video_url = UrlUtils.add_query_parameter(video_url, {'t': minutes + seconds})
 
                         if i > 0:
