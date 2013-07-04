@@ -121,7 +121,7 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
         note.title = file['title']
         note_content = ''.join(content_enml).encode('utf-8')
         note.content = '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note>{0}</en-note>'.format(note_content)
-
+        note.content = note.content.replace('&', '&amp;')
         if notebook:
             note.notebookGuid = notebook.guid
         note = notestore.createNote(note)
