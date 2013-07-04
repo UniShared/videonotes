@@ -114,7 +114,7 @@ class ExportEvernoteHandler(BaseEvernoteHandler, BaseDriveHandler):
         content_enml.append('<a href="{0}">View in VideoNot.es</a>'.format(base_url))
         if not extension_loaded:
             content_enml.append('<br/>')
-            content_enml.append('(Tips: Do you know you can add snapshots of the video to your export by installing the <a href="http://videonot.es">Chrome Extension</a>)')
+            content_enml.append('(Tip: you can add snapshots of the video to your export by installing our <a href="https://chrome.google.com/webstore/detail/kmbcnighpdagelfjmlbakfnciogcelgi">Chrome Extension</a>)')
 
         # Saving the note in Evernote
         note = Note()
