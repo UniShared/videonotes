@@ -1,6 +1,6 @@
 import collections
 import unittest
-from utils import FileUtils
+from utils import FileUtils, UrlUtils
 
 __author__ = 'arnaud'
 
@@ -203,3 +203,16 @@ class TestFileUtils(unittest.TestCase):
 
         content_enml = FileUtils.to_ENML(file, base_url)
         self.assertEqual(expected_enml, content_enml)
+
+class TestFileUtils(unittest.TestCase):
+    def test_add_query_parameter_with_existing_param(self):
+        url = 'http://videonot.es?param1=test'
+        params = {'param2': 'test'}
+        url_with_new_param = UrlUtils.add_query_parameter(url, params)
+        self.assertEqual('http://videonot.es?param2=test&param1=test', url_with_new_param)
+
+    def test_add_query_parameter_without_param(self):
+        url = 'http://videonot.es'
+        params = {'param1': 'test'}
+        url_with_new_param = UrlUtils.add_query_parameter(url, params)
+        self.assertEqual(url+'?param1=test', url_with_new_param)

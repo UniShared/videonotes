@@ -3,6 +3,9 @@ from datetime import timedelta, datetime
 import json
 import logging
 import os
+import urllib
+import urlparse
+
 
 class FileUtils():
     LAST_FILE_VERSION = 2
@@ -157,7 +160,7 @@ class FileUtils():
                         sync_time = flat_sync[i]['time']
 
                         # Adding the Youtube time parameter
-                        if 'youtube' in video_url and sync_time > 0.01:
+                        if sync_time > 0.01 and any(match in video_url for match in ['youtube', 'youtu.be']):
                             video_url = video_url.replace('www.youtube.com/watch?v=', 'youtu.be/')
 
                             sec = timedelta(seconds=sync_time)
@@ -169,7 +172,7 @@ class FileUtils():
                             if d.minute > 0:
                                 minutes = '{0}m'.format(d.minute)
 
-                            video_url += '?t=' + minutes + seconds
+                            video_url = UrlUtils.add_query_parameter(video_url, {'t': minutes + seconds})
 
                         if i > 0:
                             content_enml.append('<br></br>')
@@ -231,3 +234,18 @@ class DriveState(object):
           request: HTTP request.
         """
         return DriveState(request.get('state'))
+
+class UrlUtils():
+    @staticmethod
+    def add_query_parameter(url, params):
+        """
+        Add query parameters to an URL
+        @return: URL with new parameters
+        """
+        url_parts = list(urlparse.urlparse(url))
+        query = dict(urlparse.parse_qsl(url_parts[4]))
+        query.update(params)
+
+        url_parts[4] = urllib.urlencode(query)
+
+        return urlparse.urlunparse(url_parts)

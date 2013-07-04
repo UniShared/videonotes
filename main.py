@@ -21,10 +21,8 @@ __author__ = 'afshar@google.com (Ali Afshar)'
 __author__ = 'arnaud@videonot.es (Arnaud BRETON)'
 
 from evernote_handlers import AuthEvernoteHandler, ExportEvernoteHandler
-import urllib
 from base_handlers import BaseHandler, BaseDriveHandler
-import urlparse
-from utils import FileUtils, DriveState
+from utils import FileUtils, DriveState, UrlUtils
 import os
 import httplib2
 import random
@@ -375,13 +373,9 @@ class AuthHandler(BaseDriveHandler):
                 if file_id:
                     params.update({'videonotes_id': file_id})
 
-            url_parts = list(urlparse.urlparse(next))
-            query = dict(urlparse.parse_qsl(url_parts[4]))
-            query.update(params)
+            redirect_url = UrlUtils.add_query_parameter(next, params)
 
-            url_parts[4] = urllib.urlencode(query)
-
-            return self.redirect(str(urlparse.urlunparse(url_parts)))
+            return self.redirect(str(redirect_url))
         else:
             return self.redirect('/edit/')
 
