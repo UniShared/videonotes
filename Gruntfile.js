@@ -14,7 +14,7 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('package.json'),
         watch: {
             compass: {
-                files: [ 'static/scss/*.scss' ],
+                files: [ 'static/scss/**/*.scss' ],
                 tasks: [ 'compass:dev' ]
             },
             karma: {
