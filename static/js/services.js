@@ -612,7 +612,8 @@ module.factory('editor',
         service.syncLine = function (line, shift) {
             // Is there a video loaded?
             var currentSync = service.getCurrentSync(),
-                currentSyncLine = service.getCurrentSync(line);
+                currentSyncLine = service.getCurrentSync(line),
+                currentTime = video.currentTime();
 
             if (doc.info && doc.info.currentVideo) {
                 $log.info('Video loaded');
@@ -636,8 +637,8 @@ module.factory('editor',
                     }
                 }
 
-                if (isLineBefore && isLineAfter) {
-                    // Text before and after
+                if (isLineBefore && isLineAfter && (currentTime < timestampBefore || currentTime > timestampAfter)) {
+                    // Text before and after and video currently further (refactoring mode)
                     // Timestamp for this line must be average time between nearest line before/after
                     currentSyncLine.time = (timestampBefore + timestampAfter) / 2;
                 }
@@ -645,15 +646,15 @@ module.factory('editor',
                     // No text or only before / after
                     // Using current player time minus a delta
                     if(shift) {
-                        if(parseInt(video.currentTime() - 3, 10) > 0) {
-                            currentSyncLine.time = video.currentTime() - 3;
+                        if(parseInt(currentTime - 3, 10) > 0) {
+                            currentSyncLine.time = currentTime - 3;
                         }
                         else {
-                            currentSyncLine.time = video.currentTime();
+                            currentSyncLine.time = currentTime;
                         }
                     }
                     else {
-                        currentSyncLine.time = video.currentTime();
+                        currentSyncLine.time = currentTime;
                     }
                 }
 
