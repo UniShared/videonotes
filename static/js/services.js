@@ -650,7 +650,7 @@ module.factory('editor',
                             currentSyncLine.time = currentTime - 3;
                         }
                         else {
-                            currentSyncLine.time = currentTime;
+                            currentSyncLine.time = currentTime - currentTime;
                         }
                     }
                     else {
