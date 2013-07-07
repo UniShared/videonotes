@@ -534,7 +534,7 @@ module.factory('editor',
                 }
                 doc.info.videos[doc.info.currentVideo] = shiftedSyncNotesVideo;
 
-                service.updateBreakpoints(session);
+                service.updateBreakpoints();
             }.bind(session);
             session.on("change", session.$breakpointListener);
 
@@ -554,7 +554,7 @@ module.factory('editor',
             doc.lastSave = 0;
             doc.info = fileInfo;
 
-            service.updateBreakpoints(session);
+            service.updateBreakpoints();
             service.jump(0);
 
             session.setUseWrapMode(true);
@@ -565,9 +565,10 @@ module.factory('editor',
                 editor.focus();
             }
         };
-        service.updateBreakpoints = function (session) {
-            if (session && doc.info) {
-                var annotations = [],
+        service.updateBreakpoints = function () {
+            if (doc.info) {
+                var session = editor.getSession(),
+                    annotations = [],
                     breakpoints = [];
 
                 session.clearBreakpoints();
@@ -611,8 +612,7 @@ module.factory('editor',
         service.syncLine = function (line, shift) {
             // Is there a video loaded?
             var currentSync = service.getCurrentSync(),
-                currentSyncLine = service.getCurrentSync(line),
-                session = editor.getSession();
+                currentSyncLine = service.getCurrentSync(line);
 
             if (doc.info && doc.info.currentVideo) {
                 $log.info('Video loaded');
@@ -658,7 +658,7 @@ module.factory('editor',
                 }
 
                 $log.info('Setting timestamp', line, currentSyncLine.time);
-                this.updateBreakpoints(session);
+                this.updateBreakpoints();
             }
             // No video => mark it anyway, don't want to sync this line
             else {
@@ -686,9 +686,9 @@ module.factory('editor',
             var currentSync = service.getCurrentSync(line),
                 session = editor.getSession();
 
-            if (doc.info && currentSync && line in currentSync) {
-                session.clearBreakpoint(line);
-                delete currentSync[line];
+            if (doc.info && currentSync) {
+                delete doc.info.videos[doc.info.currentVideo][line];
+                service.updateBreakpoints();
             }
         };
 
