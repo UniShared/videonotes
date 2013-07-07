@@ -1,0 +1,25 @@
+{
+  "name": "angular-segmentio",
+  "version": "0.0.0",
+  "main": "angular-segmentio.js",
+  "dependencies": {
+    "angular": "~1.0.6"
+  },
+  "devDependencies": {
+    "angular-mocks": "~1.0.6"
+  },
+  "ignore": [
+    "test/",
+    "config/"
+  ],
+  "gitHead": "eb19a0df94618cef47793a2294d25ec2c6cfdb36",
+  "readme": "# Tracking Events and Pageviews with Segment.io (http://segment.io)\n\n## How-to use it?\n\nFollow these steps:\n\n1) Add the service to your angular js app module:\n\n\t``var app = angular.module('myapp', ['segmentio']) {\n\t\t...\n\t});``\n\n\n2) Now just have analytics to be injected in your controller.\n\n\t``function myCtrl($rootScope, $scope, $http, segmentio) {\n\t    ...\n\t};``\n\n3) Call any method documented here: https://segment.io/libraries/analytics.js\n\n## How-to add it to your project?\n\nVia Twitter Bower (http://bower.io/) \nRun ``bower install angular-segmentio`` in a terminal\n\n## How-to build / develop it?\n\n1) Install dependencies via npm: ``npm install``(in the project folder)\n\n2) Run grunt: ``grunt`` or ``grunt uglify``\n\n3) The build result is in the build directory\n\n",
+  "readmeFilename": "README.md",
+  "_id": "angular-segmentio@0.1.0",
+  "description": "## How-to use it?",
+  "commit": "eb19a0df94618cef47793a2294d25ec2c6cfdb36",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/arnaudbreton/angular-segmentio.git"
+  }
+}

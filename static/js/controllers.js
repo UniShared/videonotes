@@ -327,7 +327,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     };
 
     $scope.playPauseVideo = function () {
-        if (doc.info && doc.info.video) {
+        if (doc.info && doc.info.currentVideo) {
             video.togglePlayPause();
             segmentio.track('Video {0}'.format(video.isPlaying() ? 'play' : 'pause'));
         }
