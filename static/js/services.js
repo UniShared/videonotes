@@ -482,6 +482,8 @@ module.factory('editor',
             $log.info("Updating editor", fileInfo);
 
             var session = new EditSession(fileInfo.content);
+            session.setUseWrapMode(true);
+            session.setWrapLimitRange(80);
 
             session.on('change', function () {
                 if (doc && doc.info) {
@@ -550,20 +552,16 @@ module.factory('editor',
                 }
             });
 
+            if(editor) {
+                editor.setSession(session);
+                editor.focus();
+            }
 
             doc.lastSave = 0;
             doc.info = fileInfo;
 
             service.updateBreakpoints();
             service.jump(0);
-
-            session.setUseWrapMode(true);
-            session.setWrapLimitRange(80);
-
-            if(editor) {
-                editor.setSession(session);
-                editor.focus();
-            }
         };
         service.updateBreakpoints = function () {
             if (doc.info) {
