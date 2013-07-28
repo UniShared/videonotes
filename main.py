@@ -224,11 +224,11 @@ class ServiceHandler(BaseDriveHandler):
                     ).execute()
 
                     if BaseHandler.is_production():
-                        clement_permission = {
-                            'value': 'clement@videonot.es',
-                            'type': 'user',
-                            'role': 'reader'
-                        }
+                        # clement_permission = {
+                        #     'value': 'clement@videonot.es',
+                        #     'type': 'user',
+                        #     'role': 'reader'
+                        # }
 
                         anyone_permission = {
                             'type': 'anyone',
@@ -236,11 +236,11 @@ class ServiceHandler(BaseDriveHandler):
                             'withLink': True
                         }
 
-                        try:
-                            logging.info('Add Clement as a reader')
-                            service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
-                        except HttpError:
-                            logging.info('Error when adding Clement as a reader')
+                        # try:
+                        #     logging.info('Add Clement as a reader')
+                        #     service.permissions().insert(fileId=resource['id'], body=clement_permission).execute()
+                        # except HttpError:
+                        #     logging.info('Error when adding Clement as a reader')
 
                         try:
                             logging.info('Add anyone as a reader')
