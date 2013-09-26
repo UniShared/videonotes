@@ -292,7 +292,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.loadStart = function () {
         if($scope.videoUrl !== doc.info.currentVideo) {
             $scope.videoUrl = doc.info.currentVideo;
-            $scope.$apply();
+            $scope.safeApply();
         }
     };
 
