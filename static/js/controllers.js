@@ -204,65 +204,6 @@ controllersModule.controller('NavbarCtrl', ['$scope', function($scope) {
     });
 }]);
 
-controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', 'segmentio', function($scope, $rootScope, segmentio) {
-    // Called when sign-in via the first (in the hero, banner) "Connect with GDrive" button
-    $scope.authHero = function () {
-        segmentio.track('Sign-in hero');
-        $scope.auth();
-    };
-
-    // Called when sign-in via the second "Connect with GDrive" button, below the features block
-    $scope.authFeatures = function () {
-        segmentio.track('Sign-in features');
-        $scope.auth();
-    };
-
-    $rootScope.$broadcast('setMenu', [{text:'Features', target:'features', offset: 50}]);
-
-    // Calling jQuery backstretch to set background
-    $.backstretch('/img/background.jpg');
-}]);
-
-controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', function ($scope, $rootScope, user) {
-    $scope.isAuthenticated = user.isAuthenticated();
-
-    $scope.$on('authentified', function () {
-        $scope.user = user.getInfo();
-        $scope.isAuthenticated = true;
-    });
-}]);
-
-controllersModule.controller('MainCtrl', ['$scope', '$rootScope', '$routeParams', '$timeout', '$location', 'user', 'editor', function($scope, $rootScope, $routeParams, $timeout, $location, user, editor) {
-    if (!user.isAuthenticated()) {
-        user.login();
-    }
-
-    $scope.init = function () {
-        if ($routeParams.id) {
-            editor.load($routeParams.id);
-        }
-        else if ($routeParams.templateId) {
-            editor.copy($routeParams.templateId);
-        }
-        else {
-            // New doc, but defer to next event cycle to ensure init
-            $timeout(function () {
-                    var parentId = $location.search()['parent'];
-                    editor.create(parentId);
-                    editor.save();
-                },
-                1);
-        }
-    };
-
-    $rootScope.$broadcast('setMenu', null);
-
-    // Remove backstretch background if exists
-    $('.backstretch').remove();
-
-    $scope.$on('$routeChangeSuccess', $scope.init);
-}]);
-
 controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'video', 'segmentio', function ($scope, sampleVideo, doc, video, segmentio) {
     $scope.doc = doc;
     $scope.videoUrl = null;
@@ -348,10 +289,77 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
         $scope.endLoading();
     };
 
+    $scope.loadStart = function () {
+        if($scope.videoUrl !== doc.info.currentVideo) {
+            $scope.videoUrl = doc.info.currentVideo;
+            $scope.$apply();
+        }
+    };
+
     $scope.$on('shortcut', $scope.shortcuts);
     $scope.$on('loaded', $scope.loadPlayer);
+    $scope.$on('video::loadstart', $scope.loadStart);
     $scope.$on('video::loadeddata', $scope.endLoading);
     $scope.$on('video::error', $scope.errorLoadVideo);
+}]);
+
+controllersModule.controller('HomeCtrl', ['$scope', '$rootScope', 'segmentio', function($scope, $rootScope, segmentio) {
+    // Called when sign-in via the first (in the hero, banner) "Connect with GDrive" button
+    $scope.authHero = function () {
+        segmentio.track('Sign-in hero');
+        $scope.auth();
+    };
+
+    // Called when sign-in via the second "Connect with GDrive" button, below the features block
+    $scope.authFeatures = function () {
+        segmentio.track('Sign-in features');
+        $scope.auth();
+    };
+
+    $rootScope.$broadcast('setMenu', [{text:'Features', target:'features', offset: 50}]);
+
+    // Calling jQuery backstretch to set background
+    $.backstretch('/img/background.jpg');
+}]);
+
+controllersModule.controller('UserCtrl', ['$scope', '$rootScope', 'user', function ($scope, $rootScope, user) {
+    $scope.isAuthenticated = user.isAuthenticated();
+
+    $scope.$on('authentified', function () {
+        $scope.user = user.getInfo();
+        $scope.isAuthenticated = true;
+    });
+}]);
+
+controllersModule.controller('MainCtrl', ['$scope', '$rootScope', '$routeParams', '$timeout', '$location', 'user', 'editor', function($scope, $rootScope, $routeParams, $timeout, $location, user, editor) {
+    if (!user.isAuthenticated()) {
+        user.login();
+    }
+
+    $scope.init = function () {
+        if ($routeParams.id) {
+            editor.load($routeParams.id);
+        }
+        else if ($routeParams.templateId) {
+            editor.copy($routeParams.templateId);
+        }
+        else {
+            // New doc, but defer to next event cycle to ensure init
+            $timeout(function () {
+                    var parentId = $location.search()['parent'];
+                    editor.create(parentId);
+                    editor.save();
+                },
+                1);
+        }
+    };
+
+    $rootScope.$broadcast('setMenu', null);
+
+    // Remove backstretch background if exists
+    $('.backstretch').remove();
+
+    $scope.$on('$routeChangeSuccess', $scope.init);
 }]);
 
 controllersModule.controller('SpeedCtrl', ['$scope', 'video', 'segmentio', function ($scope, video, segmentio) {
