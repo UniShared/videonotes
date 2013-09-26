@@ -90,6 +90,8 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
         subtitlesUrl: null,
         load: function () {
             if (this.videoUrl && this.videoElement) {
+                var videoUrlToLoad = this.videoUrl;
+
                 if (this.player) {
                     this.player.destroy();
                     $(this.videoElement).empty();
@@ -98,11 +100,11 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
 
                 var matchVideoCoursera = this.getCourseLectureCoursera(this.videoUrl);
                 if (matchVideoCoursera && matchVideoCoursera.length == 3) {
-                    this.videoUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
+                    videoUrlToLoad = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/download.mp4?lecture_id=' + matchVideoCoursera[2]
                     this.subtitlesUrl = 'https://class.coursera.org/' + matchVideoCoursera[1] + '/lecture/subtitles?q=' + matchVideoCoursera[2] + '_en&format=srt'
                 }
 
-                this.player = Popcorn.smart("#" + this.videoElement.id, this.videoUrl, {controls: true});
+                this.player = Popcorn.smart("#" + this.videoElement.id, videoUrlToLoad, {controls: true});
                 this.bindEvents();
 
                 this.player.controls(true);
@@ -232,7 +234,7 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
             this.isPlaying() ? this.pause() : this.play();
         },
         currentTime: function () {
-            if (arguments.length) {
+            if (arguments.length && this.player.readyState() === 4) {
                 segmentio.track('Jump', {time: arguments[0]});
                 this.player.currentTime(arguments[0]);
             }
@@ -449,7 +451,7 @@ module.factory('editor',
                 }
             }
 
-            if (timestamp) {
+            if (typeof timestamp !== "undefined" && typeof videoUrl !== "undefined") {
                 $log.info('Timestamp', line, timestamp);
                 if (timestamp > -1) {
                     if(video.videoUrl !== videoUrl) {
