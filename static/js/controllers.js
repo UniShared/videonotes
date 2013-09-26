@@ -318,7 +318,7 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
     $scope.shortcuts = function (event, eventData) {
         switch (eventData.which) {
             case 32:
-                if (eventData.ctrlKey) {
+                if (eventData.ctrlKey || eventData.metaKey) {
                     $scope.playPauseVideo();
                     eventData.preventDefault();
                 }
