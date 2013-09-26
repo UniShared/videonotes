@@ -28,10 +28,10 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
 from google.appengine.api import mail
 import logging, logging.handlers
+from configuration import configuration_dict
 
 class BufferingSMTPHandler(logging.handlers.BufferingHandler):
-    FROM     = 'arnaud@unishared.com'
-    TO       = 'arnaud@unishared.com'
+    FROM = TO = configuration_dict['admin_email']
 
     def __init__(self, capacity):
         logging.handlers.BufferingHandler.__init__(self, capacity)

@@ -51,6 +51,11 @@ static/js/build
 *.datastore
 client_secrets_*.json
 session.secret
+config_*.json
+out/
 
 # NPM
 node_modules/
+
+# Mac OSX
+.DS_Store

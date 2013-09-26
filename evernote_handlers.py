@@ -1,7 +1,15 @@
+# Copyright (C) 2013 UniShared Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import collections
 from utils import FileUtils
 
-__author__ = 'arnaud'
+__author__ = 'arnaud@videonot.es (Arnaud BRETON)'
 
 # Add the library location to the path
 import sys
@@ -14,6 +22,7 @@ from evernote.edam.type.ttypes import Note, Notebook
 from evernote.edam.error.ttypes import EDAMUserException
 from oauth2client.appengine import StorageByKeyName
 from models import EvernoteCredentials
+from configuration import configuration_dict
 import logging
 
 class BaseEvernoteHandler(BaseHandler):
@@ -21,8 +30,6 @@ class BaseEvernoteHandler(BaseHandler):
 
     Adds Authorization support for Evernote.
     """
-    EN_CONSUMER_KEY = 'videonotes'
-    EN_CONSUMER_SECRET = 'c0a52fafb28eba20'
 
     def handle_exception(self, exception, debug):
         # If the exception is a HTTPException with 401/403 status code use its error code.
@@ -40,8 +47,8 @@ class BaseEvernoteHandler(BaseHandler):
 
     def get_client(self):
         return EvernoteClient(
-            consumer_key=BaseEvernoteHandler.EN_CONSUMER_KEY,
-            consumer_secret=BaseEvernoteHandler.EN_CONSUMER_SECRET,
+            consumer_key=configuration_dict['evernote_consumer_key'],
+            consumer_secret=configuration_dict['evernote_consumer_secret'],
             sandbox=False
         )
 
