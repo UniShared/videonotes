@@ -13,12 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 # Add the library location to the path
 import sys
 sys.path.insert(0, 'lib')
 
 __author__ = 'afshar@google.com (Ali Afshar)'
-__author__ = 'arnaud@videonot.es (Arnaud BRETON)'
+__author__ = 'arnaud@videonot.es Arnaud BRETON (UniShared)'
 
 from evernote_handlers import AuthEvernoteHandler, ExportEvernoteHandler
 from base_handlers import BaseHandler, BaseDriveHandler
