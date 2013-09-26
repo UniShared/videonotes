@@ -207,6 +207,10 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
                     });
                 });
             });
+
+            this.player.on('unstarted', function (event) {
+                $rootScope.$broadcast('video::unstarted', event.detail.data);
+            });
         },
         getYoutubeVideoId: function (url) {
             var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,

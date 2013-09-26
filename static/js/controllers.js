@@ -304,8 +304,15 @@ controllersModule.controller('VideoCtrl', ['$scope', 'sampleVideo', 'doc', 'vide
         }
     };
 
+    $scope.unstartedVideo = function (event, url) {
+        // Event raised when video is part of a playlist
+        // Used to detect next video
+        $scope.addVideo(url);
+    };
+
     $scope.$on('shortcut', $scope.shortcuts);
     $scope.$on('loaded', $scope.loadPlayer);
+    $scope.$on('video::unstarted', $scope.unstartedVideo);
     $scope.$on('video::loadstart', $scope.loadStart);
     $scope.$on('video::loadeddata', $scope.endLoading);
     $scope.$on('video::error', $scope.errorLoadVideo);
