@@ -39,7 +39,7 @@ from oauth2client.client import AccessTokenRefreshError
 from oauth2client.appengine import simplejson as json
 import logging
 from utils import SibPath
-
+from configuration import configuration_dict
 
 # Configure error logger
 logger = logging.getLogger("error")
@@ -442,7 +442,7 @@ class ConfigHandler(BaseHandler):
         production = BaseHandler.is_production()
 
         logging.debug('Get configuration, production %s', production)
-        segment_io_account = [os.environ.get('SEGMENTIO_STAGING'), os.environ.get('SEGMENTIO_PRODUCTION')][production]
+        segment_io_account = configuration_dict['segmentio']
         logging.debug('Segment IO account %s', segment_io_account)
         app_id = flow_from_clientsecrets('client_secrets_{0}.json'.format(self.get_version()), scope='').client_id.split('.')[0].split('-')[0]
         logging.debug('App id %s', app_id)
@@ -521,11 +521,10 @@ class MediaInMemoryUpload(MediaUpload):
         return self._body[begin:begin + length]
 
 # Create an WSGI application suitable for running on App Engine
-config = {}
-config['webapp2_extras.sessions'] = {
+app_config = {}
+app_config['webapp2_extras.sessions'] = {
     'secret_key': SESSION_SECRET,
 }
-
 app = webapp2.WSGIApplication(
     [
         webapp2.Route(r'/', HomePage, 'home'),
@@ -540,5 +539,5 @@ app = webapp2.WSGIApplication(
         webapp2.Route(r'/export/evernote/<:[A-Za-z0-9\-_]*>', ExportEvernoteHandler),
     ],
     # XXX Set to False in production.
-    debug=not BaseHandler.is_production(), config=config
+    debug=not BaseHandler.is_production(), config=app_config
 )

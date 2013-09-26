@@ -22,6 +22,7 @@ from evernote.edam.type.ttypes import Note, Notebook
 from evernote.edam.error.ttypes import EDAMUserException
 from oauth2client.appengine import StorageByKeyName
 from models import EvernoteCredentials
+from configuration import configuration_dict
 import logging
 
 class BaseEvernoteHandler(BaseHandler):
@@ -29,8 +30,6 @@ class BaseEvernoteHandler(BaseHandler):
 
     Adds Authorization support for Evernote.
     """
-    EN_CONSUMER_KEY = 'videonotes'
-    EN_CONSUMER_SECRET = 'c0a52fafb28eba20'
 
     def handle_exception(self, exception, debug):
         # If the exception is a HTTPException with 401/403 status code use its error code.
@@ -48,8 +47,8 @@ class BaseEvernoteHandler(BaseHandler):
 
     def get_client(self):
         return EvernoteClient(
-            consumer_key=BaseEvernoteHandler.EN_CONSUMER_KEY,
-            consumer_secret=BaseEvernoteHandler.EN_CONSUMER_SECRET,
+            consumer_key=configuration_dict['evernote_consumer_key'],
+            consumer_secret=configuration_dict['evernote_consumer_secret'],
             sandbox=False
         )
 

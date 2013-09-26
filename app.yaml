@@ -49,7 +49,3 @@ builtins:
 libraries:
 - name: jinja2
   version: latest
-
-env_variables:
-  SEGMENTIO_PRODUCTION: '7i4twht1o5'
-  SEGMENTIO_STAGING: 'p1iuc2hebz'
