@@ -208,8 +208,11 @@ module.factory('video', ['$rootScope', '$log', '$timeout', '$q', 'segmentio', fu
                 });
             });
 
+            var _this = this;
+
             this.player.on('unstarted', function (event) {
-                $rootScope.$broadcast('video::unstarted', event.detail.data);
+                _this.videoUrl = _this.player.media.src;
+                $rootScope.$broadcast('video::unstarted');
             });
         },
         getYoutubeVideoId: function (url) {

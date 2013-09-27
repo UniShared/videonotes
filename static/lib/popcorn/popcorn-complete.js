@@ -1,5 +1,5 @@
 /*
- * popcorn.js version 7de7401
+ * popcorn.js version 484e9c9
  * http://popcornjs.org
  *
  * Copyright 2011, Mozilla Foundation
@@ -100,7 +100,7 @@
   };
 
   //  Popcorn API version, automatically inserted via build system.
-  Popcorn.version = "7de7401";
+  Popcorn.version = "484e9c9";
 
   //  Boolean flag allowing a client to determine if Popcorn can be supported
   Popcorn.isSupported = true;
@@ -3935,12 +3935,12 @@
       document.removeEventListener( this._eventNamespace + type, listener, useCapture );
     },
 
-    dispatchEvent: function( name, data ) {
+    dispatchEvent: function( name ) {
       var customEvent = document.createEvent( "CustomEvent" ),
         detail = {
           type: name,
           target: this.parentNode,
-          data: data
+          data: null
         };
 
       customEvent.initCustomEvent( this._eventNamespace + name, false, false, detail );
@@ -5933,6 +5933,10 @@
       ytCallbacks[ i ]();
       delete ytCallbacks[ i ];
     }
+
+    if(YT && YT.PlayerState && !YT.PlayerState.UNSTARTED) {
+      YT.PlayerState.UNSTARTED = -1;
+    }
   };
 
   function HTMLYouTubeVideoElement( id ) {
@@ -5975,6 +5979,7 @@
       bufferedInterval,
       lastLoadedFraction = 0,
       currentTimeInterval,
+      currentStateInterval,
       timeUpdateInterval,
       firstPlay = true;
 
@@ -6002,6 +6007,7 @@
       playerReady = true;
       // XXX: this should really live in cued below, but doesn't work.
 
+      currentStateInterval = setInterval(pollingPlayerState, 10);
       // Browsers using flash will have the pause() call take too long and cause some
       // sound to leak out. Muting before to prevent this.
       player.mute();
@@ -6071,10 +6077,21 @@
       self.dispatchEvent( "error" );
     }
 
+    function pollingPlayerState () {
+      var state = player.getPlayerState();
+      if ( playerState !== state ) {
+        onPlayerStateChange( {
+          data: state
+        } );
+      }
+    }
+
     function onPlayerStateChange( event ) {
       switch( event.data ) {
-        case -1:
-            self.dispatchEvent('unstarted', player.getVideoUrl());
+        case YT.PlayerState.UNSTARTED:
+          impl.src = player.getVideoUrl();
+
+          self.dispatchEvent("unstarted");
 
         // ended
         case YT.PlayerState.ENDED:
@@ -6184,6 +6201,7 @@
       }
       clearInterval( currentTimeInterval );
       clearInterval( bufferedInterval );
+      clearInterval( currentStateInterval );
       player.stopVideo();
       player.clearVideo();
 
