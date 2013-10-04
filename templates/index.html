@@ -34,7 +34,7 @@
         <div class="navbar-inner">
             <div class="container-fluid">
                 <nav class="row-fluid" ng-controller="NavbarCtrl">
-                    <div class="span9">
+                    <div ng-class="{'span4': menus, 'span3': !menus}">
                         <ul class="nav">
                             <li class="brand">
                                 <a href alt="{{appName}}" smooth-scroll-jquery>
@@ -48,18 +48,15 @@
                         </ul>
                     </div>
 
-                   <!-- <div class="span4">
+                    <div class="span6">
                         <ul class="nav">
-                            <li class="social-button">
-                                <div class="fb-like" data-href="https://www.facebook.com/pages/Videonotes/346878492080788" data-send="false" data-layout="button_count" data-width="450" data-show-faces="false"></div>
+                            <li class="open-source">
+                                <span>We're open-source, support us by <a href="https://github.com/UniShared/videonotes" class="link" target="_blank">contributing on Github</a> or buying us coffee</span>
                             </li>
-                            <li class="social-button width-75"><a href="https://twitter.com/share" data-count="horizontal" data-url="http://videonot.es" class="twitter-share-button" data-via="videonotes" data-lang="en" data-hashtags="mooc"
-                                                         data-text="I'm taking note while watching my online course. Want to try?">Tweeter</a></li>
-                            <li class="social-button width-75"><div class="g-plusone" href="https://plus.google.com/u/0/112441181479806615038" data-size="medium"></div></li>
                         </ul>
-                    </div>-->
+                    </div>
 
-                    <div class="span3" ng-controller="UserCtrl">
+                    <div ng-class="{'span3': isAuthenticated, 'span2': !isAuthenticated}" ng-controller="UserCtrl">
                         <ul class="nav pull-right">
                             <li class="dropdown" ng-show="isAuthenticated">
                                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">

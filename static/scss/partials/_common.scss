@@ -28,16 +28,16 @@ body {
   margin-top: 43px;
 }
 
-.nav h4 {
-  margin: 0;
-}
-
 [ng\:cloak], [ng-cloak], .ng-cloak {
   display: none !important;
 }
 
 h1, h2, h3, h4 {
   font-weight: normal;
+}
+
+.link {
+  color: $main-yellow-color;
 }
 
 #error {
@@ -90,8 +90,16 @@ h1, h2, h3, h4 {
     }
 
     .nav {
+      h4 {
+        margin: 0;
+      }
+
       .menu {
-        padding-top: 12px;
+        padding-top: 10px;
+      }
+
+      .open-source {
+        margin-top: 10px;
       }
     }
   }
