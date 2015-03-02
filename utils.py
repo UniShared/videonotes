@@ -239,6 +239,8 @@ class DriveState(object):
 
             if 'folderId' in state_data:
                 self.parent = state_data['folderId']
+            else:
+                self.parent = []
             self.ids = map(str, state_data.get('ids', []))
         else:
             self.action = 'create'
